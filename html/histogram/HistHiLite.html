@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<link href="/sticigui.css" rel="stylesheet" type="text/css" />
+<script src="http://d3js.org/d3.v2.js"></script>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<script src="/sticigui.js"></script>
+<title>Histogram</title>
+<style>
+#chart {
+  width: 600px;
+  height: 400px;
+  border: 1px #000 solid;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</head>
+
+<body>
+
+<div id="chart">
+</div>
+
+<script>
+jQuery(function() {
+  Stici_HistHiLite('chart', {
+    data: ['/data/gmat.json']
+  });
+});
+</script>
+
+<p align="center">Data from <a
+href="../Teach/SticiGui/Notes/gloss.xht#fpp">FPP</a>. </p>
+
+<p>You can use the scrollbars to highlight different parts of the
+histogram; the area highlighted is given in the lower left
+corner. Try to guess the percentiles, and test yourself! </p>
+
+<p><font color="#FF0000" size="2">©1997, </font><a
+href="../index.html"><font color="#FF0000" size="2">P.B. Stark</font></a>
+All rights reserved. <br />
+<font
+color="#FF0000" size="2">. Last modified 24 December 1997. </font></p>
+</body>
+</html>
