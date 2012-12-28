@@ -22,15 +22,6 @@
   top: 0;
   bottom: 10px;
 }
-.stici>.stici_chart>div>div {
-  background-color: steelblue;
-  color: white;
-  display: inline-block;
-  position: absolute;
-  bottom: 0;
-  border-left: 1px solid #fff;
-  border-right: 1px solid #fff;
-}
 .stici .axis path,
 .stici .axis line {
   fill: none;
