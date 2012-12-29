@@ -14,7 +14,7 @@
 .stici>.stici_chart {
   background: #fff;
   margin-top: 30px;
-  margin-bottom: 45px
+  margin-bottom: 75px
 }
 .stici .chart_box {
   width: 100%;
@@ -48,7 +48,7 @@
   width: 100%;
   height: 15px;
   position: absolute;
-  bottom: 30px;
+  bottom: 60px;
   padding-left: 5px;
   display: table-cell;
   vertical-align: middle;
@@ -57,7 +57,7 @@
 }
 .stici>.bottom_controls {
   width: 100%;
-  height: 30px;
+  height: 60px;
   position: absolute;
   bottom: 0px;
   padding-left: 5px;
@@ -78,4 +78,8 @@
 .stici>.bottom_controls .ui-slider-handle {
   margin-top: 4px;
   height: 10px;
+}
+.stici>.bottom_controls>span {
+  display: block;
+  height: 30px;
 }
