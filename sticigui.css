@@ -54,7 +54,7 @@
   vertical-align: middle;
 }
 .stici>.bottom_controls input[type="text"] {
-  width: 20px;
+  width: 50px;
 }
 .stici>.bottom_controls .slider {
   display: inline-block;
