@@ -24,6 +24,8 @@
 }
 .stici .chart_box rect {
   fill: steelblue;
+  stroke: black;
+  stroke-width: 1;
 }
 .stici .chart_box .overlay rect {
   fill: lemonchiffon;
