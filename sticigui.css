@@ -91,14 +91,20 @@
 .stici>.bottom_controls .popbox button {
   padding: 3px 3px 3px 3px;
   border-color: #888;
-  width: 100%;
+  width: 100px;
+  margin-right: 5px;
 }
 .stici>.bottom_controls .popbox .box {
-  width: 120px;
   padding: 5px 5px 5px 5px;
   font-size: 12pt;
 }
 .stici>.bottom_controls .popbox .box p {
   margin-top: 0px;
   margin-bottom: 15px;
+}
+.stici>.bottom_controls .popbox .box p td {
+  text-align: right;
+}
+.stici>.bottom_controls .popbox .box p table {
+  border-spacing: 10px;
 }
