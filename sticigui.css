@@ -23,12 +23,12 @@
   bottom: 10px;
 }
 .stici .chart_box rect {
-  fill: steelblue;
+  fill: #6594ff;
   stroke: black;
   stroke-width: 1;
 }
 .stici .chart_box .overlay rect {
-  fill: lemonchiffon;
+  fill: #f8ff53;
 }
 .stici .axis path,
 .stici .axis line {
