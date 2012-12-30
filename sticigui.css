@@ -88,11 +88,13 @@
   text-align: inherit;
   display: inline-block;
 }
-.stici>.bottom_controls .popbox button {
+.stici>.bottom_controls button.open {
   padding: 3px 3px 3px 3px;
   border-color: #888;
-  width: 100px;
+}
+.stici>.bottom_controls .popbox button {
   margin-right: 5px;
+  width: 100px;
 }
 .stici>.bottom_controls .popbox .box {
   padding: 5px 5px 5px 5px;
