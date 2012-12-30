@@ -103,6 +103,7 @@
 .stici>.bottom_controls .popbox .box p {
   margin-top: 0px;
   margin-bottom: 15px;
+  min-width: 200px;
 }
 .stici>.bottom_controls .popbox .box p td {
   text-align: right;
