@@ -27,16 +27,16 @@ with the ID of the container object as the first parameter and options as the
 second parameter. For options, see the source files in lib/.
 For example:
 
-```<div id="chart">
-</div>
-
-<script>
-jQuery(function() {
-  Stici_HistHiLite('chart', {
-    data: ['../../data/gmat.json']
-  });
-});
-</script>```
+    <div id="chart">
+    </div>
+    
+    <script>
+    jQuery(function() {
+      Stici_HistHiLite('chart', {
+        data: ['../../data/gmat.json']
+      });
+    });
+    </script>
 
 Data Format
 ===========
