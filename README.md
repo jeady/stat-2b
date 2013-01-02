@@ -38,6 +38,9 @@ For example:
     });
     </script>
 
+This library is designed to scale with various dimensions given to the
+container element, but the recommended size is 600x400.
+
 Data Format
 ===========
 This library expects input data to be a JSON-encoded array of arrays, where
