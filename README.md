@@ -43,6 +43,7 @@ Data Format
 This library expects input data to be a JSON-encoded array of arrays, where
 data[0] is an array of field names and data[1..n] contains the actual data.
 For example:
+
     [['Student ID', 'Grade'],
      [1, 95],
      [8, 75],
