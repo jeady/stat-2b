@@ -25,6 +25,9 @@
         } else {
           box.css({'display': 'block', 'top': 10, 'left': ((pop.parent().width()/2) -box.width()/2 )});
         }
+
+        if (typeof $(this).parent().data('onPopBox') != 'undefined')
+          $(this).parent().data('onPopBox')();
       },
 
       close: function(){
