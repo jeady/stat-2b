@@ -20,8 +20,8 @@ your web application. Additionally, the following dependancies are required:
 1. jQuery
 2. jQuery UI
 3. d3
-4. PopBox
-5. jQuery.tinyscrollbar
+4. PopBox (custom fork, use included)
+5. jQuery.tinyscrollbar (custom fork, use included)
 
 All interactive charts in this library are used by invoking the creation method
 with the ID of the container object as the first parameter and options as the
