@@ -32,9 +32,10 @@
 <script>
 jQuery(function() {
   Stici_HistHiLite('chart', {
-    data: ['../../data/gmat.json'],
-    showNormalButton: false,
-    bins: 10
+    bins: 9,
+    counts: [9, 10, 13, 20, 25, 14, 5, 2, 2],
+    ends: [-160, -110, -90, -70, -40, -10, 20, 50, 80, 160],
+    showUnivariateStats: false,
   });
 });
 </script>
