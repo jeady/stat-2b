@@ -6,7 +6,39 @@
 // container_id: the CSS ID of the container to create the histogram (and
 //               controls) in.
 // params: A javascript object with various parameters to customize the chart.
-//  - data: Array of URLs (as strings) of json-encoded datasets
+//  // Array of URLs (as strings) of json-encoded datasets.
+//  - data: null
+//
+//  // Show normal by default. Normal can still be toggled by the button.
+//  - showNormal: false
+//
+//  // Whether or not to display the 'Show Normal' button.
+//  - showNormalButton: true
+//
+//  // Default number of bins to display.
+//  - bins: 10
+//
+//  // Whether the user can set the number of bins.
+//  - changeNumBins: true
+//
+//  // Whether or not to display the 'Show Univariate Stats' button.
+//  - showUnivariateStats: true
+//
+//  // Whether or not to display the 'List Data' button.
+//  - listData: true
+//
+//  // The following two options can be use to manually configure the histogram
+//  // rather than having it loaded from a JSON data file. Note that if either
+//  // counts or ends are set, data cannot be set and showNormal,
+//  // showNormalButton, showUnivariateStats, and listData will all be
+//  // automatically set to false.
+//
+//  // Array of bin counts to use instead of parsing data.
+//  - counts: null
+//
+//  // Array of bin ends. If counts is set, ends must also be set.
+//  - ends: null
+
 function Stici_HistHiLite(container_id, params) {
   var self = this;
 
@@ -15,8 +47,21 @@ function Stici_HistHiLite(container_id, params) {
     return;
   }
 
-  // Configuration options.
-  this.options = params;
+  // Configuration option defaults.
+  this.options = {
+    data: null,
+    showNormalButton: true,
+    showNormal: false,
+    bins: 10,
+    changeNumBins: true,
+    showUnivariateStats: true,
+    listData: true,
+    counts: null,
+    ends: null
+  };
+
+  // Override options with anything specified by the user.
+  jQuery.extend(this.options, params);
 
   // jQuery object containing the entire chart.
   this.container = jQuery('#' + container_id);
@@ -50,11 +95,20 @@ function Stici_HistHiLite(container_id, params) {
   this.areaToSlider = null;
   this.binsInput = null;
   this.areaInfoDiv = null;
+  this.showNormalButton = null;
   this.showingNormal = false;
 
-  if (!params.data instanceof Array) {
+  if (!(self.options.data instanceof Array)) {
     this.dataSource = null;
-    this.options.data = [];
+    if (self.options.counts === null || self.options.ends === null) {
+      console.error('Unknown data source.');
+      return;
+    }
+    self.data = [self.options.ends.min(), self.options.ends.max()];
+    self.options.showNormal = false;
+    self.options.showNormalButton = false;
+    self.options.showUnivariateStats = false;
+    self.options.listData = false;
   } else {
     this.dataSource = this.options.data[0];
   }
@@ -65,42 +119,57 @@ function Stici_HistHiLite(container_id, params) {
     self.dataFields = [];
     self.dataValues = [];
 
-    jQuery.getJSON(self.dataSource, function(data) {
-      self.dataFields = data[0];
-      self.dataValues = data.slice(1);
-      self.variableSelect.children().remove();
-      jQuery.each(self.dataFields, function(i, field) {
-        self.variableSelect.append(
-          jQuery('<option/>').attr('value', i).text(field)
-        );
-      });
-      self.variableSelect.val(2);  // TODO(jmeady): un-hardcode this.
+    if (self.dataSource !== null) {
+      jQuery.getJSON(self.dataSource, function(data) {
+        self.dataFields = data[0];
+        self.dataValues = data.slice(1);
+        self.variableSelect.children().remove();
+        jQuery.each(self.dataFields, function(i, field) {
+          self.variableSelect.append(
+            jQuery('<option/>').attr('value', i).text(field)
+          );
+        });
+        self.variableSelect.val(2);  // TODO(jmeady): un-hardcode this.
 
+        self.reloadChart();
+      });
+    } else {
       self.reloadChart();
-    });
+    }
   };
 
   this.reloadChart = function() {
+    var i;
     self.chartDiv.children().remove();
     var normalChartDiv = jQuery('<div/>').addClass('chart_box');
     self.overlayDiv = normalChartDiv.clone().addClass('overlay');
-    self.normalOverlayDiv = jQuery('<div/>').addClass('chart_box').hide();
+    self.normalOverlayDiv = jQuery('<div/>').addClass('chart_box');
     self.chartDiv.append(normalChartDiv);
     self.chartDiv.append(self.overlayDiv);
     self.chartDiv.append(self.normalOverlayDiv);
 
     // Background calculations about the data.
-    var data = jQuery.map(self.dataValues, function(values) {
-      return values[self.variableSelect.val()];
-    });
-    self.data = data;
     var nBins = parseInt(self.binsInput.val(), 10);
+    if (self.dataSource !== null) {
+      var data = jQuery.map(self.dataValues, function(values) {
+        return values[self.variableSelect.val()];
+      });
+      self.data = data;
+      self.binEnds = histMakeBins(nBins, data);
+      self.binCounts = histMakeCounts(self.binEnds, data);
+    } else {
+      self.binEnds = self.options.ends;
+      self.binCounts = self.options.counts;
+      var total = self.binCounts.reduce(function(a, b) { return a + b; });
+      for (i = 0; i < self.binCounts.length; i++) {
+        self.binCounts[i] /= total * (self.binEnds[i + 1] - self.binEnds[i]);
+      }
+    }
     var width = self.overlayDiv.width();
     var height = self.overlayDiv.height();
-    self.binEnds = histMakeBins(nBins, data);
-    self.binCounts = histMakeCounts(self.binEnds, data);
     var dataMu = mean(self.data);
     var dataSd = sd(self.data);
+    var graphWidth = self.data.max() - self.data.min();
 
     // Calculate the scaling by taking the max of the histogram bar heights
     // and the y-coordinate of the points on the normal curve.
@@ -112,18 +181,13 @@ function Stici_HistHiLite(container_id, params) {
       return y;
     };
     var yScale = null;
-    var i;
     // TODO(jmeady): Include height in yScale.
     for (i = 0; i < width; i++) {
       if (yScale === null || normalCurveY(i) > yScale)
         yScale = normalCurveY(i);
-      console.log('yScale = ' + yScale);
     }
-    console.log('yScale = ' + yScale);
     yScale = Math.max(self.binCounts.max(), yScale);
     yScale /= (height - 1);
-    console.log('binCount = ' + self.binCounts.max());
-    console.log('yScale = ' + yScale);
 
     // Draw the histogram as an SVG. We draw a second copy to use as the
     // area overlay and use absolute positioning to put them on top of each
@@ -136,8 +200,8 @@ function Stici_HistHiLite(container_id, params) {
         .append('rect')
         .attr('y', function(d) { return height - d / yScale; })
         .attr('height', function(d) { return d / yScale; })
-        .attr('x', function(d, i) { return (i * width / nBins); })
-        .attr('width', width / nBins);
+        .attr('x', function(d, i) { return (width * (self.binEnds[i] - self.binEnds.min()) / graphWidth); })
+        .attr('width', function(d, i) { return width * (self.binEnds[i + 1] - self.binEnds[i]) / graphWidth; });
     }
     appendSvg(normalChartDiv);
     appendSvg(self.overlayDiv);
@@ -147,7 +211,7 @@ function Stici_HistHiLite(container_id, params) {
     var axisSvg = d3.select(normalChartDiv.get(0))
                 .append('svg')
                 .attr('class', 'axis');
-    var axisScale = d3.scale.linear().domain([data.min(), data.max()]).range([0, width]);
+    var axisScale = d3.scale.linear().domain([self.data.min(), self.data.max()]).range([0, width]);
     var axis = d3.svg.axis().scale(axisScale).orient('bottom');
     axisSvg.append('g').call(axis);
 
@@ -166,15 +230,22 @@ function Stici_HistHiLite(container_id, params) {
       .style('fill', 'none')
       .style('stroke', '#000000');
 
-    self.areaFromSlider.slider('option', 'min', data.min());
-    self.areaFromSlider.slider('option', 'value', data.min());
-    self.areaFromSlider.slider('option', 'max', data.max());
-    self.areaFromInput.val(data.min());
-    self.areaToSlider.slider('option', 'min', data.min());
-    self.areaToSlider.slider('option', 'value', data.min());
-    self.areaToSlider.slider('option', 'max', data.max());
-    self.areaToInput.val(data.min());
-    self.showingNormal = false;
+    self.areaFromSlider.slider('option', 'min', self.data.min());
+    self.areaFromSlider.slider('option', 'value', self.data.min());
+    self.areaFromSlider.slider('option', 'max', self.data.max());
+    self.areaFromInput.val(self.data.min());
+    self.areaToSlider.slider('option', 'min', self.data.min());
+    self.areaToSlider.slider('option', 'value', self.data.min());
+    self.areaToSlider.slider('option', 'max', self.data.max());
+    self.areaToInput.val(self.data.min());
+
+    self.showingNormal = self.options.showNormal;
+    if (self.options.showNormal) {
+      self.showNormalButton.text('Hide Normal Curve');
+    } else {
+      self.showNormalButton.text('Show Normal Curve');
+      self.normalOverlayDiv.hide();
+    }
   };
 
   // Initializes the chart controls. Adds the sliders, input fields, etc.
@@ -183,19 +254,21 @@ function Stici_HistHiLite(container_id, params) {
     self.container.append(o);
 
     // Top controls
-    self.urlInput = jQuery('<input type="text" />');
-    self.dataSelect = jQuery('<select/>').change(self.reloadData);
-    self.variableSelect = jQuery('<select/>').change(self.reloadChart);
+    if (self.dataSource !== null) {
+      self.urlInput = jQuery('<input type="text" />');
+      self.dataSelect = jQuery('<select/>').change(self.reloadData);
+      self.variableSelect = jQuery('<select/>').change(self.reloadChart);
 
-    var top = jQuery('<div/>').addClass('top_controls');
-    top.append('Data: ').append(self.dataSelect);
-    jQuery.each(this.options.data, function(i, dataUrl) {
-      self.dataSelect.append(jQuery('<option/>')
-                     .attr('value', dataUrl)
-                     .text(dataUrl));
-    });
-    top.append('Variable: ').append(self.variableSelect);
-    o.append(top);
+      var top = jQuery('<div/>').addClass('top_controls');
+      top.append('Data: ').append(self.dataSelect);
+      jQuery.each(this.options.data, function(i, dataUrl) {
+        self.dataSelect.append(jQuery('<option/>')
+                       .attr('value', dataUrl)
+                       .text(dataUrl));
+      });
+      top.append('Variable: ').append(self.variableSelect);
+      o.append(top);
+    }
 
     // Chart
     self.chartDiv = jQuery('<div/>')
@@ -215,8 +288,10 @@ function Stici_HistHiLite(container_id, params) {
     var row2 = jQuery('<span/>');
     bottom.append(row1).append(row2);
     self.binsInput = jQuery('<input type="text" />')
-                       .val(10)
+                       .val(self.options.bins)
                        .change(self.reloadChart);
+    if (!self.options.changeNumBins)
+      self.binsInput.attr('readonly', '');
 
     // Helper function that is called whenever any of the area overlay sliders
     // or inputs are changed.
@@ -257,7 +332,7 @@ function Stici_HistHiLite(container_id, params) {
       slide: updateAreaFromInput,
       step: 0.001
     });
-    row1.append('Area From: ').append(areaFromInput).append(areaFromSlider);
+    row1.append('Area from: ').append(areaFromInput).append(areaFromSlider);
     self.areaToInput = jQuery('<input type="text" />').change(function() {
       self.areaToSlider.slider('value', self.areaToInput.val());
     });
@@ -272,7 +347,7 @@ function Stici_HistHiLite(container_id, params) {
       slide: updateAreaToInput,
       step: 0.001
     });
-    row1.append('Area To: ').append(areaToInput).append(areaToSlider);
+    row1.append(' to: ').append(areaToInput).append(areaToSlider);
 
     row1.append('Bins: ').append(self.binsInput);
 
@@ -302,10 +377,9 @@ function Stici_HistHiLite(container_id, params) {
     }
     var listDataButton = createPopBox();
     listDataButton.button.text('List Data');
-    listDataButton.content.css('max-height', '200px')
-                          .css('overflow-y', 'auto');
-    listDataButton.button.click(function() {
-      var data = '<table><tr>';
+    listDataButton.parent.data('onPopBox', function() {
+      var data = '<div class="scrollbar"><div class="track"><div class="thumb"><div class="end"></div></div></div></div>';
+      data += '<div class="viewport"><table class="overview"><tr>';
       var i = 0;
       for (i = 0; i < self.dataFields.length; i++)
         data += '<th>' + self.dataFields[i] + '</th>';
@@ -316,9 +390,17 @@ function Stici_HistHiLite(container_id, params) {
           data += '<td>' + self.dataValues[i][j] + '</td>';
         data += '</tr>';
       }
-      data += '</table>';
+      data += '</table></div>';
       listDataButton.content.html(data);
+      listDataButton.content.addClass('tinyscrollbar');
+      listDataButton.content.width(
+        listDataButton.content.find('.overview').width() + 20);
+      listDataButton.content.tinyscrollbar();
     });
+    if (self.options.listData) {
+      row2.append(listDataButton.parent);
+    }
+
     var statsButton = createPopBox();
     statsButton.button.text('Univariate Stats');
     statsButton.button.click(function() {
@@ -333,19 +415,29 @@ function Stici_HistHiLite(container_id, params) {
       text += 'Max: ' + self.data.max().fix(2) + '<br />';
       statsButton.content.html(text);
     });
-    var normalButton = jQuery('<button/>')
-                         .addClass('open')
-                         .text('Show Normal Curve');
-    normalButton.click(function() {
+    if (self.options.showUnivariateStats)
+      row2.append(statsButton.parent);
+
+    self.showNormalButton = jQuery('<button/>')
+                         .addClass('open');
+    if (self.options.showNormal)
+      self.showNormalButton.text('Hide Normal Curve');
+    else
+      self.showNormalButton.text('Show Normal Curve');
+    self.showNormalButton.click(function() {
       self.normalOverlayDiv.toggle();
       if (!self.showingNormal)
-        normalButton.text(normalButton.text().replace('Show', 'Hide'));
+        self.showNormalButton
+            .text(self.showNormalButton.text().replace('Show', 'Hide'));
       else
-        normalButton.text(normalButton.text().replace('Hide', 'Show'));
+        self.showNormalButton
+            .text(self.showNormalButton.text().replace('Hide', 'Show'));
       self.showingNormal = !self.showingNormal;
       refreshSelectedAreaOverlay();
     });
-    row2.append(listDataButton.parent).append(statsButton.parent).append(normalButton);
+    if (self.options.showNormalButton)
+      row2.append(self.showNormalButton);
+
     jQuery('.popbox').popbox();
   }
 
