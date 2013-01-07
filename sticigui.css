@@ -109,16 +109,58 @@
   text-align: right;
 }
 .stici>.bottom_controls .popbox .box p table {
-  border-spacing: 10px;
 }
 
-.tinyscrollbar .viewport { height: 200px; overflow-y: hidden; position: relative; }
-.tinyscrollbar .overview { list-style: none; position: absolute; left: 0; top: 0; }
+.tinyscrollbar .viewport {
+  height: 200px;
+  overflow-y: hidden;
+  position: relative;
+}
+.tinyscrollbar .overview {
+  list-style: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
 .tinyscrollbar .thumb .end,
-.tinyscrollbar .thumb { background-color: #003D5D; }
-.tinyscrollbar .scrollbar { position: relative; float: right; width: 15px; }
-.tinyscrollbar .track { background-color: #D8EEFD; height: 100%; width:13px; position: relative; padding: 0 1px; }
-.tinyscrollbar .thumb { height: 20px; width: 13px; cursor: pointer; overflow: hidden; position: absolute; top: 0; }
-.tinyscrollbar .thumb .end { overflow: hidden; height: 5px; width: 13px; }
-.tinyscrollbar .disable{ display: none; }
-.noSelect { user-select: none; -o-user-select: none; -moz-user-select: none; -khtml-user-select: none; -webkit-user-select: none; }
+.tinyscrollbar .thumb {
+  background-color: #666;
+}
+.tinyscrollbar .scrollbar {
+  position: relative;
+  float: right;
+  width: 15px;
+}
+.tinyscrollbar .track {
+  background-color: #CCC;
+  height: 100%;
+  width:12px;
+  position: relative;
+  padding: 0 1px;
+  border-radius: 10px;
+}
+.tinyscrollbar .thumb {
+  height: 20px;
+  width: 8px;
+  margin-left: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+}
+.tinyscrollbar .thumb .end {
+  overflow: hidden;
+  height: 5px;
+  width: 13px;
+}
+.tinyscrollbar .disable {
+  display: none;
+}
+.noSelect {
+  user-select: none;
+  -o-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+}
