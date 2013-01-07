@@ -311,7 +311,7 @@ function Stici_HistHiLite(container_id, params) {
       if (self.showingNormal) {
         var m = mean(self.data);
         var s = sd(self.data);
-        p = (normCdf((upper - m) / s) - normCdf((lower - m) / s)) * 100;
+        p = Math.max(0, (normCdf((upper - m) / s) - normCdf((lower - m) / s)) * 100);
         text += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
         text += 'Normal approx: ' + p.fix(2) + '%';
       }
@@ -357,17 +357,38 @@ function Stici_HistHiLite(container_id, params) {
       var parent = jQuery('<div/>').addClass('popbox');
       var open = jQuery('<button/>').addClass('open').text('Click Here!');
       var collapse = jQuery('<div/>').addClass('collapse');
-      var box = jQuery('<div/>').addClass('box');
-      var content = jQuery('<p/>').text('Content Here :)');
-
+      collapse.html(
+        '<div class="box">' +
+        '  <div class="arrow"></div>' +
+        '  <div class="arrow-border"></div>' +
+        '  <div class="tinyscrollbar">' +
+        '    <div class="scrollbar">' +
+        '      <div class="track">' +
+        '        <div class="thumb">' +
+        '          <div class="end"></div>' +
+        '        </div>' +
+        '      </div>' +
+        '    </div>' +
+        '    <div class="viewport">' +
+        '      <p class="overview"></p>' +
+        '    </div>' +
+        '  </div>' +
+        '  <a href="#" class="close">close</a>' +
+        '</div>');
       parent.append(open).append(collapse);
-      collapse.append(box);
-      box.append(jQuery('<div/>').addClass('arrow'))
-         .append(jQuery('<div/>').addClass('arrow-border'))
-         .append(content)
-         .append(jQuery('<a/>').addClass('close')
-                               .attr('href', '#')
-                               .text('close'));
+
+      var content = collapse.find('p');
+      content.text('Content Here :)');
+
+      var inited_scrollbar = false;
+      parent.data('onPopBox', function() {
+        if (!inited_scrollbar) {
+          inited_scrollbar = true;
+          parent.tinyscrollbar();
+        }
+        parent.find('.viewport').parent().width(content.width() + 20);
+      });
+
 
       return {
         parent: parent,
@@ -377,25 +398,30 @@ function Stici_HistHiLite(container_id, params) {
     }
     var listDataButton = createPopBox();
     listDataButton.button.text('List Data');
-    listDataButton.parent.data('onPopBox', function() {
-      var data = '<div class="scrollbar"><div class="track"><div class="thumb"><div class="end"></div></div></div></div>';
-      data += '<div class="viewport"><table class="overview"><tr>';
-      var i = 0;
+    listDataButton.button.click(function() {
+      var rawHeader = '<tr>';
       for (i = 0; i < self.dataFields.length; i++)
-        data += '<th>' + self.dataFields[i] + '</th>';
-      data += '</tr>';
+        rawHeader += '<th>' + self.dataFields[i] + '</th>';
+      rawHeader += '</tr>';
+      var header = jQuery('<table>' + rawHeader + '</table>');
+      header.css('position', 'absolute')
+            .css('top', '0px')
+            .css('background-color', '#fff');
+      header.insertAfter(listDataButton.content);
+
+      var data = '<table>' + rawHeader;
+      var i = 0;
       for (i = 0; i < self.dataValues.length; i++) {
         data += '<tr>';
         for (var j = 0; j < self.dataValues[i].length; j++)
           data += '<td>' + self.dataValues[i][j] + '</td>';
         data += '</tr>';
       }
-      data += '</table></div>';
+      data += '</table>';
       listDataButton.content.html(data);
-      listDataButton.content.addClass('tinyscrollbar');
-      listDataButton.content.width(
-        listDataButton.content.find('.overview').width() + 20);
-      listDataButton.content.tinyscrollbar();
+      jQuery(listDataButton.content.find('tr')[0])
+        .css('visibility', 'hidden')
+        .css('height', '0px');
     });
     if (self.options.listData) {
       row2.append(listDataButton.parent);
@@ -405,14 +431,21 @@ function Stici_HistHiLite(container_id, params) {
     statsButton.button.text('Univariate Stats');
     statsButton.button.click(function() {
       var text = '';
-      text += 'Cases: ' + self.data.length + '<br />';
-      text += 'Mean: ' + mean(self.data).fix(2) + '<br />';
-      text += 'SD: ' + sd(self.data).fix(2) + '<br />';
-      text += 'Min: ' + self.data.min().fix(2) + '<br />';
-      text += 'LQ: ' + percentile(self.data, 25).fix(2) + '<br />';
-      text += 'Median: ' + percentile(self.data, 50).fix(2) + '<br />';
-      text += 'UQ: ' + percentile(self.data, 75).fix(2) + '<br />';
-      text += 'Max: ' + self.data.max().fix(2) + '<br />';
+      jQuery.each(self.dataFields, function(i) {
+        text += '<b>' + self.dataFields[i] + '</b><br />';
+        var data = jQuery.map(self.dataValues, function(values) {
+          return values[i];
+        });
+        text += 'Cases: ' + data.length + '<br />';
+        text += 'Mean: ' + mean(data).fix(2) + '<br />';
+        text += 'SD: ' + sd(data).fix(2) + '<br />';
+        text += 'Min: ' + data.min().fix(2) + '<br />';
+        text += 'LQ: ' + percentile(data, 25).fix(2) + '<br />';
+        text += 'Median: ' + percentile(data, 50).fix(2) + '<br />';
+        text += 'UQ: ' + percentile(data, 75).fix(2) + '<br />';
+        text += 'Max: ' + data.max().fix(2) + '<br />';
+        text += '<br />';
+      });
       statsButton.content.html(text);
     });
     if (self.options.showUnivariateStats)
@@ -754,25 +787,23 @@ function histEstimatedPercentile(pct, binEnd, counts) {  // estimates the pth pe
         return(pctile);
 }
 
-
 function histHiLitArea(loEnd, hiEnd, binEnd, counts) { // area of counts from loEnd to hiEnd
           var nBins = binEnd.length - 1;
           var area = 0;
-          for (var i=0; i < nBins; i++) {
-             if( binEnd[i]  > hiEnd ||  binEnd[i+1] <= loEnd) {}
-             else if (binEnd[i] >= loEnd && binEnd[i+1] <= hiEnd) {
-                area += counts[i]*(binEnd[i+1]-binEnd[i]);
-             }
-             else if (binEnd[i] >= loEnd && binEnd[i+1] > hiEnd) {
-                area += counts[i]*(hiEnd - binEnd[i]);
-             }
-             else if (binEnd[i] <= loEnd && binEnd[i+1] <= hiEnd) {
-                area += counts[i]*(binEnd[i+1]-loEnd);
-             }
-             else if (binEnd[i] < loEnd && binEnd[i+1] > hiEnd) {
-                area += counts[i]*(hiEnd - loEnd);
-             }
-      }
+          if (loEnd < hiEnd) {
+             for (var i=0; i < nBins; i++) {
+                if( binEnd[i]  > hiEnd ||  binEnd[i+1] <= loEnd) {
+                } else if (binEnd[i] >= loEnd && binEnd[i+1] <= hiEnd) {
+                   area += counts[i]*(binEnd[i+1]-binEnd[i]);
+                } else if (binEnd[i] >= loEnd && binEnd[i+1] > hiEnd) {
+                   area += counts[i]*(hiEnd - binEnd[i]);
+                } else if (binEnd[i] <= loEnd && binEnd[i+1] <= hiEnd) {
+                   area += counts[i]*(binEnd[i+1]-loEnd);
+                } else if (binEnd[i] < loEnd && binEnd[i+1] > hiEnd) {
+                   area += counts[i]*(hiEnd - loEnd);
+                }
+            }
+         }
       return(area);
 }
 
