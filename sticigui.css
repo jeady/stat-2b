@@ -109,7 +109,6 @@
   text-align: right;
 }
 .stici>.bottom_controls .popbox .box p table {
-  border-spacing: 10px;
 }
 
 .tinyscrollbar .viewport { height: 200px; overflow-y: hidden; position: relative; }
