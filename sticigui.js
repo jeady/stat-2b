@@ -115,16 +115,19 @@ function Stici_HistHiLite(container_id, params) {
 
   // Reloads chart data from this.data_source
   this.reloadData = function() {
-    self.options.data = [];
     self.dataFields = [];
     self.dataValues = [];
 
-    if (self.dataSource !== null) {
+    if (self.options.data !== null) {
+      self.dataSource = self.dataSelect.val();
       jQuery.getJSON(self.dataSource, function(data) {
         self.dataFields = data[0];
         self.dataValues = data.slice(1);
         self.variableSelect.children().remove();
         jQuery.each(self.dataFields, function(i, field) {
+          if (field.indexOf('//') === 0)
+            return;
+
           self.variableSelect.append(
             jQuery('<option/>').attr('value', i).text(field)
           );
@@ -152,7 +155,7 @@ function Stici_HistHiLite(container_id, params) {
     var nBins = parseInt(self.binsInput.val(), 10);
     if (self.dataSource !== null) {
       var data = jQuery.map(self.dataValues, function(values) {
-        return values[self.variableSelect.val()];
+        return parseFloat(values[self.variableSelect.val()]);
       });
       self.data = data;
       self.binEnds = histMakeBins(nBins, data);
@@ -396,25 +399,39 @@ function Stici_HistHiLite(container_id, params) {
         content: content
       };
     }
+    var lastListDataHeader = null;
     var listDataButton = createPopBox();
     listDataButton.button.text('List Data');
     listDataButton.button.click(function() {
       var rawHeader = '<tr>';
-      for (i = 0; i < self.dataFields.length; i++)
-        rawHeader += '<th>' + self.dataFields[i] + '</th>';
+      for (i = 0; i < self.dataFields.length; i++) {
+        var field = self.dataFields[i].toString();
+        if (field.indexOf('//') === 0)
+          rawHeader += '<th>' + field.substr(2) + '</th>';
+        else
+          rawHeader += '<th>' + field + '</th>';
+      }
       rawHeader += '</tr>';
+      if (lastListDataHeader !== null)
+        lastListDataHeader.remove();
       var header = jQuery('<table>' + rawHeader + '</table>');
       header.css('position', 'absolute')
             .css('top', '0px')
             .css('background-color', '#fff');
       header.insertAfter(listDataButton.content);
+      lastListDataHeader = header;
 
       var data = '<table>' + rawHeader;
       var i = 0;
       for (i = 0; i < self.dataValues.length; i++) {
         data += '<tr>';
-        for (var j = 0; j < self.dataValues[i].length; j++)
-          data += '<td>' + self.dataValues[i][j] + '</td>';
+        for (var j = 0; j < self.dataValues[i].length; j++) {
+          var val = self.dataValues[i][j].toString();
+          if (val.indexOf('//') === 0)
+            data += '<td>' + val.substr(2) + '</td>';
+          else
+            data += '<td>' + val + '</td>';
+        }
         data += '</tr>';
       }
       data += '</table>';
@@ -434,7 +451,7 @@ function Stici_HistHiLite(container_id, params) {
       jQuery.each(self.dataFields, function(i) {
         text += '<b>' + self.dataFields[i] + '</b><br />';
         var data = jQuery.map(self.dataValues, function(values) {
-          return values[i];
+          return parseFloat(values[i]);
         });
         text += 'Cases: ' + data.length + '<br />';
         text += 'Mean: ' + mean(data).fix(2) + '<br />';
