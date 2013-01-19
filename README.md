@@ -20,8 +20,8 @@ your web application. Additionally, the following dependancies are required:
 1. jQuery
 2. jQuery UI
 3. d3
-4. PopBox (custom fork, use included)
-5. jQuery.tinyscrollbar (custom fork, use included)
+4. PopBox (custom fork, included in sticigui.js/css)
+5. jQuery.tinyscrollbar (custom fork, included in sticigui.js/css)
 
 All interactive charts in this library are used by invoking the creation method
 with the ID of the container object as the first parameter and options as the
@@ -60,8 +60,14 @@ Internet Explorer support are in development.
 
 Development
 ===========
-This library is compiled using Grunt. To compile sticigui.js, simple run
-`grunt` from this project's directory. You can start up a development webserver
-that hosts the demo files by running `python -m SimpleHTTPServer` from the
-project's directory, and then navigating to any of the .html files in the html/
+This library is compiled using Grunt and the grunt-css plugin.
+
+To install grunt: `npm install -g grunt`
+To install grunt-css: `npm install grunt-css@0.3.2`
+
+To compile sticigui.js, simply run `grunt` from this project's directory. Run
+`grunt debug` if you wish to compile a debug version of the library (without
+minification applied). You can start up a development webserver that hosts the
+demo files by running `python -m SimpleHTTPServer` from the project's
+directory, and then navigating to any of the .html files in the html/
 directory.
