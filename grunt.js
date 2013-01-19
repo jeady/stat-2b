@@ -5,15 +5,15 @@ module.exports = function(grunt) {
     lint: {
       all: ['grunt.js', 'lib/*.js']
     },
-    min: {
-      all: {
-        src: 'sticigui.js',
-        dest: 'sticigui.js'
-      }
-    },
     concat: {
       all: {
         src: ['lib/*.js'],
+        dest: 'sticigui.js'
+      }
+    },
+    min: {
+      all: {
+        src: 'sticigui.js',
         dest: 'sticigui.js'
       }
     }
