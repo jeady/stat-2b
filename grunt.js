@@ -6,7 +6,10 @@ module.exports = function(grunt) {
       all: ['grunt.js', 'lib/*.js']
     },
     min: {
-      all: ['lib/*.js']
+      all: {
+        src: 'sticigui.js',
+        dest: 'sticigui.js'
+      }
     },
     concat: {
       all: {
@@ -17,6 +20,6 @@ module.exports = function(grunt) {
   });
 
 
-  grunt.registerTask('default', 'lint min concat');
+  grunt.registerTask('default', 'lint concat min');
 
 };
