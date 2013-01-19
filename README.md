@@ -33,7 +33,7 @@ For example:
 
     <script>
     jQuery(function() {
-      Stici_HistHiLite('chart', {
+      new Stici_HistHiLite('chart', {
         data: ['../../data/gmat.json']
       });
     });
