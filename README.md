@@ -60,8 +60,14 @@ Internet Explorer support are in development.
 
 Development
 ===========
-This library is compiled using Grunt. To compile sticigui.js, simply run
-`grunt` from this project's directory. You can start up a development webserver
-that hosts the demo files by running `python -m SimpleHTTPServer` from the
-project's directory, and then navigating to any of the .html files in the html/
+This library is compiled using Grunt and the grunt-css plugin.
+
+To install grunt: `npm install -g grunt`
+To install grunt-css: `npm install grunt-css@0.3.2`
+
+To compile sticigui.js, simply run `grunt` from this project's directory. Run
+`grunt debug` if you wish to compile a debug version of the library (without
+minification applied). You can start up a development webserver that hosts the
+demo files by running `python -m SimpleHTTPServer` from the project's
+directory, and then navigating to any of the .html files in the html/
 directory.
