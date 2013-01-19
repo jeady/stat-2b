@@ -60,7 +60,7 @@ Internet Explorer support are in development.
 
 Development
 ===========
-This library is compiled using Grunt. To compile sticigui.js, simple run
+This library is compiled using Grunt. To compile sticigui.js, simply run
 `grunt` from this project's directory. You can start up a development webserver
 that hosts the demo files by running `python -m SimpleHTTPServer` from the
 project's directory, and then navigating to any of the .html files in the html/
