@@ -7,7 +7,7 @@ module.exports = function(grunt) {
     },
     concat: {
       all: {
-        src: ['lib/*.js'],
+        src: ['lib/*.js', 'vendor/**/*.js'],
         dest: 'sticigui.js'
       }
     },
