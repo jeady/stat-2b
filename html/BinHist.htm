@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:pref="http://www.w3.org/2002/Math/preference"
+      pref:renderer="css">
+
+<head>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script src="http://d3js.org/d3.v2.js"></script>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<script src="../sticigui.js"></script>
+<link href="../sticigui.css" rel="stylesheet" type="text/css" />
+<title>Binomial Probability Histogram</title>
+<style>
+#chart {
+  width: 600px;
+  height: 400px;
+  border: 1px #000 solid;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</head>
+
+<body>
+
+<p align="center">
+<div id="chart">
+</div>
+
+<script>
+jQuery(function() {
+  new Stici_HistHiLite('chart', {
+    n: 5,
+    p: 0.5
+  });
+});
+</script>
+</p>
+
+<p>
+The number of &quot;successes&quot; in <em>n</em> <a
+href="../../SticiGui/Text/gloss.htm#independent">independent</a>
+trials that each have the same probability <em>p</em> of success
+has the <a href="../../SticiGui/Text/gloss.htm#binomial">binomial
+distribution with parameters <em>n</em> and <em>p</em></a>.
+</p>
+
+<p>
+For example, the number of heads in 10 tosses of a fair coin
+has a binomial distribution with parameters <em>n</em>=10 and <em>p</em>=50%.
+</p>
+
+<p>
+The <a href="../../SticiGui/Text/gloss.htm#expectation">expected
+value</a> of the binomial distribution is <em>n&times;p</em> (that's
+where the probability histogram would balance), and the standard
+error of the binomial distribution is
+(<em>n</em>&times;<em>p</em>&times;(1-<em>p</em>))<sup>&frac12;</sup>.
+</p>
+
+<p>Note that for a fixed value of <em>n</em>, the distribution is
+broadest (has the largest SE) when <em>p</em> = 50%. </p>
+
+<p>You can use the scrollbars to select different parts of the
+histogram; the area of the selected region is printed in the
+middle. </p>
+
+<p>The normal approximation to the binomial probability histogram
+is good when <em>n</em> is large and <em>p</em> is neither close
+to 0 nor close to 100%.</p>
+
+<p>&nbsp;</p>
+
+<h2 align="center"><a name="controls">
+</a>Explanation of Controls
+</h2>
+
+<p align="left">The &quot;Show Normal Curve&quot; button
+superposes the normal approximation to the binomial over the
+binomial histogram.</p>
+
+<p align="left">The &quot;Area from&quot; and &quot;to&quot;
+scrollbars and text boxes allow you to select a range of possible
+&quot;successes,&quot; for which the applet will calculate the
+probability, displayed after &quot;Selected area.&quot;</p>
+
+<p align="left">The text boxes on the bottom row let you change
+the number of trials <em>n</em> and the probability <em>p</em> of
+success in each trial. To change the value, delete the value in
+the box, type in the new value, then strike the &quot;enter&quot;
+or &quot;return&quot; key or click the mouse anywhere outside the
+box.</p>
+</body>
+</html>
