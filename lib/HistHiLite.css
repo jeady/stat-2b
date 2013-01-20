@@ -9,6 +9,9 @@
   margin-top: 30px;
   margin-bottom: 75px
 }
+.stici_histogram .chart_box svg {
+  vertical-align: top;
+}
 .stici_histogram .chart_box rect {
   fill: #6594ff;
   stroke: black;
