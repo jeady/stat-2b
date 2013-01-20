@@ -36,6 +36,7 @@ File.new(ARGV[0]).each do |line|
       if quoted
         var += line[i]
       elsif var == '//'
+        break if line_vars.length == 0
         comment_only = true
         var = ''
       else
@@ -49,6 +50,7 @@ File.new(ARGV[0]).each do |line|
     end
   end
 
+  next if line_vars.length == 0
   json_lines.push(line_vars)
 end.close
 
