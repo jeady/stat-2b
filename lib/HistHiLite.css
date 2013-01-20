@@ -1,10 +1,3 @@
-.stici {
-  position: relative;
-  padding: 0 0 0 0;
-  margin: 0 0 0 0;
-  height: 100%;
-  width: 100%;
-}
 .stici>.top_controls {
   height: 30px;
   display: table-cell;
@@ -16,22 +9,16 @@
   margin-top: 30px;
   margin-bottom: 75px
 }
-.stici .chart_box {
-  width: 100%;
-  position: absolute;
-  top: 0;
-  bottom: 10px;
-}
-.stici .chart_box rect {
+.stici_histogram .chart_box rect {
   fill: #6594ff;
   stroke: black;
   stroke-width: 1;
 }
-.stici .chart_box .overlay rect {
+.stici_histogram .chart_box .overlay rect {
   fill: #f8ff53;
 }
-.stici .axis path,
-.stici .axis line {
+.stici_histogram .axis path,
+.stici_histogram .axis line {
   fill: none;
   stroke: black;
   shape-rendering: crispEdges;
@@ -55,18 +42,6 @@
   text-align: center;
   font-size: 10pt;
 }
-.stici>.bottom_controls {
-  width: 100%;
-  height: 60px;
-  position: absolute;
-  bottom: 0px;
-  padding-left: 5px;
-  display: table-cell;
-  vertical-align: middle;
-}
-.stici>.bottom_controls input[type="text"] {
-  width: 50px;
-}
 .stici>.bottom_controls .slider {
   display: inline-block;
   width: 100px;
@@ -79,10 +54,6 @@
   margin-top: 4px;
   height: 10px;
 }
-.stici>.bottom_controls>span {
-  display: block;
-  height: 30px;
-}
 .stici>.bottom_controls .popbox {
   margin: 0 0 0 0;
   text-align: inherit;
@@ -90,7 +61,6 @@
 }
 .stici>.bottom_controls button.open {
   padding: 3px 3px 3px 3px;
-  border-color: #888;
 }
 .stici>.bottom_controls .popbox button {
   margin-right: 5px;
