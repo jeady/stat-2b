@@ -14,6 +14,9 @@
   #chart {
     text-align: center;
     margin: auto;
+    border: 1px #000 solid;
+    width: 820px;
+    height: 480px;
   }
 </style>
 </head>
@@ -28,7 +31,6 @@ jQuery(function() {
   new Stici_Scatterplot('chart', {
     data: ['/data/gmat.dat.json', '/data/cities.dat.json', '/data/baseball98.dat.json'],
     graphOfAvePoints: 9,
-    chartDimensions: [800, 380],
     chartMargins: [10, 10, 25, 40]
   });
 });
