@@ -8,6 +8,8 @@ Currently the following interactive charts are supported:
 
 1. Histogram
    Created by invoking `Stici_HistHiLite`.
+2. Scatterplot
+   Created by invoking `Stici_Scatterplot`.
 
 Usage
 =====
@@ -21,7 +23,6 @@ your web application. Additionally, the following dependancies are required:
 2. jQuery UI
 3. d3
 4. PopBox (custom fork, included in sticigui.js/css)
-5. jQuery.tinyscrollbar (custom fork, included in sticigui.js/css)
 
 All interactive charts in this library are used by invoking the creation method
 with the ID of the container object as the first parameter and options as the
