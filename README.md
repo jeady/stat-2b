@@ -14,8 +14,8 @@ Currently the following interactive charts are supported:
 Usage
 =====
 You may find a compiled copy of this library on this projects github page (
-[js](https://raw.github.com/jeady/stat-2b/gh-pages/sticigui.js)
-[css](https://raw.github.com/jeady/stat-2b/gh-pages/sticigui.js) ). If you wish
+[js](https://raw.github.com/jeady/stat-2b/gh-pages/sticigui.js)/
+[css](https://raw.github.com/jeady/stat-2b/gh-pages/sticigui.css) ). If you wish
 to build your own copy of sticigui.js, see the section on development. To use
 this library, you will need to link to both sticigui.js and sticigui.css from
 your web application. Additionally, the following dependancies are required:
