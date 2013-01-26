@@ -27,6 +27,10 @@
   display: inline-block;
 }
 
+#scatterplot {
+  margin-top: 30px;
+}
+
 #scatterplot svg path {
   display: none;
 }
