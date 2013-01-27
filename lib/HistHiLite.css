@@ -19,6 +19,8 @@
 }
 .stici_histogram .additional_info {
   text-align: center;
+  vertical-align: middle;
+  height: 30px;
 }
 .stici_histogram {
   font-size: 14px;
