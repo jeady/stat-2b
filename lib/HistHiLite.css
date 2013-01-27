@@ -17,6 +17,9 @@
   fill: none;
   stroke-width: 2px;
 }
+.stici_histogram {
+  font-size: 14px;
+}
 .stici_histogram path.restricted {
   stroke: #136738;
 }
