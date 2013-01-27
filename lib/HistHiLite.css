@@ -12,6 +12,23 @@
   width: 100%;
   height: 100%;
 }
+.stici_histogram path {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 2px;
+}
+.stici_histogram path.restricted {
+  stroke: #136738;
+}
+.stici_histogram .chart_box rect.restricted {
+  fill: #37DA7E;
+}
+.stici_histogram .chart_box .overlay rect.restricted {
+  fill: #CA1F7B;
+}
+.stici_histogram path.nrestricted {
+  stroke: #0032A8;
+}
 .stici_histogram .chart_box rect {
   fill: #6594ff;
   stroke: black;
