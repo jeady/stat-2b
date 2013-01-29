@@ -27,46 +27,49 @@
   display: inline-block;
 }
 
-#scatterplot {
+.stici_scatterplot>.stici_chart {
   margin-top: 30px;
 }
+.stici_scatterplot {
+  text-align: center;
+}
 
-#scatterplot svg path {
+.stici_scatterplot>.stici_chart svg path {
   display: none;
 }
-#scatterplot .axis text {
+.stici_scatterplot>.stici_chart .axis text {
   font-size: 11px;
 }
-#scatterplot svg line {
+.stici_scatterplot>.stici_chart svg line {
   stroke: #333;
   stroke-width: 1px;
 }
-#scatterplot svg .graph-of-ave rect {
+.stici_scatterplot>.stici_chart svg .graph-of-ave rect {
   fill: #ff0;
   stroke: #333;
 }
-#scatterplot svg .sd-line line {
+.stici_scatterplot>.stici_chart svg .sd-line line {
   stroke: rgba(245, 20, 255, 1);
   stroke-width: 1px;
 }
-#scatterplot svg .reg-line line {
+.stici_scatterplot>.stici_chart svg .reg-line line {
   stroke: rgba(81, 255, 0, 1);
   stroke-width: 1px;
 }
-#scatterplot svg line.x-axis {
+.stici_scatterplot>.stici_chart svg line.x-axis {
   stroke: #000;
 }
-#scatterplot svg circle {
+.stici_scatterplot>.stici_chart svg circle {
   cursor: pointer;
 }
 
-#scatterplot svg .data-point.added {
+.stici_scatterplot>.stici_chart svg .data-point.added {
   fill: rgba(0, 255, 0, 1);
 }
-#scatterplot svg .data-point.selected {
+.stici_scatterplot>.stici_chart svg .data-point.selected {
   fill: #E0FFFF;
 }
-#scatterplot svg .data-point.active {
+.stici_scatterplot>.stici_chart svg .data-point.active {
   stroke-width: 2px;
   fill: #FFF799;
 }
