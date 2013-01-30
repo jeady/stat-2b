@@ -48,6 +48,9 @@
     });
 
     return this.each(function(){
+      if ($(this).data('isPopBox') === true)
+        return;
+      $(this).data('isPopBox', true);
       if (!$(this).css('width'))
         $(this).css({'width': $(settings['box']).width()}); // Width needs to be set otherwise popbox will not move when window resized.
       $(settings['open'], this).bind('click', methods.open);
