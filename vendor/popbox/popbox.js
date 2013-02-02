@@ -31,7 +31,7 @@
       },
 
       close: function(){
-        $(settings['box']).fadeOut("fast");
+        $(settings.selector).find(settings['box']).fadeOut("fast");
       }
     };
 
