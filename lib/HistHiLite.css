@@ -69,18 +69,6 @@
   text-align: center;
   font-size: 10pt;
 }
-.stici>.bottom_controls .slider {
-  display: inline-block;
-  width: 100px;
-  height: 10px;
-  margin-top: 10px;
-  margin-left: 15px;
-  margin-right: 15px;
-}
-.stici>.bottom_controls .ui-slider-handle {
-  margin-top: 4px;
-  height: 10px;
-}
 .stici>.bottom_controls .popbox {
   margin: 0 0 0 0;
   text-align: inherit;
