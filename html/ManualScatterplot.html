@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:pref="http://www.w3.org/2002/Math/preference"
+      pref:renderer="css">
+
+<head>
+<script language="JavaScript1.8" type="text/javascript"><!--
+	pageModDate = "21 January 2013 08:37 PST";
+	// copyright 1997--2013 by P.B. Stark, statistics.berkeley.edu/~stark.
+    // All rights reserved.
+// -->
+</script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="http://d3js.org/d3.v2.js"></script>
+<script type="text/javascript" src="../sticigui.js"></script>
+<link href="../sticigui.css" rel="stylesheet" type="text/css" />
+<style>
+  #chart {
+    margin: auto;
+    border: 1px #000 solid;
+    width: 470px;
+    height: 380px;
+  }
+</style>
+</head>
+<body>
+<p align="center">
+<div id="chart"></div>
+<script>
+jQuery(function() {
+  new Stici_Scatterplot('chart', {
+    addPoints: false,
+    graphAveButton: false,
+    regressButton: false,
+    residualsButton: false,
+    sdButton: false,
+    sdLineButton: false,
+    showR: false,
+    x: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,2,
+        26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50],
+    y: [1.3648462,2.4493555,2.4686836,3.1937691,4.5300116,4.103517,
+        4.7296546,4.1827321,4.7415191,4.5860516,4.6978422,
+        5.0302679,4.8101506,4.6254892,3.9367077,3.7839850,2.8874823,2.8867729,3.3807606,
+        3.0995626,2.8559447,2.2024342,2.9366545,3.1528946,3.1058939,3.7296558,5.0469460,
+        4.2949031,4.3250106,4.4094161,5.6797091,6.2004392,6.4514583,8.1304136,8.0355230,
+        8.1702298,8.2398647,7.0043573,8.8214607,8.0677759,7.5286017,6.8350082,7.4065463,
+        7.8839126,6.8542513,6.7049488,5.9683663,6.1649185,4.9026613,5.7249926]
+  });
+});
+</script>
+</p>
+
+<p>
+Play with the sliders to change the correlation coefficient and the
+number of data. The buttons add lines at the point of averages
+&plusmn;1 SD, the SD line and the regression line.
+You can add points by clicking in the scatterplot. Whether those points
+are used in the computations is controlled by another button.
+The last button clears the points you added by clicking.
+</p>
+</BODY>
+</HTML>
