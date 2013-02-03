@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:pref="http://www.w3.org/2002/Math/preference"
+      pref:renderer="css">
+
+<head>
+<script language="JavaScript1.8" type="text/javascript"><!--
+	pageModDate = "21 January 2013 08:37 PST";
+	// copyright 1997--2013 by P.B. Stark, statistics.berkeley.edu/~stark.
+    // All rights reserved.
+// -->
+</script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="http://d3js.org/d3.v2.js"></script>
+<script type="text/javascript" src="../sticigui.js"></script>
+<link href="../sticigui.css" rel="stylesheet" type="text/css" />
+<style>
+  #chart {
+    margin: auto;
+    border: 1px #000 solid;
+    width: 470px;
+    height: 380px;
+  }
+</style>
+</head>
+<body>
+<p align="center">
+<div id="chart"></div>
+<script>
+jQuery(function() {
+  new Stici_Scatterplot('chart', {
+    r: 0,
+    n: 50
+  });
+});
+</script>
+</p>
+
+<p>
+Play with the sliders to change the correlation coefficient and the
+number of data. The buttons add lines at the point of averages
+&plusmn;1 SD, the SD line and the regression line.
+You can add points by clicking in the scatterplot. Whether those points
+are used in the computations is controlled by another button.
+The last button clears the points you added by clicking.
+</p>
+</BODY>
+</HTML>
