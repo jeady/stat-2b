@@ -10,7 +10,6 @@
 .stici_histogram .chart_box svg {
   vertical-align: top;
   width: 100%;
-  height: 100%;
 }
 .stici_histogram path {
   stroke: #000000;
