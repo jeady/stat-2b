@@ -310,9 +310,9 @@
   border: 1px solid #999;
   border-left: 0;
   padding: 5px;
-  width: 100px;
   overflow: hidden;
-  display: inline-block;
+  display: table-cell;
+  width: 100%;
 }
 
 .popbox-content .table-header {
@@ -326,6 +326,8 @@
 .popbox-content .table-header td {
   border: 1px solid #999;
   border-left: 0;
+  height: 100%;
+  vertical-align: middle;
 }
 
 .popbox-content .table-body {
