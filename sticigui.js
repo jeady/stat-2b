@@ -1,1 +1,4591 @@
-function Stici_HistHiLite(e,t){function r(){function f(e){if(null===n.restrictedCounts||!n.showingRestricted.is(":checked"))return d3.select(e.get(0)).append("svg").selectAll("div").data(n.binCounts).enter().append("rect").attr("y",function(e){return i-e/u}).attr("height",function(e){return e/u}).attr("x",function(e,t){return r*(n.binEnds[t]-n.binEnds.min())/s}).attr("width",function(e,t){return r*(n.binEnds[t+1]-n.binEnds[t])/s});var t=d3.select(e.get(0)).append("svg").selectAll("div"),o=jQuery.map(n.binCounts,function(e,t){return n.showingOriginal.is(":checked")?[[n.binCounts[t],n.restrictedCounts[t]]]:[[null,n.restrictedCounts[t]]]});return t.data(o).enter().append("rect").attr("y",function(e){return i-e.max()/u}).attr("height",function(e){return e.max()/u}).attr("x",function(e,t){return r*(n.binEnds[t]-n.binEnds.min())/s}).attr("width",function(e,t){return r*(n.binEnds[t+1]-n.binEnds[t])/s}).attr("class",function(e){return e[0]==e[1]?"restricted":e[1]>e[0]?"restricted":""}),t.data(o).enter().append("rect").attr("y",function(e){return i-e.min()/u}).attr("height",function(e){return e.min()/u}).attr("x",function(e,t){return r*(n.binEnds[t]-n.binEnds.min())/s}).attr("width",function(e,t){return r*(n.binEnds[t+1]-n.binEnds[t])/s}).attr("class",function(e){return e[0]==e[1]?"":e[1]<e[0]?"restricted":""}),t}var e;n.chartDiv.children().remove();var t=jQuery("<div/>").addClass("chart_box");n.overlayDiv=t.clone().addClass("overlay"),n.normalOverlayDiv=jQuery("<div/>").addClass("chart_box"),n.chartDiv.append(t),n.chartDiv.append(n.overlayDiv),n.chartDiv.append(n.normalOverlayDiv);var r=n.overlayDiv.width(),i=n.overlayDiv.height(),s=n.binEnds.max()-n.binEnds.min(),o=function(e){var t=n.binEnds[0]+e*(n.binEnds[n.nBins]-n.binEnds[0])/(r-1),i=normPdf(n.mu,n.sd,t);return i},u=null;for(e=0;e<r;e++)(u===null||o(e)>u)&&!isNaN(o(e))&&(u=o(e));u=Math.max(n.binCounts.max(),u);var a=null;if(null!==n.restrictedCounts){a=function(e){var t=n.binEnds[0]+e*(n.binEnds[n.nBins]-n.binEnds[0])/(r-1),i=normPdf(n.restrictedMu,n.restrictedSd,t);return i};for(e=0;e<r;e++)(u===null||a(e)>u)&&!isNaN(a(e))&&(u=a(e));u=Math.max(n.restrictedCounts.max(),u)}u/=i-1,f(t),f(n.overlayDiv),n.overlayDiv.css("clip","rect(0px, 0px, "+i+"px, 0px)");var l=d3.select(t.get(0)).append("svg").attr("class","axis"),h=d3.scale.linear().domain([n.binEnds.min(),n.binEnds.max()]).range([0,r]),p=d3.svg.axis().scale(h).orient("bottom");l.append("g").call(p);if(n.options.showNormalButton||n.options.showNormal){var d=d3.svg.line().x(function(e){return e}).y(function(e){return i-o(e)/u}),v=d3.select(n.normalOverlayDiv.get(0)).append("svg");if(null===n.restrictedCounts||n.showingOriginal.is(":checked")||!n.showingRestricted.is(":checked")){var m=v.append("path");null!==n.restrictedCounts&&m.attr("class","nrestricted"),m.data([d3.range(0,r)]).attr("d",d)}if(null!==n.restrictedCounts&&n.showingRestricted.is(":checked")){var g=d3.svg.line().x(function(e){return e}).y(function(e){return i-a(e)/u});v.append("path").attr("class","restricted").data([d3.range(0,r)]).attr("d",g)}n.showingNormal?n.showNormalButton.text("Hide Normal Curve"):(n.showNormalButton.text("Show Normal Curve"),n.normalOverlayDiv.hide())}c()}function i(e){n.dataSource=n.dataSelect.val(),jQuery.getJSON(n.dataSource,function(t){n.dataFields=t[0],n.dataValues=t.slice(1),n.variableSelect.children().remove(),jQuery.each(n.dataFields,function(e,t){if(t.indexOf("//")===0)return;n.variableSelect.append(jQuery("<option/>").attr("value",e).text(t))}),n.variableSelect.val(2),s(),n.reloadChart(),e&&e()})}function s(){n.data=jQuery.map(n.dataValues,function(e){return parseFloat(e[n.variableSelect.val()])}),n.binEnds=histMakeBins(n.nBins,n.data),n.binCounts=histMakeCounts(n.binEnds,n.data),n.sd=sd(n.data),n.mu=mean(n.data);var e="n="+n.data.length;e+="&nbsp;&nbsp;&nbsp;",e+="Mean="+n.mu.toFixed(3),e+="&nbsp;&nbsp;&nbsp;",e+="SD="+n.sd.toFixed(3),n.additionalInfo.html(e)}function o(){n.data=[n.options.ends.min(),n.options.ends.max()],n.options.sd===null?n.sd=sd(n.data):n.sd=n.options.sd,n.options.mu===null?n.mu=mean(n.data):n.mu=n.options.mu,n.binEnds=n.options.ends,n.binCounts=n.options.counts;var e=n.binCounts.reduce(function(e,t){return e+t});for(var t=0;t<n.binCounts.length;t++)n.binCounts[t]/=e*(n.binEnds[t+1]-n.binEnds[t]);n.reloadChart()}function u(){var e=n.options.p,t=n.options.n;n.nBins=t+1,n.binCounts=[Math.pow(1-e,t)],n.binEnds=[-0.5];for(var r=1;r<n.nBins;r++)e<1?n.binCounts.push(n.binCounts[r-1]*e*(t-r+1)/((1-e)*r)):n.binCounts.push(0),n.binEnds.push(r-.5);n.binEnds.push(t+.5),e==1&&(n.binCounts[n.nBins-1]=1),n.sd=Math.sqrt(t*e*(1-e)),n.mu=t*e,n.reloadChart(),n.additionalInfo.html("n="+t+"&nbsp;&nbsp;&nbsp;p="+e)}function a(){function h(e){t.append(e),u+=o}function p(e){i.append(e),a+=o}function d(){var e=jQuery("<div/>").addClass("popbox"),t=jQuery("<button/>").addClass("open").text("Click Here!"),n=jQuery("<div/>").addClass("collapse");n.html('<div class="box">  <div class="arrow"></div>  <div class="arrow-border"></div>  <div class="popbox-content">  </div>  <a href="#" class="close">close</a></div>'),e.append(t).append(n);var r=n.find(".popbox-content");return r.text("Content Here :)"),e.data("onPopBox",function(){e.find(".viewport").parent().width(r.width()+20)}),{parent:e,button:t,content:r}}function v(){n.urlInput=jQuery('<input type="text" />'),n.dataSelect=jQuery("<select/>").change(n.reloadData),n.variableSelect=jQuery("<select/>").change(function(){s(),f(),n.reloadChart()});var e=jQuery("<div/>");e.append("Data: "),n.options.data.length>1?e.append(n.dataSelect):e.append(n.options.data[0].replace(/^.*[\\\/]/,"")),jQuery.each(n.options.data,function(e,t){n.dataSelect.append(jQuery("<option/>").attr("value",t).text(t.replace(/^.*[\\\/]/,"")))}),e.append("Variable: ").append(n.variableSelect),n.options.restrict&&(n.showingOriginal=jQuery('<input type="checkbox" />'),n.showingOriginal.prop("checked",!0),n.showingOriginal.change(function(){r()}),e.append(n.showingOriginal).append("Show original data"),n.showingRestricted=jQuery('<input type="checkbox" />'),n.showingRestricted.prop("checked",!0),n.showingRestricted.change(function(){r()}),e.append(n.showingRestricted).append("Show restricted data")),h(e)}function m(){var e=jQuery("<div/>");n.areaFromInput=jQuery('<input type="text" />').change(function(){n.areaFromSlider.slider("value",n.areaFromInput.val())});var t=function(){n.areaFromInput.val(n.areaFromSlider.slider("value")),c()};n.areaFromSlider=jQuery("<span/>").addClass("slider").slider({change:t,slide:t,step:.001}),e.append("Area from: ").append(n.areaFromInput).append(n.areaFromSlider),n.areaToInput=jQuery('<input type="text" />').change(function(){n.areaToSlider.slider("value",n.areaToInput.val())});var i=function(){n.areaToInput.val(n.areaToSlider.slider("value")),c()};n.areaToSlider=jQuery("<span/>").addClass("slider").slider({change:i,slide:i,step:.001}),e.append(" to: ").append(n.areaToInput).append(n.areaToSlider);if(n.options.changeNumBins){var s=jQuery('<input type="text" />').val(n.options.bins);s.change(function(){n.nBins=parseInt(s.val(),10),n.binEnds=histMakeBins(n.nBins,n.data),n.binCounts=histMakeCounts(n.binEnds,n.data),n.options.restrict&&l(),r()}),e.append("Bins: ").append(s)}else e.append("Bins: "+n.options.bins);p(e)}function g(){var e=jQuery("<div/>");n.restrictedVariable=n.variableSelect.clone(),n.restrictedVariable.change(l),e.append("Restrict to ").append(n.restrictedVariable),n.restrictLowerEnable=jQuery('<input type="checkbox" />'),e.append(n.restrictLowerEnable).append(">= "),n.restrictLower=jQuery('<input type="text" />'),e.append(n.restrictLower),n.restrictUpperEnable=jQuery('<input type="checkbox" />'),e.append(n.restrictUpperEnable).append("and <= "),n.restrictUpper=jQuery('<input type="text" />'),e.append(n.restrictUpper),jQuery.each([n.restrictLowerEnable,n.restrictLower,n.restrictUpperEnable,n.restrictUpper],function(e,t){t.change(l)});var t=jQuery("<button/>").text("Clear Restrictions");t.click(function(){n.restrictUpperEnable.prop("checked",!1),n.restrictUpper.val(n.binEnds.max()),n.restrictLowerEnable.prop("checked",!1),n.restrictLower.val(n.binEnds.min()),l()}),e.append(" ").append(t),p(e)}function y(){var e=jQuery("<div/>"),t=null,r=d();r.button.text("List Data"),r.button.click(function(e){e.preventDefault();var t=n.dataFields,i=n.dataValues,s=t.length,o,u,a,f;f='<div class="table-container"><div class="table-header"><table class="data-fields"><thead><tr>';for(var l=0;l<t.length;l++)f+="<td>"+t[l]+"</td>";f+="</tr></thead></table></div>",f+='<div class="table-body"><table class="data-values"><tbody>';for(var c=0;c<i.length;c++){o=i[c],o.length>t.length&&(a=o.slice(t.length-1).join(" ").replace(/[\/]/g,""),o=o.slice(0,t.length-1),o.push(a)),f+='<tr data-index="'+c+'">';for(var h=0;h<o.length;h++)u=o[h],f+="<td>"+u+"</td>";f+="</tr>"}f+="</tbody></table></div></div>",r.content.html(f)}),n.options.listData&&e.append(r.parent);var i=d();i.button.text("Univariate Stats"),i.button.click(function(e){e.preventDefault();var t='<div class="univariate-stats-container">';$.each(n.dataFields,function(e){if(n.dataFields[e].indexOf("//")===0)return;t+='<div class="univariate-stat-wrapper"><h3>'+n.dataFields[e]+"</h3>";var r=$.map(n.dataValues,function(t){return parseFloat(t[e])});t+='<ul class="stat-list"><li class="stat-item">Cases: '+r.length+"</li>"+'<li class="stat-item">Mean: '+mean(r).toFixed(2)+"</li>"+'<li class="stat-item">SD: '+sd(r).toFixed(2)+"</li>"+'<li class="stat-item">Min: '+r.min().toFixed(2)+"</li>"+'<li class="stat-item">LQ: '+percentile(r,25).toFixed(2)+"</li>"+'<li class="stat-item">Median: '+percentile(r,50).toFixed(2)+"</li>"+'<li class="stat-item">UQ: '+percentile(r,75).toFixed(2)+"</li>"+'<li class="stat-item">Max: '+r.max().toFixed(2)+"</li>"+"</ul>",t+="</div>"}),t+="</div>",i.content.html(t)}),n.options.showUnivariateStats&&e.append(i.parent),n.showNormalButton=jQuery("<button/>").addClass("open"),n.showingNormal?n.showNormalButton.text("Hide Normal Curve"):n.showNormalButton.text("Show Normal Curve"),n.showNormalButton.click(function(e){e.preventDefault(),n.normalOverlayDiv.toggle(),n.showingNormal?n.showNormalButton.text(n.showNormalButton.text().replace("Hide","Show")):n.showNormalButton.text(n.showNormalButton.text().replace("Show","Hide")),n.showingNormal=!n.showingNormal,c()}),n.options.showNormalButton&&e.append(n.showNormalButton),e.children().length>0&&p(e)}var e=jQuery("<div/>").addClass("stici").addClass("stici_histogram");n.container.append(e);var t=jQuery("<div/>").addClass("top_controls");e.append(t),n.chartDiv=jQuery("<div/>").addClass("stici_chart").addClass("chart_box"),e.append(n.chartDiv),n.areaInfoDiv=jQuery("<div/>").addClass("area_info"),e.append(n.areaInfoDiv);var i=jQuery("<div/>").addClass("bottom_controls");e.append(i);var o=30,u=0,a=0;n.dataSource!==null&&v(),m(),n.options.restrict&&g(),y();var b=jQuery("<div/>").addClass("additional_info");n.additionalInfo=jQuery("<p/>"),b.append(n.additionalInfo),p(b),jQuery(".popbox").popbox(),n.areaInfoDiv.css("bottom",a+"px"),t.css("height",u+"px"),i.css("height",a+"px"),n.chartDiv.css("margin-bottom",a+15+"px"),n.chartDiv.css("margin-top",u+"px")}function f(){if(!n.options.restrict)return;n.restrictedVariable.html(n.variableSelect.html()),n.restrictedVariable.val(n.variableSelect.val()),n.restrictUpper.val(n.binEnds.max()),n.restrictLower.val(n.binEnds.min())}function l(){n.restrictedData=jQuery.map(n.dataValues,function(e){return parseFloat(e[n.restrictedVariable.val()])}),n.restrictUpperEnable.is(":checked")&&(n.restrictedData=jQuery.grep(n.restrictedData,function(e){return e<=n.restrictUpper.val()?!0:!1})),n.restrictLowerEnable.is(":checked")&&(n.restrictedData=jQuery.grep(n.restrictedData,function(e){return e>=n.restrictLower.val()?!0:!1}));if(!n.restrictUpperEnable.is(":checked")&&!n.restrictLowerEnable.is(":checked"))n.restrictedCounts=null;else{n.restrictedCounts=histMakeCounts(n.binEnds,n.restrictedData),isNaN(n.restrictedCounts[0])&&(n.restrictedCounts=null),n.restrictedMu=mean(n.restrictedData),n.restrictedSd=sd(n.restrictedData);var e="n="+n.data.length;e+="&nbsp;&nbsp;&nbsp;",e+="Mean="+n.mu.toFixed(3),e+="&nbsp;&nbsp;&nbsp;",e+="SD="+n.sd.toFixed(3),e+="&nbsp;&nbsp;&nbsp;",e+="Subset: n="+n.restrictedData.length,e+="&nbsp;&nbsp;&nbsp;",e+="Mean="+n.restrictedMu.toFixed(3),e+="&nbsp;&nbsp;&nbsp;",e+="SD="+n.restrictedSd.toFixed(3),n.additionalInfo.html(e)}r()}function c(){var e=parseFloat(n.areaFromSlider.slider("value")),t=parseFloat(n.areaToSlider.slider("value")),r=n.chartDiv.width()/(n.binEnds.max()-n.binEnds.min()),i=(e-n.binEnds.min())*r,s=(t-n.binEnds.min())*r;n.overlayDiv.css("clip","rect(0px,"+s+"px,"+n.chartDiv.height()+"px,"+i+"px)");var o=histHiLitArea(e,t,n.binEnds,n.binCounts);o*=100;var u="Selected area: "+o.fix(2)+"%";if(n.showingNormal){var a=n.mu,f=n.sd;o=Math.max(0,(normCdf((t-a)/f)-normCdf((e-a)/f))*100),u+="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;",u+="Normal approx: "+o.fix(2)+"%"}n.restrictedCounts!==null&&(u+="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;",o=histHiLitArea(e,t,n.binEnds,n.restrictedCounts),o*=100,u+="Subset data: "+o.fix(2)+"%",n.showingNormal&&(rm=n.restrictedMu,rs=n.restrictedSd,o=Math.max(0,(normCdf((t-rm)/rs)-normCdf((e-rm)/rs))*100),u+="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;",u+="Normal approx: "+o.fix(2)+"%")),n.areaInfoDiv.html(u)}var n=this;if(!t instanceof Object){console.error("Stici_HistHiLite params should be an object");return}this.options={showNormalButton:!0,showNormal:!1,bins:10,changeNumBins:!0,showUnivariateStats:!0,hiLiteHi:null,hiLiteLo:null,data:null,listData:!0,restrict:!1,counts:null,ends:null,n:null,p:null},jQuery.each(t,function(e){typeof n.options[e]=="undefined"&&console.warn("Stici_HistHiLite: Unknown key '"+e+"'")}),jQuery.extend(this.options,t),this.container=jQuery("#"+e),this.dataFields=null,this.dataValues=null,this.dataSource=null,this.data=null,this.restrictedData=null,this.nBins=n.options.bins,this.binEnds=null,this.binCounts=null,this.restrictedCounts=null,this.sd=0,this.mu=0,this.restrictedSd=0,this.restrictedMu=0,this.urlInput=null,this.dataSelect=null,this.variableSelect=null,this.chartDiv=null,this.overlayDiv=null,this.normalOverlayDiv=null,this.areaFromInput=null,this.areaFromSlider=null,this.areaToInput=null,this.areaToSlider=null,this.areaInfoDiv=null,this.showNormalButton=null,this.showingOriginal=null,this.showingRestricted=null,this.additionalInfo=null,this.restrictedVariable=null,this.restrictLowerEnable=null,this.restrictLower=null,this.restrictUpperEnable=null,this.restrictUpper=null,this.reloadData=null;if(n.options.n!==null||n.options.p!==null)n.options.showUnivariateStats=!1,n.options.listData=!1,n.options.changeNumBins=!1,n.reloadData=u;else if(n.options.counts!==null||n.options.ends!==null)n.dataSource=null,t.showNormal||(n.options.showNormal=!1),t.showNormalButton||(n.options.showNormalButton=!1),n.options.showUnivariateStats=!1,n.options.listData=!1,n.options.changeNumBins=!1,n.reloadData=o;else{if(!(n.options.data instanceof Array)){console.error("Unknown data source.");return}n.dataSource=n.options.data[0],n.options.restrict?n.reloadData=function(){i(f)}:n.reloadData=i}this.showingNormal=n.options.showNormal,this.reloadChart=function(){r(),n.areaFromSlider.slider("option","min",n.binEnds.min()),n.areaFromSlider.slider("option","max",n.binEnds.max()),n.options.hiLiteLo===null?(n.areaFromSlider.slider("option","value",n.binEnds.min()),n.areaFromInput.val(n.binEnds.min())):(n.areaFromSlider.slider("option","value",n.options.hiLiteLo),n.areaFromInput.val(n.options.hiLiteLo)),n.areaToSlider.slider("option","min",n.binEnds.min()),n.areaToSlider.slider("option","max",n.binEnds.max()),n.options.hiLiteHi===null?(n.areaToSlider.slider("option","value",n.binEnds.min()),n.areaToInput.val(n.binEnds.min())):(n.areaToSlider.slider("option","value",n.options.hiLiteHi),n.areaToInput.val(n.options.hiLiteHi))},a(),this.reloadData()}function Stici_Scatterplot(e,t){function r(){var e=n.container.find(".bottom_controls"),t=n.container.find(".popbox-controls");n.options.files=[],n.dataFields=[],n.dataValues=[],n.dataSource=n.dataSelect.val();var r=3,i=2;jQuery.getJSON(n.dataSource,function(e){n.dataFields=e[0],n.dataValues=e.slice(1),n.xVariableSelect.empty(),n.yVariableSelect.empty(),$.each(n.dataFields,function(e,t){if(t.indexOf("//")>-1)return!0;!n.inited&&null!==n.options.Xinit&&t==n.options.Xinit&&(r=e),!n.inited&&null!==n.options.Yinit&&t==n.options.Yinit&&(i=e),n.xVariableSelect.append($("<option/>").attr("value",e).text(t)),n.yVariableSelect.append($("<option/>").attr("value",e).text(t))}),n.xVariableSelect.val(r),n.yVariableSelect.val(i),n.container.find(".popbox-controls").empty(),n.createPopbox("list-data"),n.createPopbox("univar-stats"),n.container.find(".popbox").popbox({toggler:["list-data","univar-stats"]}),n.container.find(".popbox-content table").css("width",n.dataFields.length*100+"px"),n.prepareData(),n.reloadChart()})}function i(){var e=cNormPoints(n.n,n.r),t=e[0],r=e[1];n.n==1&&(t=[5.5],r=[5.5]),n.currentData=$.map(t,function(e,n){return{x:t[n],y:r[n],index:n,added:!1,selected:!1}}),n.reloadChart()}function s(){n.currentData=$.map(n.options.x,function(e,t){return{x:n.options.x[t],y:n.options.y[t],index:t,added:!1,selected:!1}}),n.reloadChart()}function o(){var e=$("<div/>").addClass("stici").addClass("stici_scatterplot"),t=$("<div/>").addClass("top_controls");n.container.append(e),e.append(t),typeof n.options.title=="string"&&t.append(n.options.title),n.chartDiv=$("<div/>").addClass("stici_chart").addClass("chart_box"),e.append(n.chartDiv);if(l())n.urlInput=$('<input type="text" />'),n.dataSelect=$('<select class="data_select"/>').change(n.reloadData),n.xVariableSelect=$('<select class="variable_select"/>').change(function(){n.prepareData(),n.reloadChart()}),n.yVariableSelect=$('<select class="variable_select"/>').change(function(){n.prepareData(),n.reloadChart()}),t.append("Data: "),n.options.files.length>1?t.append(n.dataSelect):(t.append(n.options.files[0].replace(/^.*[\\\/]/,"")),t.append("&nbsp;&nbsp;&nbsp;")),$.each(n.options.files,function(e,t){n.dataSelect.append($("<option/>").attr("value",t).text(t.replace(/^.*[\\\/]/,"")))}),t.append(n.yVariableSelect),t.append(" vs "),t.append(n.xVariableSelect);else if(c()){n.rInput=jQuery('<input type="text" />').change(function(){s.slider("value",n.rInput.val()),n.r=n.rInput.val(),i()});var r=function(){n.rInput.val(s.slider("value")),n.r=s.slider("value"),i()},s=jQuery("<span/>").addClass("slider").slider({change:r,slide:r,step:.001,max:1,min:-1});n.rInput.val(n.r),s.slider("value",n.rInput.val()),n.options.showRBar&&t.append("r: ").append(n.rInput).append(s);var o=jQuery('<input type="text" />').change(function(){a.slider("value",o.val()),n.n=o.val(),i()}),u=function(){o.val(a.slider("value")),n.n=a.slider("value"),i()},a=jQuery("<span/>").addClass("slider").slider({change:u,slide:u,step:1,max:200,min:3});n.options.showRBar&&(o.val(n.n),a.slider("value",o.val()),t.append("n: ").append(o).append(a))}var f=$("<div/>").addClass("bottom_controls").addClass("extended"),h=$("<span/>").data("btnId","r-hat").text("r: 0.16"),p=$("<button/>").data("btnId","sds").text("SDs"),d=$("<button/>").data("btnId","sd-line").text("SD Line"),v=$("<button/>").data("btnId","graph-of-ave").text("Graph of Ave"),m=$("<button/>").data("btnId","reg-line").text("Regression Line"),g=$("<button/>").data("btnId","res-plot").text("Plot Residuals"),y=$("<div/>").attr("class","popbox-controls"),b=$("<button/>").data("btnId","use-points").text("Use Added Points"),w=$("<button/>").data("btnId","clear-points").text("Clear Added Points"),E=$("<span/>").addClass("cursor-pos").text("");e.append(f),n.options.showR&&!c()&&f.append(h),n.options.sdButton&&f.append(p),n.options.sdLineButton&&f.append(d),n.options.graphAveButton&&f.append(v),n.options.regressButton&&f.append(m),n.options.residualsButton&&f.append(g),f.append("<br/>").append(y),n.options.addPoints&&f.append(b).append(w),f.append(E)}function u(e){var t=n.container.find(e.target),r=t.data("btnId");r!=="clear-points"&&r!=="list-data"&&r!=="univar-stats"&&(t.toggleClass("selected"),n.bottomControls[r]=n.bottomControls[r]===!0?!1:!0),n.toggleOption(r,t.hasClass("selected"))}function a(e){var t=e.type,r=n.container.find(e.target),i=r.closest("table"),s,o;i.hasClass("data-values")&&(s=r.closest("tr"),o=s.attr("data-index"),n.highlightDataPoint(o,t))}function f(e){n.container.find(".bottom_controls").children().filter(function(){return $(this).data("btnId")==e}).click()}function l(){return n.options.files!==null?!0:!1}function c(){return n.options.r!==null||n.options.n!==null?!0:!1}function h(){return n.options.x!==null||n.options.y!==null?!0:!1}var n=this;if(!t instanceof Object){console.error("Stici_ScatterPlot params should be an object");return}this.options={title:null,graphAveButton:!0,graphOfAvePoints:9,addPoints:!0,regressButton:!0,residualsButton:!0,sdButton:!0,sdLineButton:!0,showR:!0,showRBar:!0,showSDs:!1,showSdLine:!1,showGraphOfAve:!1,showRegress:!1,showResiduals:!1,files:null,Xinit:null,Yinit:null,r:null,n:null,x:null,y:null},jQuery.each(t,function(e){typeof n.options[e]=="undefined"&&console.warn("Stici_Scatterplot: Unknown key '"+e+"'")}),jQuery.extend(this.options,t);if(!this.options.showRBar||!this.options.showR)this.options.showRBar=!1,this.options.showR=!1;this.container=$("#"+e);if(!c()&&!l()&&!h()){console.error("Unknown scatterplot data source."),n.container.html("Unable to load scatterplot: unknown data source.");return}this.dataFields=null,this.dataValues=null,this.dataSource=null,this.inited=!1,this.urlInput=null,this.dataSelect=null,this.xVariableSelect=null,this.yVariableSelect=null,this.currentData=null,this.xScale=null,this.yScale=null,this.chartWidth=this.container.width()-20,this.chartHeight=this.container.height()-100,this.chartDiv=null,this.r=null,this.n=null,this.rInput=null,this.chartMargins={top:"10",right:"10",bottom:"25",left:"40"},this.bottomControls={sds:!1,"sd-line":!1,"avg-graph":!1,"reg-line":!1,"res-plot":!1,"use-points":!1,"plot-mean":!0,"r-hat":!0},this.reloadData=null;if(l())!t.files instanceof Array?(this.dataSource=null,this.options.files=[]):this.dataSource=this.options.files[0],this.reloadData=r;else if(c())this.n=n.options.n,this.r=n.options.r,this.reloadData=i;else if(h()){if(n.options.x.length!=n.options.y.length){console.error("Data has been manually specified, but x and y options have different numbers of data points."),n.container.html("Invalid data supplied.");return}this.reloadData=s}this.prepareData=function(){n.currentData=$.map(n.dataValues,function(e,t){return{x:parseFloat(e[n.xVariableSelect.val()]),y:parseFloat(e[n.yVariableSelect.val()]),index:t,added:!1,selected:n.container.find('.popbox.list-data tr[data-index="'+t+'"]').hasClass("selected")}})},this.setScale=function(e){var t=n.chartWidth,r=n.chartMargins,i=d3.min(e,function(e){return e.x}),s=d3.max(e,function(e){return e.x}),o,u=d3.min(e,function(e){return e.y}),a=d3.max(e,function(e){return e.y}),f;i==s&&(i-=4.5,s+=4.5),u==a&&(u-=4.5,a+=4.5),o=d3.scale.linear().domain([i,s]).range([0,t-r.left-r.right]).nice(),a<.001&&u>-0.001&&(a=1,u=-1),f=d3.scale.linear().domain([u,a]).range([n.chartHeight-n.chartMargins.top-n.chartMargins.bottom,0]).nice(),n.xScale=o,n.yScale=f},this.initCanvas=function(){n.chartDiv.empty();var e=n.chartWidth,t=n.chartHeight,r=d3.select(n.chartDiv.get(0)).append("svg").attr("width",n.chartWidth).attr("height",n.chartHeight)},this.drawDataPlot=function(){var e=n.currentData;n.initCanvas(),n.setScale(e),n.plotAxes("data"),n.plotPoints(e,"data"),n.drawMouseRect(),n.updateRHat()},this.plotAxes=function(e){var t=n.xScale,r=n.yScale,i=n.chartMargins,s=n.chartWidth,o=n.chartHeight,u=d3.svg.axis().scale(t).orient("bottom"),a=d3.svg.axis().scale(r).orient("left"),f=d3.select(n.chartDiv.get(0)).select("svg");e==="data"?f.append("g").attr("class","x axis").attr("transform","translate("+i.left+", "+(o-i.bottom)+")").call(u):f.append("g").attr("class","x axis").attr("transform","translate("+i.left+", "+(r(0)+1*i.top)+")").call(u),f.append("g").attr("class","y axis").attr("transform","translate("+i.left+", "+i.top+")").call(a),f.select("g.x.axis").append("line").attr("class","line x-axis").attr("x1",0).attr("x2",s-i.left).attr("y1",0).attr("y2",0),f.select("g.y.axis").append("line").attr("class","line y-axis").attr("x1",0).attr("x2",0).attr("y1",0).attr("y2",o-i.bottom-i.top)},this.reloadChart=function(){n.bottomControls["res-plot"]===!0?n.toggleResPlot(!0):(n.drawDataPlot(),n.plotSelectedOptions(["res-plot"])),n.inited||(n.options.showSdLine&&f("sd-line"),n.options.showSDs&&f("sds"),n.options.showGraphOfAve&&f("graph-of-ave"),n.options.showRegress&&f("reg-line"),n.options.showResiduals&&f("res-plot")),n.inited=!0},this.updateRHat=function(){var e=n.filterData(),t=$.map(e,function(e){return e.x}),r=$.map(e,function(e){return e.y}),i=corr(t,r).toFixed(2);c()&&n.rInput.val(i),n.container.find(".r-hat").text("r: "+i)},this.plotSelectedOptions=function(e){var t;e=e||[];for(var r in n.bottomControls){if(e.indexOf(r)>-1)continue;t=n.bottomControls[r],n.toggleOption(r,t)}},this.toggleOption=function(e,t){switch(e){case"sds":n.toggleSds(t);break;case"sd-line":n.toggleSdLine(t);break;case"graph-of-ave":n.toggleGraphOfAve(t);break;case"reg-line":n.toggleRegLine(t);break;case"res-plot":n.toggleResPlot(t);break;case"use-points":n.toggleUsePoints();break;case"clear-points":n.toggleClearPoints();break;case"plot-mean":n.plotMean();break;case"r-hat":n.updateRHat();break;default:}},this.createPopbox=function(e){var t,r,i,s;e==="list-data"?(r="List Data",t=n.createListDataHtml(),i="list-data"):e==="univar-stats"&&(r="Univariate Stats",t=n.createUnivarStatsHtml(),i="univar-stats"),s='<div class="popbox '+e+'">'+'<button class="open" id="'+i+'">'+r+"</button>"+'<div class="collapse">'+'<div class="box">'+'<div class="arrow"></div>'+'<div class="arrow-border"></div>'+'<div class="popbox-content">'+t+"</div>"+"</div>"+"</div>"+"</div>",n.container.find(".bottom_controls .popbox-controls").append(s)},this.createUnivarStatsHtml=function(){var e='<div class="univariate-stats-container">';return $.each(n.dataFields,function(t){if(n.dataFields[t].indexOf("//")===0)return;e+='<div class="univariate-stat-wrapper"><h3>'+n.dataFields[t]+"</h3>";var r=$.map(n.dataValues,function(e){return parseFloat(e[t])});e+='<ul class="stat-list"><li class="stat-item">Cases: '+r.length+"</li>"+'<li class="stat-item">Mean: '+mean(r).toFixed(2)+"</li>"+'<li class="stat-item">SD: '+sd(r).toFixed(2)+"</li>"+'<li class="stat-item">Min: '+r.min().toFixed(2)+"</li>"+'<li class="stat-item">LQ: '+percentile(r,25).toFixed(2)+"</li>"+'<li class="stat-item">Median: '+percentile(r,50).toFixed(2)+"</li>"+'<li class="stat-item">UQ: '+percentile(r,75).toFixed(2)+"</li>"+'<li class="stat-item">Max: '+r.max().toFixed(2)+"</li>"+"</ul>",e+="</div>"}),e+="</div>",e},this.createListDataHtml=function(){var e=n.dataFields,t=n.dataValues,r=e.length,i,s,o,u;u='<div class="table-container"><div class="table-header"><table class="data-fields"><thead><tr>';for(var a=0;a<e.length;a++)u+="<td>"+e[a]+"</td>";u+="</tr></thead></table></div>",u+='<div class="table-body"><table class="data-values"><tbody>';for(var f=0;f<t.length;f++){i=t[f],i.length>e.length&&(o=i.slice(e.length-1).join(" ").replace(/[\/]/g,""),i=i.slice(0,e.length-1),i.push(o)),u+='<tr data-index="'+f+'">';for(var l=0;l<i.length;l++)s=i[l],u+="<td>"+s+"</td>";u+="</tr>"}return u+="</tbody></table></div></div>",u},this.toggleClearPoints=function(){n.currentData=$.grep(n.currentData,function(e,t){return e.added===!1}),d3.select(n.chartDiv.get(0)).selectAll('.data-point[data-added="true"]').remove(),n.plotSelectedOptions(["res-plot","use-points"])},this.toggleUsePoints=function(){n.plotSelectedOptions(["res-plot","use-points"]),n.bottomControls["res-plot"]&&n.toggleResPlot(!0)},this.toggleResPlot=function(e){var t=n.filterData(),r=$.map(t,function(e){return e.x}),i=$.map(t,function(e){return e.y}),s=mean(r),o=mean(i),u=sd(r),a=sd(i),f=corr(r,i),l=f*a/u,c,h,p,d,v=n.currentData.length;if(e){n.initCanvas(),n.residualData=[];for(var m=0;m<v;m++)h=n.currentData[m],c=o-l*(s-h.x),p=h.y-c,n.residualData.push({x:h.x,y:p,added:h.added,index:h.index});n.setScale(n.residualData),n.plotAxes("residual"),n.plotPoints(n.residualData,"residual"),n.drawMouseRect(),n.plotSelectedOptions(["res-plot","use-points"])}else n.drawDataPlot(),n.plotSelectedOptions(["res-plot"])},this.plotPoints=function(e,t){var r=n.chartMargins,i=n.xScale,s=n.yScale,o=t==="data"?"plot-data":"plot-residual",u=d3.select(n.chartDiv.get(0)).select("svg").append("g").attr("class",o+" plot").attr("transform","translate("+r.left+","+r.top+")"),a;u.selectAll("circle").data(e).enter().append("circle").attr("class",function(e){var t="data-point",n=e.selected?"selected":"",r=e.added?"added":"";return t+" "+n+" "+r}).attr("cx",function(e){return i(e.x)}).attr("cy",function(e){return s(e.y)}).attr("stroke","#333").attr("stroke-width","1").attr("data-index",function(e){return e.index}).attr("data-added",function(e){return e.added}).attr("data-x",function(e){return e.x}).attr("data-y",function(e){return e.y}).attr("r",function(e){return e.selected?3.5:2}).attr("fill",function(e){return"rgba(0, 0, 255, 1)"}),d3.select(n.chartDiv.get(0)).selectAll(".data-point").sort(function(e){return e&&e.selected===!0?1:-1})},this.drawMouseRect=function(){var e=n.chartMargins,t=n.chartWidth,r=n.chartHeight,i=n.xScale,s=n.yScale,o=d3.select(n.chartDiv.get(0)).select(".plot");o.append("rect").attr("class","mouse-event-handler").attr("width",t-e.left-e.right).attr("height",r-e.top-e.bottom).attr("fill","rgba(0, 0, 0, 0)").on("mousemove",function(){var e=d3.mouse(this),t=e[0],r=e[1],o=i.invert(t).toFixed(2),u=s.invert(r).toFixed(2);n.container.find(".cursor-pos").text(" x = "+o+"  y = "+u)}),d3.select(n.chartDiv.get(0)).select(".plot-data.plot .mouse-event-handler").on("click",function(){if(!n.options.addPoints)return;var e=d3.mouse(this),t=e[0],r=e[1],o=i.invert(t).toFixed(2),u=s.invert(r).toFixed(2),a={x:parseFloat(o),y:parseFloat(u),added:!0,index:n.currentData.length};n.currentData.push(a),n.plotPoint(a),!n.bottomControls["res-plot"]&&n.bottomControls["use-points"]&&n.plotSelectedOptions(["res-plot","use-points"])})},this.plotPoint=function(e){var t=n.yScale,r=n.xScale;pointPlot=d3.select(n.chartDiv.get(0)).select(".plot-data.plot"),pointPlot.insert("circle",".data-point").attr("class","data-point added").attr("cx",r(e.x)).attr("cy",t(e.y)).attr("stroke","#333").attr("stroke-width","1").attr("data-index",e.index).attr("data-added",e.added).attr("data-x",e.x).attr("data-y",e.y).attr("r",2)},this.toggleRegLine=function(e){var t=n.filterData(),r,i,s,o,u,a,f,l,c,h,p,d,v,m;n.container.find("svg g.reg-line").remove(),e&&(r=$.map(t,function(e){return e.x}),i=$.map(t,function(e){return e.y}),u=d3.min(r),a=d3.max(r),s=mean(r),o=mean(i),f=sd(r),l=sd(i),h=corr(r,i),c=h*l/f,d={x:s,y:o},v={x:u,y:d.y-c*(d.x-u)},m={x:a,y:d.y-c*(d.x-a)},p=d3.select(n.chartDiv.get(0)).select(".plot-data").append("g").attr("class","reg-line"),p.append("line").attr("x1",n.xScale(v.x)).attr("x2",n.xScale(m.x)).attr("y1",n.yScale(v.y)).attr("y2",n.yScale(m.y)))},this.toggleGraphOfAve=function(e){var t=n.bottomControls["res-plot"]===!0?"plot-residual":"plot-data",r=n.filterData(),i,s,o,u,a,f,l,c,h,p,d,v,m,g,y,b,w,E,S,x;n.container.find("svg g.graph-of-ave").remove();if(e){i=$.map(r,function(e){return e.x}),s=$.map(r,function(e){return e.y}),o=d3.max(i),u=d3.min(i),w=(o-u)/n.options.graphOfAvePoints,a=mean(i),f=mean(s),l=sd(i),c=sd(s),h=corr(i,s),p=h*c/l,x=d3.select(n.chartDiv.get(0)).select("."+t).append("g").attr("class","graph-of-ave");for(var T=0;T<n.options.graphOfAvePoints;T++){E=0,y=0,m=u+T*w,g=u+(T+1)*w;for(var N=0;N<r.length;N++)T===n.options.graphOfAvePoints-1?r[N].x>=m&&r[N].x<=g&&(y+=1,E+=r[N].y):r[N].x>=m&&r[N].x<g&&(y+=1,E+=r[N].y);y>0&&(S=E/y,b={x:(m+g)/2,y:S},t==="plot-residual"&&(d=f-p*(a-b.x),v=S-d,b={x:(m+g)/2,y:S-d}),x.append("rect").attr("x",n.xScale(b.x)-2.5).attr("y",n.yScale(b.y)-2.5).attr("height",5).attr("width",5))}}},this.toggleSdLine=function(e){var t=n.filterData(),r,i,s,o,u,a,f,l,c,h,p,d,v,m;n.container.find("svg g.sd-line").remove(),e&&(r=$.map(t,function(e){return e.x}),i=$.map(t,function(e){return e.y}),s=mean(r),o=mean(i),f=sd(r),l=sd(i),c=corr(r,i),u=d3.max(r),a=d3.min(r),yMin=d3.min(i),yMax=d3.max(i),h=(c>=0?1:-1)*l/f,p={x:s,y:o},d={x:a,y:p.y-h*(p.x-a)},v={x:u,y:p.y-h*(p.x-u)},d.y<yMin&&(d.x=p.x-(p.y-yMin)/h,d.y=yMin),v.y<yMin&&(v.x=(yMin-p.y)/h+s,v.y=yMin),m=d3.select(n.chartDiv.get(0)).select(".plot-data").append("g").attr("class","sd-line"),m.append("line").attr("x1",n.xScale(d.x)).attr("x2",n.xScale(v.x)).attr("y1",n.yScale(d.y)).attr("y2",n.yScale(v.y)))},this.filterData=function(){var e=n.bottomControls["use-points"],t=n.currentData,r=t.length,i;return e?t:(i=$.grep(t,function(e,t){return e.added===!1}),i)},this.highlightDataPoint=function(e,t){var r=d3.select(n.chartDiv.get(0)).select('.data-point[data-index="'+e+'"]'),i=r.classed("selected"),s;t==="mouseover"?(r.node().parentNode.appendChild(r.node()),r.classed("active",!0).transition().duration(200).attr("r",5)):t==="mouseout"?r.classed("active",!1).transition().duration(200).attr("r",function(){return i?3.5:2}):t==="click"&&(s=!i,r.classed("selected",s),n.currentData[e].selected=s,n.container.find('.popbox.list-data tr[data-index="'+e+'"]').toggleClass("selected"))},this.plotMean=function(){var e=n.filterData(),t=$.map(e,function(e){return e.x}),r=$.map(e,function(e){return e.y}),i=mean(t),s=n.bottomControls["res-plot"]===!0?0:mean(r),o=n.xScale,u=n.yScale,a=5;d3.select(n.chartDiv.get(0)).select(".mean-point").remove(),d3.select(n.chartDiv.get(0)).select("svg .plot").append("rect").attr("x",o(i)-a/2).attr("y",u(s)-a/2).attr("class","mean-point").attr("width",a).attr("height",a).attr("fill","rgba(255, 0, 0, 1)").attr("stroke","#000")},this.toggleSds=function(e){var t=n.filterData(),r,i,s,o,u,a,f,l,c;n.container.find("svg g.sds").remove(),e&&(u=$.map(t,function(e){return e.x}),a=$.map(t,function(e){return e.y}),r=mean(u),i=mean(a),s=sd(u),o=sd(a),f=[r-s,r+s],l=[i-o,i+o],c=d3.select(n.chartDiv.get(0)).select(".plot-data").append("g").attr("class","sds"),c.append("line").attr("x1",n.xScale(f[0])).attr("x2",n.xScale(f[0])).attr("y1",0).attr("y2",n.chartHeight-n.chartMargins.bottom-n.chartMargins.top),c.append("line").attr("x1",n.xScale(f[1])).attr("x2",n.xScale(f[1])).attr("y1",0).attr("y2",n.chartHeight-n.chartMargins.bottom-n.chartMargins.top),c.append("line").attr("x1",0).attr("x2",n.chartWidth-n.chartMargins.left-n.chartMargins.right).attr("y1",n.yScale(l[0])).attr("y2",n.yScale(l[0])),c.append("line").attr("x1",0).attr("x2",n.chartWidth-n.chartMargins.left-n.chartMargins.right).attr("y1",n.yScale(l[1])).attr("y2",n.yScale(l[1])))},$().ready(function(){n.container.find("button").on("click",function(e){u(e)}),n.container.find(".popbox").on("mouseover mouseout click",function(e){a(e)})}),o(),this.reloadData()}function mean(e){return vSum(e)/e.length}function vMult(e,t){var n=new Array(t.length);for(var r=0;r<t.length;r++)n[r]=e*t[r];return n}function vScalarSum(e,t){var n=new Array(e.length);for(var r=0;r<e.length;r++)n[r]=e[r]+t;return n}function vVectorSum(e,t){if(e.length!=t.length)return alert("Error #1 in irGrade.vVectorSum: vector lengths are not equal"),Math.NaN;var n=new Array(length(e));for(var r=0;r<e.length;r++)n[r]=e[r]+t[r];return n}function vPointwiseMult(e,t){var n=Math.NaN;if(e.length!=t.length)alert("Error #1 in irGrade.vPointwiseMult: vector lengths do not match!");else{n=new Array(e.length);for(var r=0;r<e.length;r++)n[r]=e[r]*t[r]}return n}function vFloor(e){var t=new Array(e.length);for(var n=0;n<e.length;n++)t[n]=Math.floor(e[n]);return t}function vCeil(e){var t=new Array(e.length);for(var n=0;n<e.length;n++)t[n]=Math.ceil(e[n]);return t}function vRoundToInts(e){var t=new Array(e.length),n;for(var r=0;r<e.length;r++)t[r]=Math.floor(e[r]),e[r]-t[r]>=.5&&t[r]++;return t}function vSum(e){var t=0;for(var n=0;n<e.length;n++)t+=e[n];return t}function vProd(e){var t=1;for(var n=0;n<e.length;n++)t*=e[n];return t}function vCum(e){var t=e;for(var n=1;n<e.length;n++)t[n]+=t[n-1];return t}function vDiff(e){var t=new Array(e.length);for(var n=e.length-1;n>0;n--)t[n]=e[n]-e[n-1];return t[0]=e[0],t}function vInterval(e){var t=[];t[0]=e[0];for(var n=1;n<e.length;n++)t[n]=e[n]-e[n-1];return t}function vZero(e){var t=new Array(e);for(var n=0;n<e;n++)t[n]=0;return t}function vOne(e){var t=new Array(e);for(var n=0;n<e;n++)t[n]=1;return t}function twoNorm(e){var t=0;for(var n=0;n<e.length;n++)t+=e[n]*e[n];return Math.sqrt(t)}function convolve(e,t){var n=new Array(e.length+t.length-1),r,i;for(var s=0;s<e.length+t.length-1;s++){n[s]=0,i=Math.min(s+1,e.length),r=Math.max(0,s-t.length+1);for(var o=r;o<i;o++)n[s]+=e[o]*t[t.length-s-1+o]}return n}function nFoldConvolve(e,t){var n=e;for(var r=0;r<t;r++)n=convolve(n,e);return n}function numberLessThan(e,t){var n=parseFloat(e)-parseFloat(t);return n<0?-1:n===0?0:1}function numberGreaterThan(e,t){var n=parseFloat(e)-parseFloat(t);return n<0?1:n===0?0:-1}function sd(e){ave=mean(e),ssq=0;for(var t=0;t<e.length;t++)ssq+=(e[t]-ave)*(e[t]-ave);return ssq=Math.sqrt(ssq/e.length),ssq}function sampleSd(e){ave=mean(e),ssq=0;for(var t=0;t<e.length;t++)ssq+=(e[t]-ave)*(e[t]-ave);return ssq=Math.sqrt(ssq/(e.length-1)),ssq}function corr(e,t){if(e.length!=t.length)return alert("Error #1 in irGrade.corr(): lists have different lengths!"),Math.NaN;var n=mean(e),r=mean(t),i=sd(e),s=sd(t),o=0;for(var u=0;u<e.length;u++)o+=(e[u]-n)*(t[u]-r);return o/=i*s*e.length,o}function percentile(e,t){var n=e.length,r=e.slice(0);r.sort(numberLessThan);var i=Math.max(Math.ceil(t*n/100),1);return r[i-1]}function histMakeCounts(e,t){var n=e.length-1,r=new Array(n),i=0;for(i=0;i<n;i++)r[i]=0;for(i=0;i<t.length;i++){for(var s=0;s<n-1;s++)t[i]>=e[s]&&t[i]<e[s+1]&&(r[s]+=1);t[i]>=e[n-1]&&(r[n-1]+=1)}for(i=0;i<n;i++)r[i]/=t.length*(e[i+1]-e[i]);return r}function histMakeBins(e,t){binEnd=new Array(e+1),dMnMx=vMinMax(t);for(var n=0;n<e+1;n++)binEnd[n]=dMnMx[0]+n*(dMnMx[1]-dMnMx[0])/e;return binEnd}function histEstimatedPercentile(e,t,n){var r=e/100,i;if(r>1)i=Math.NaN;else if(r==1)i=t[nBins];else{var s=0,o=0;while(s<r)o++,s=histHiLitArea(t[0],t[o],t,n);o--,s=r-histHiLitArea(t[0],t[o],t,n);var u=histHiLitArea(t[o],t[o+1],t,n);i=t[o]+s/u*(t[o+1]-t[o])}return i}function histHiLitArea(e,t,n,r){var i=n.length-1,s=0;if(e<t)for(var o=0;o<i;o++)n[o]>t||n[o+1]<=e||(n[o]>=e&&n[o+1]<=t?s+=r[o]*(n[o+1]-n[o]):n[o]>=e&&n[o+1]>t?s+=r[o]*(t-n[o]):n[o]<=e&&n[o+1]<=t?s+=r[o]*(n[o+1]-e):n[o]<e&&n[o+1]>t&&(s+=r[o]*(t-e)));return s}function listOfRandSigns(e){var t=new Array(e);for(var n=0;n<e;n++){var r=rand.next();r<.5?t[n]=-1:t[n]=1}return t}function listOfRandUniforms(e,t,n){if(typeof t=="undefined"||t===null)t=0;if(typeof n=="undefined"||n===null)n=1;var r=new Array(e);for(var i=0;i<e;i++)r[i]=t+(n-t)*rand.next();return r}function listOfRandInts(e,t,n){var r=new Array(e);for(var i=0;i<e;i++)r[i]=Math.floor((n+1-t)*rand.next())+t;return r}function listOfDistinctRandInts(e,t,n){var r=new Array(e),i,s=0,o;while(s<e){i=Math.floor((n+1-t)*rand.next())+t,o=!0;for(var u=0;u<s;u++)i==r[u]&&(o=!1);o&&(r[s]=i,s++)}return r}function randomSample(e,t,n){var r=[],i=[];n!==null&&n?i=listOfRandInts(t,0,e.length-1):i=listOfDistinctRandInts(t,0,e.length-1);for(var s=0;s<t;s++)r[s]=e[i[s]];return r}function randomPartition(e,t){var n=listOfDistinctRandInts(t-1,1,e.length-1).sort(numberLessThan);n[n.length]=e.length;var r=new Array(t),i=0;for(i=0;i<r.length;i++)r[i]=[];for(i=0;i<n[0];i++)r[0][i]=e[i];for(var s=1;s<t;s++)for(i=0;i<n[s]-n[s-1];i++)r[s][i]=e[n[s-1]+i];return r}function constrainedRandomPartition(e,t,n){if(t*n<e.length)return alert("Error in irGrade.constrainedRandomPartition: mx too small!"),!1;var r=listOfDistinctRandInts(t-1,1,e.length-1).sort(numberLessThan);r[r.length]=e.length,vm=vMinMax(vDiff(r))[1];while(vm>n)r=listOfDistinctRandInts(t-1,1,e.length-1).sort(numberLessThan),r[r.length]=e.length,vm=vMinMax(vDiff(r))[1];var i=new Array(t),s=0;for(s=0;s<i.length;s++)i[s]=[];for(s=0;s<r[0];s++)i[0][s]=e[s];for(var o=1;o<t;o++)for(s=0;s<r[o]-r[o-1];s++)i[o][s]=e[r[o-1]+s];return i}function multinomialSample(e,t){e=vMult(1/vSum(e),e);var n=vCum(e),r=vZero(e.length),i,s;for(var o=0;o<t;o++){i=rand.next(),s=0;while(i>n[s]&&s<t)s++;r[s]++}return r}function normPoints(e,t,n,r){var i=!0;if(typeof r=="undefined"||r===null)i=!1;var s=new Array(e),o=0;if(i)for(o=0;o<e;o++)s[o]=roundToDig(t+n*rNorm(),r);else for(o=0;o<e;o++)s[o]=t+n*rNorm();return s}function cNormPoints(e,t){var n=new Array(e),r=new Array(e),i;if(e==2)t==-1?(n[0]=-10,n[1]=10,r[0]=10,r[1]=-10):t===0?(n[0]=-10,n[1]=10,r[0]=0,r[1]=0):t==1?(n[0]=-10,n[1]=10,r[0]=-10,r[1]=10):(n[0]=Number.NaN,r[0]=Number.NaN);else if(e>2){for(i=0;i<e;i++)n[i]=rNorm(),r[i]=rNorm();var s=corr(n,r),o=sgn(s)*sgn(t),u=mean(n),a=mean(r),f=sd(n),l=sd(r),c=new Array(e),h=new Array(e);for(i=0;i<e;i++)n[i]=(n[i]-u)/f,c[i]=o*s*n[i]*l+a,h[i]=o*r[i]-c[i];var p=rms(h);for(i=0;i<e;i++)r[i]=Math.sqrt(1-t*t)*h[i]/p+t*n[i];var d=vMinMax(r),v=vMinMax(n),m=8.5/(v[1]-v[0]),g=8.5/(d[1]-d[0]);for(i=0;i<e;i++)n[i]=(n[i]-v[0])*m+1,r[i]=(r[i]-d[0])*g+1}else n[0]=Number.NaN,r[0]=Number.NaN;var y=new Array(n,r);return y}function listOfRandReals(e,t,n){var r=new Array(e);for(var i=0;i<e;i++)r[i]=(n-t)*rand.next()+t;return r}function rNorm(){var e=normInv(rand.next());return e}function normCdf(e){return.5*erfc(-e*.7071067811865475)}function erfc(e){var t=.46875,n=[3.1611237438705655,113.86415415105016,377.485237685302,3209.3775891384694,.18577770618460315],r=[23.601290952344122,244.02463793444417,1282.6165260773723,2844.236833439171],i=[.5641884969886701,8.883149794388377,66.11919063714163,298.6351381974001,881.952221241769,1712.0476126340707,2051.0783778260716,1230.3393547979972,2.1531153547440383e-8],s=[15.744926110709835,117.6939508913125,537.1811018620099,1621.3895745666903,3290.7992357334597,4362.619090143247,3439.3676741437216,1230.3393548037495],o=[.30532663496123236,.36034489994980445,.12578172611122926,.016083785148742275,.0006587491615298378,.016315387137302097],u=[2.568520192289822,1.8729528499234604,.5279051029514285,.06051834131244132,.0023352049762686918],a,f,l,c,h,p,d=0;if(Math.abs(e)<=t){a=Math.abs(e),f=a*a,l=n[4]*f,c=f;for(d=0;d<3;d++)l=(l+n[d])*f,c=(c+r[d])*f;h=1-e*(l+n[3])/(c+r[3])}else if(Math.abs(e)<=4){a=Math.abs(e),l=i[8]*a,c=a;for(d=0;d<7;d++)l=(l+i[d])*a,c=(c+s[d])*a;h=(l+i[7])/(c+s[7]),a>0?f=Math.floor(a*16)/16:f=Math.ceil(a*16)/16,p=(a-f)*(a+f),h=Math.exp(-f*f)*Math.exp(-p)*h}else{a=Math.abs(e),f=1/(a*a),l=o[5]*f,c=f;for(d=0;d<4;d++)l=(l+o[d])*f,c=(c+u[d])*f;h=f*(l+o[4])/(c+u[4]),h=(1/Math.sqrt(Math.PI)-h)/a,a>0?f=Math.floor(a*16)/16:f=Math.ceil(a*16)/16,p=(a-f)*(a+f),h=Math.exp(-f*f)*Math.exp(-p)*h}return e<-t&&(h=2-h),h}function normInv(e){return e===0?Math.NEGATIVE_INFINITY:e>=1?Math.POSITIVE_INFINITY:Math.sqrt(2)*erfInv(2*e-1)}function erfInv(e){var t=[.886226899,-1.645349621,.914624893,-0.140543331],n=[-2.118377725,1.442710462,-0.329097515,.012229801],r=[-1.970840454,-1.624906493,3.429567803,1.641345311],i=[3.5438892,1.6370678],s=.7,o=0,u=0;return Math.abs(e)<=s?(u=e*e,o=e*(((t[3]*u+t[2])*u+t[1])*u+t[0])/((((n[3]*u+n[2])*u+n[1])*u+n[0])*u+1)):e>s&&e<1?(u=Math.sqrt(-Math.log((1-e)/2)),o=(((r[3]*u+r[2])*u+r[1])*u+r[0])/((i[1]*u+i[0])*u+1)):e<-s&&e>-1&&(u=Math.sqrt(-Math.log((1+e)/2)),o=-(((r[3]*u+r[2])*u+r[1])*u+r[0])/((i[1]*u+i[0])*u+1)),o-=(1-erfc(o)-e)/(2/Math.sqrt(Math.PI)*Math.exp(-o*o)),o-=(1-erfc(o)-e)/(2/Math.sqrt(Math.PI)*Math.exp(-o*o)),o}function betaCdf(e,t,n){return t<=0||n<=0?Math.NaN:e>=1?1:e>0?Math.min(incBeta(e,t,n),1):0}function betaPdf(e,t,n){return t<=0||n<=0||e<0||e>1?Math.NaN:e===0&&t<1||e==2&&n<1?Math.POSITIVE_INFINITY:t<=0||n<=0||e<=0||e>=1?0:Math.exp((t-1)*Math.log(e)+(n-1)*Math.log(1-e)-lnBeta(t,n))}function lnBeta(e,t){return lnGamma(e)+lnGamma(t)-lnGamma(e+t)}function betaInv(e,t,n){if(e<0||e>1||t<=0||n<=0)return Math.NaN;if(e===0)return Math.NEGATIVE_INFINITY;if(e==1)return Math.POSITIVE_INFINITY;var r=100,i=0,s=Math.sqrt(eps),o=1,u,a;t===0?a=Math.sqrt(eps):n===0?a=1-Math.sqrt(eps):a=t/(t+n);while(Math.abs(o)>s*Math.abs(a)&&Math.abs(o)>s&&i<r){i++,o=(betaCdf(a,t,n)-e)/betaPdf(a,t,n),u=a-o;while(u<0||u>1)o/=2,u=a-o;a=u}return a}function lnGamma(e){var t=-0.5772156649015329,n=[4.945235359296727,201.8112620856775,2290.8383738313464,11319.672059033808,28557.246356716354,38484.962284437934,26377.487876241954,7225.813979700288],r=[67.48212550303778,1113.3323938571993,7738.757056935398,27639.870744033407,54993.102062261576,61611.22180066002,36351.2759150194,8785.536302431014],i=.42278433509846713,s=[4.974607845568932,542.4138599891071,15506.93864978365,184793.29044456323,1088204.7694688288,3338152.96798703,5106661.678927353,3074109.0548505397],o=[183.03283993705926,7765.049321445006,133190.38279660742,1136705.8213219696,5267964.117437947,13467014.543111017,17827365.303532742,9533095.591844354],u=1.791759469228055,a=[14745.0216605994,2426813.3694867045,121475557.40450932,2663432449.630977,29403789566.34554,170266573776.5399,492612579337.7431,560625185622.3951],f=[2690.5301758708993,639388.5654300093,41355999.30241388,1120872109.616148,14886137286.788137,101680358627.24382,341747634550.73773,446315818741.9713],l=[-0.001910444077728,.00084171387781295,-0.0005952379913043012,.0007936507935003503,-0.0027777777777776816,.08333333333333333,.0057083835261],c=Math.NaN,h=1e-12,p=1,d=0,v,m,g,y=0;if(e<0)return c;if(e<=h)return-Math.log(e);if(e<=.5){for(y=0;y<8;y++)d=d*e+n[y],p=p*e+r[y];c=-Math.log(e)+e*(t+e*(d/p))}else if(e<=.6796875){v=e-1;for(y=0;y<8;y++)d=d*v+s[y],p=p*v+o[y];c=-Math.log(e)+v*(i+v*(d/p))}else if(e<=1.5){v=e-1;for(y=0;y<8;y++)d=d*v+n[y],p=p*v+r[y];c=v*(t+v*(d/p))}else if(e<=4){m=e-2;for(y=0;y<8;y++)d=d*m+s[y],p=p*m+o[y];c=m*(i+m*(d/p))}else if(e<=12){g=e-4,p=-1;for(y=0;y<8;y++)d=d*g+a[y],p=p*g+f[y];c=u+g*(d/p)}else{var b=l[6],w=e*e;for(y=0;y<6;y++)b=b/w+l[y];b/=e;var E=Math.log(e),S=.9189385332046728;c=b+S-.5*E+e*(E-1)}return c}function normPdf(e,t,n){return Math.exp(-(n-e)*(n-e)/(2*t*t))/(Math.sqrt(2*Math.PI)*t)}function tCdf(e,t){var n;return e<1?n=Math.NaN:t===0?n=.5:e==1?n=.5+Math.atan(t)/Math.PI:t>0?n=1-incBeta(e/(e+t*t),e/2,.5)/2:t<0&&(n=incBeta(e/(e+t*t),e/2,.5)/2),n}function tInv(e,t){var n;return t<0||e<0?Math.NaN:e===0?Math.NEGATIVE_INFINITY:e==1?Math.POSITIVE_INFINITY:t==1?Math.tan(Math.PI*(e-.5)):e>=.5?(n=betaInv(2*(1-e),t/2,.5),Math.sqrt(t/n-t)):(n=betaInv(2*e,t/2,.5),-Math.sqrt(t/n-t))}function incBeta(e,t,n){var r;if(e<0||e>1)r=Math.NaN;else{r=0;var i=Math.exp(lnGamma(t+n)-lnGamma(t)-lnGamma(n)+t*Math.log(e)+n*Math.log(1-e));e<(t+1)/(t+n+2)?r=i*betaGuts(e,t,n)/t:r=1-i*betaGuts(1-e,n,t)/n}return r}function betaGuts(e,t,n){var r=t+1,i=t-1,s=t+n,o=1,u=o,a=o,f=1-s*e/r,l=0,c=l,h=l,p=l,d=l,v=l,m=1,g;while(a-v>4*eps*Math.abs(a))g=2*m,l=m*(n-m)*e/((i+g)*(t+g)),h=a+l*o,d=f+l*u,l=-(t+m)*(s+m)*e/((t+g)*(r+g)),c=h+l*a,p=d+l*f,v=a,o=h/p,u=d/p,a=c/p,m==1&&(f=1),m++;return a}function chi2Cdf(e,t){var n=e==Math.floor(e)?gammaCdf(t,e/2,2):Number.NaN;return n}function chi2Inv(e,t){var n=Math.NaN;if(e===0)n=0;else if(e==1)n=Math.POSITIVE_INFINITY;else if(e<0)n=Math.NaN;else{var r=1e-8,i=.001;n=Math.max(0,t+Math.sqrt(2*t)*normInv(e));var s=chi2Cdf(n,t),o=s,u=s,a=n,f=n;while(o>e)a=.8*a,o=chi2Cdf(a,t);while(u<e)f=1.2*f,u=chi2Cdf(f,t);n=(a+f)/2,s=chi2Cdf(n,t);while(Math.abs(s-e)>r||Math.abs(s-e)/e>i)s<e?a=n:f=n,n=(a+f)/2,s=chi2Cdf(n,t)}return n}function gammaCdf(e,t,n){var r=Math.NaN;return t<=0||n<=0||(e<=0?r=0:r=Math.min(incGamma(e/n,t),1)),r}function incGamma(e,t){var n=0,r=lnGamma(t+rmin);if(e===0)n=0;else if(t===0)n=1;else if(e<t+1){var i=t,s=1/i,o=s;while(Math.abs(o)>=10*eps*Math.abs(s))o*=e/++i,s+=o;n=s*Math.exp(-e+t*Math.log(e)-r)}else if(e>=t+1){var u=1,a=e,f=0,l=1,c=1,h=1,p=1,d=0,v,m;while(Math.abs(p-d)>=10*eps*Math.abs(p))d=p,v=h-t,u=(a+u*v)*c,f=(l+f*v)*c,m=h*c,a=e*u+m*a,l=e*f+m*l,c=1/a,p=l*c,h++;n=1-Math.exp(-e+t*Math.log(e)-r)*p}return n}function poissonPmf(e,t){var n=0;return t!=Math.floor(t)?n=Number.NaN:t>=0&&(n=Math.exp(-e)*Math.pow(e,t)/factorial(t)),n}function poissonCdf(e,t){var n=0,r=0,i=0;if(t!=Math.floor(t))n=Number.NaN;else{while(i<=t)r+=Math.pow(e,i++)/factorial(t);n+=Math.exp(-e)*r}return n}function poissonTail(e,t){return 1-poissonCdf(e,t-1)}function expCdf(e,t){return 1-Math.exp(-t/e)}function expPdf(e,t){return 1/e*Math.exp(-t/e)}function factorial(e){var t=Number.NaN;if(e!=Math.floor(e))t=Number.NaN;else{t=1;for(var n=e;n>1;n--)t*=n}return Math.round(t)}function binomialCoef(e,t){if(e!=Math.floor(e)||t!=Math.floor(t))return Number.NaN;if(e<t||e<0)return 0;if(t===0||e===0||e==t)return 1;var n=Math.min(t,e-t),r=1;for(var i=0;i<n;i++)r*=(e-i)/(n-i);return Math.round(r)}function binomialPmf(e,t,n){var r=binomialCoef(e,n)*Math.pow(t,n)*Math.pow(1-t,e-n);return r}function binomialCdf(e,t,n){if(n<0)return 0;if(n>=e)return 1;var r=0;for(var i=0;i<=n;i++)r+=binomialPmf(e,t,i);return r}function binomialTail(e,t,n){if(n<0)return 1;if(n>=e)return 0;var r=0;for(var i=n;i<=e;i++)r+=binomialPmf(e,t,i);return r}function binomialInv(e,t,n){var r=0;if(n<0||n>1)r=NaN;else if(n===0)r=0;else if(n==1)r=e;else{r=0;var i=0;while(i<n)i+=binomialPmf(e,t,r++);r-=1}return r}function multinomialCoef(e,t){var n=0,r=vMinMax(e);if(typeof t=="undefined"||t===null)t=vSum(e);if(r[0]<0)alert("Error #1 in irGrade.multinomialCoef: a number of outcomes is negative!");else if(t==vSum(e)){n=factorial(t);for(var i=0;i<e.length;i++)n/=factorial(e[i])}return n}function multinomialPmf(e,t,n){var r=0,i=vMinMax(t),s=vMinMax(e);if(typeof n=="undefined"||n===null)n=vSum(e);if(e.length!=t.length)alert("Error #1 in irGrade.multinomialPmf: length of outcome and probability vectors do not match!");else if(i[0]<0)alert("Error #2 in irGrade.multinomialPmf: a probability is negative!");else if(s[0]<0)alert("Error #3 in irGrade.multinomialPmf: a number of outcomes is negative!");else if(n==vSum(e)){var o=vMult(1/vSum(t),t);r=factorial(n);for(var u=0;u<e.length;u++)r*=Math.pow(o[u],e[u])/factorial(e[u])}return r}function geoPmf(e,t){var n=0;return t!=Math.floor(t)?n=Number.NaN:t<1||e===0?n=0:n=Math.pow(1-e,t-1)*e,n}function geoCdf(e,t){var n=0;return t!=Math.floor(t)?n=Number.NaN:t<1||e===0?n=0:n=1-Math.pow(1-e,t),n}function geoTail(e,t){return 1-geoCdf(e,t-1)}function geoInv(e,t){var n=0;if(t<0||t>1)n=Math.NaN;else if(t===0)n=0;else if(t==1)n=Math.POSITIVE_INFINITY;else{n=0;var r=0;while(r<t)r+=geoPmf(e,n++)}return n}function hyperGeoPmf(e,t,n,r){var i=0;return e!=Math.floor(e)||t!=Math.floor(t)||n!=Math.floor(n)||r!=Math.floor(r)?i=Number.NaN:n<r||e<t||t<r||r<0||e<0?i=0:i=binomialCoef(t,r)*binomialCoef(e-t,n-r)/binomialCoef(e,n),i}function hyperGeoCdf(e,t,n,r){var i=0;if(e!=Math.floor(e)||t!=Math.floor(t)||n!=Math.floor(n)||r!=Math.floor(r))i=Number.NaN;else{var s=Math.min(r,t);s=Math.min(s,n);for(var o=0;o<=s;o++)i+=hyperGeoPmf(e,t,n,o)}return i}function hyperGeoTail(e,t,n,r){var i=0;if(e!=Math.floor(e)||t!=Math.floor(t)||n!=Math.floor(n)||r!=Math.floor(r))i=Number.NaN;else for(var s=r;s<=Math.min(t,n);s++)i+=hyperGeoPmf(e,t,n,s);return i}function negBinomialPmf(e,t,n){var r=0;return t!=Math.floor(t)||n!=Math.floor(n)?r=Number.NaN:t>n||t<0?r=0:r=e*binomialPmf(n-1,e,t-1),r}function negBinomialCdf(e,t,n){var r=0;if(t!=Math.floor(t)||n!=Math.floor(n))r=Number.NaN;else for(var i=t;i<=n;i++)r+=negBinomialPmf(e,t,i);return r}function pDieRolls(e,t){if(e>4)return alert("Error #1 in irGrade.pDiceRolls: too many rolls "+e+". "),Math.NaN;var n=0;if(t<e||t>6*e)return 0;var r=Math.pow(6,e),i=0,s=0,o=0;if(e==1)return 1/r;if(e==2)for(i=1;i<=6;i++)for(s=1;s<=6;s++)i+s==t&&n++;else if(e==3)for(i=1;i<=6;i++)for(s=1;s<=6;s++)for(o=1;o<=6;o++)i+s+o==t&&n++;else if(e==4)for(i=1;i<=6;i++)for(s=1;s<=6;s++)for(o=1;o<=6;o++)for(var u=1;u<=6;u++)i+s+o+u==t&&n++;return n/r}function permutations(e,t){var n;if(Math.floor(e)!=e||Math.floor(t)!=t)n=Number.NaN;else if(e<t||e<0)n=0;else if(t===0||e===0)n=1;else{n=1;for(var r=0;r<t;r++)n*=e-r}return Math.round(n)}function sgn(e){if(e>=0)return 1;if(e<0)return-1}function linspace(e,t,n){var r=new Array(n),i=(t-e)/(n-1);for(var s=0;s<n;s++)r[s]=e+s*i;return r}function rms(e){var t=0;for(var n=0;n<e.length;n++)t+=e[n]*e[n];return t/=e.length,Math.sqrt(t)}function vMinMax(e){var t=e[0],n=e[0];for(var r=1;r<e.length;r++)t>e[r]&&(t=e[r]),n<e[r]&&(n=e[r]);var i=new Array(t,n);return i}function vMinMaxIndices(e){var t=e[0],n=0,r=e[0],i=0;for(var s=1;s<e.length;s++)t>e[s]&&(t=e[s],n=s),r<e[s]&&(r=e[s],i=s);var o=new Array(t,r,n,i);return o}function vMinMaxAbs(e){var t=Math.abs(e[0]),n=Math.abs(e[0]),r;for(var i=1;i<e.length;i++)r=Math.abs(e[i]),t>r&&(t=r),n<r&&(n=r);var s=new Array(t,n);return s}function randBoolean(e){if(typeof e=="undefined"||e===null)e=.5;return rand.next()<=e?!1:!0}function sortUnique(e,t){var n=e;typeof t!="undefined"&&t!==null?n.sort(t):n.sort();var r=[];r[0]=n[0];var i=0;for(var s=1;s<n.length;s++)n[s]!=r[i]&&(r[++i]=n[s]);return r}function uniqueCount(e){var t={};t[e[0]]=e[0];var n=0;for(n=1;n<e.length;n++)typeof t[e[n]]=="undefined"||t[e[n]]===null?t[e[n]]=1:t[e[n]]++;uc=new Array(2),uc[0]=[],uc[1]=[];var r=0;for(n in t)uc[0][r]=n,uc[1][r++]=t[n];return uc}function unique(e){return uniqueCount(e)[0]}function randPermutation(e,t){var n=listOfDistinctRandInts(e.length,0,e.length-1),r=new Array(e.length),i=0;for(i=0;i<e.length;i++)r[i]=e[n[i]];var s=0;if(typeof t!="undefined"&&t=="forward")s=new Array(2),s[0]=r,s[1]=n,r=s;else if(typeof t!="undefined"&&t=="inverse"){s=new Array(2),s[0]=r,s[1]=new Array(e.length);for(i=0;i<e.length;i++)s[1][n[i]]=i;r=s}return r}function cyclicPermutation(e,t){if(typeof t=="undefined"||t===null)t=1;var n=new Array(e);for(var r=0;r<e;r++)n[r]=(r+t)%e;return n}function distinctPermutation(e,t){if(typeof t=="undefined"||t===null)t=Math.min(3,e-1);return cyclicPermutation(e,t)}function distinctRandPermutation(e){function t(e){v=!1;for(var t=0;t<e.length;t++)e[t]==t&&(v=!0);return v}var n=new Array(e);for(var r=0;r<e;r++)n[r]=r;n=randPermutation(n);while(t(n))n=randPermutation(n);return n}function fakeBivariateData(e,t,n,r,i,s){var o=new Array(2);o[0]=new Array(e),o[1]=new Array(e),r===0&&(r=2);var u,a,f,l;if(t[0]!="polynomial")return alert("Error #1 in irGrade.fakeBivariateData()!\nUnsupported function type: "+t[0].toString()),null;if(typeof i=="undefined"||i===null)i=-10;if(typeof s=="undefined"||s===null)s=10;var c=(s-i)/(e-1);for(l=0;l<e;l++){u=i+l*c,o[0][l]=u,a=0,f=1;for(var h=1;h<t.length;h++)a+=f*t[h],f*=u;o[1][l]=a}var p=twoNorm(o[1]),d=new Array(e);for(l=0;l<e;l++)d[l]=rNorm();var v=Math.floor(e/3),m=Math.floor(2*e/3*rand.next());for(l=m;l<m+v;l++)d[l]=d[l]*n;var g=twoNorm(d);for(l=0;l<e;l++)o[1][l]+=d[l]*p/g/r;return o}function nextRand(){var e=this.seed/this.Q,t=this.seed%this.Q,n=this.A*t-this.R*e;return n>0?this.seed=n:this.seed=n+this.M,this.seed*this.oneOverM}function rng(e){if(typeof e=="undefined"||e===null){var t=new Date;this.seed=2345678901+t.getSeconds()*16777215+t.getMinutes()*65535}else this.seed=e;return this.A=48271,this.M=2147483647,this.Q=this.M/this.A,this.R=this.M%this.A,this.oneOverM=1/this.M,this.next=nextRand,this.getSeed=getRandSeed,this}function getRandSeed(){return this.seed}function crypt(e,t){var n=e.length,r=t.length,i=16,s=0,o,u=-1,a="";if(e.substr(0,2)=="0x")for(o=2;o<n;o+=2)++u>=r&&(u=0),s=parseInt(e.substr(o,2),i)^t.charCodeAt(u),a+=String.fromCharCode(s);else{a+="0x";for(o=0;o<n;o++)++u>=r&&(u=0),s=e.charCodeAt(o)^t.charCodeAt(u),a+=(s<i?"0":"")+s.toString(i)}return a}function statCalc(e,t){function r(){var e=$("<div />").addClass("calc");n.container.append(e),n.theDisplay=$('<input type="text" />').attr("size",n.options.digits),e.append(n.theDisplay),n.buttonDiv=$("<div />").addClass("buttonDiv"),n.numButtonDiv=$("<div />").addClass("numButtonDiv"),n.fnButtonDiv=$("<div />").addClass("fnButtonDiv"),n.numButtonTable=$("<table />").addClass("numButtonTable"),n.fnButtonTable=$("<table />").addClass("fnButtonTable"),n.numButtonDiv.append(n.numButtonTable),n.fnButtonDiv.append(n.fnButtonTable),n.buttonDiv.append(n.numButtonDiv),n.buttonDiv.append(n.fnButtonDiv),$.each(n.options.keys,function(e,t){var r=$("<tr>");n.numButtonTable.append(r),$.each(t,function(e,t){if(null===t){r.append($("<td/>"));return}newBut=$('<input type="button" value="'+t[0]+'">').button().addClass(t[1]).addClass("calcButton").click(function(){i(t[0],t[1])}),r.append($("<td/>").append(newBut))})}),e.append(n.buttonDiv)}function i(e,t){var r=n.theDisplay.val().replace(/[^0-9e.\-]+/gi,"").replace(/^0+/,"");try{switch(t){case"num":n.theDisplay.val(r+e);break;case"una":switch(e){case"+/-":r=r.indexOf("-")===0?r.substring(1):"-"+r,n.theDisplay.val(r);break;case"!":n.theDisplay.val(factorial(r).toString());break;case"Sqrt":n.theDisplay.val(Math.sqrt(r).toString());break;case"x^2":n.theDisplay.val((r*r).toString());break;case"exp(x)":n.theDisplay.val(Math.exp(r).toString());break;case"ln(x)":n.theDisplay.val(Math.log(r).toString());break;case"1/x":n.theDisplay.val((1/r).toString());break;case"U[0,1]":n.theDisplay.val(rand.next());break;case"N(0,1)":n.theDisplay.val(rNorm());break;case"CE":n.theDisplay.val("0");break;case"C":n.x=0,n.inProgress=!1,n.currentOp=null,n.theDisplay.val("0")}break;case"bin":n.inProgress?(n.x=s(n.x,n.currentOp,r),n.theDisplay.val(n.x.toString())):(n.x=r,n.theDisplay.val("?"),n.inProgress=!0),n.currentOp=e;break;case"eq":n.inProgress&&(n.x=s(n.x,n.currentOp,r),n.theDisplay.val(n.x.toString()),n.inProgress=!1,n.currentOp=null);break;default:console.log("unexpected button in statCalc "+e)}}catch(i){console.log(i),n.theDisplay.val("NaN")}}function s(e,t,n){var r=Math.NaN;try{switch(t){case"+":r=parseFloat(e)+parseFloat(n);break;case"-":r=parseFloat(e)-parseFloat(n);break;case"*":r=parseFloat(e)*parseFloat(n);break;case"/":r=parseFloat(e)/parseFloat(n);break;case"x^y":r=parseFloat(e)^parseFloat(n);break;case"nCk":r=binomialCoef(parseFloat(e),parseFloat(n));break;case"nPk":r=permutations(parseFloat(e),parseFloat(n));break;default:console.log("unexpected binary function in statCalc "+t)}}catch(i){}return r}var n=this;this.container=$("#"+e);if(!t instanceof Object){console.error("statCalc parameters should be an object");return}this.options={keys:[[["7","num"],["8","num"],["9","num"],["/","bin"],["nCk","bin"]],[["4","num"],["5","num"],["6","num"],["*","bin"],["nPk","bin"]],[["1","num"],["2","num"],["3","num"],["-","bin"],["!","una"]],[["0","num"],[".","num"],["+/-","una"],["+","bin"],["1/x","una"]],[["=","eq"],["CE","una"],["C","una"],["Sqrt","una"],["x^2","una"]]],buttonsPerRow:5,digits:16},$.extend(this.options,t),n.x=0,n.inProgress=!1,n.currentOp=null,r()}function distCalc(e,t){function i(){var e=$("<div />").addClass("distCalc");n.container.append(e),n.selectDiv=$("<div />").addClass("selectDiv").append("If X has a "),n.selectDist=$("<select />").change(function(){s($(this).val())}),$.each(n.options.distributions,function(e,t){$("<option/>",{value:t[0]}).text(t[0]).appendTo(n.selectDist),n.distDivs[t[0]]=$("<div />").css("display","inline"),$.each(t[1],function(e,r){n.distDivs[t[0]].append(r+" = ").append($('<input type="text" />').attr("size","paramDigits").addClass(r.replace(/ +/g,"_")).blur(o)).append(", ")})}),n.paramSpan=$("<span />").addClass("paramSpan"),n.selectDiv.append(n.selectDist).append("distribution with ").append(n.paramSpan),n.currDist=n.options.distributions[0][0],n.paramSpan.append(n.distDivs[n.currDist]),n.selectDiv.append(" the chance that ").append($('<input type="checkbox">').addClass("useLower").click(o)).append("X &ge;").append($('<input type="text" />').addClass("loLim").attr("size",n.options.digits).val("0").blur(o)).append($('<input type="checkbox">').addClass("useUpper").click(o)).append("and X &le;").append($('<input type="text" />').addClass("hiLim").attr("size",n.options.digits).val("0").blur(o)).append(" is "),n.theDisplay=$('<input type="text" readonly />').attr("size",n.options.digits+4),n.expectSpan=$("<span />").addClass("expectSpan"),n.selectDiv.append(n.theDisplay).append(n.expectSpan),e.append(n.selectDiv)}function s(e){n.currDist=e,n.paramSpan.empty(),n.expectSpan.empty();var t=$.grep(n.options.distributions,function(t,n){return t[0]===e});n.paramSpan.append(n.distDivs[t[0][0]]),n.theDisplay.val("NaN"),o()}function o(){var e=Number.NaN,t=n.selectDiv.find(".useLower").prop("checked"),i=t?parseFloat(n.selectDiv.find(".loLim").val()):Number.NaN,s=n.selectDiv.find(".useUpper").prop("checked"),o=s?parseFloat(n.selectDiv.find(".hiLim").val()):Number.NaN,u=!0;$.each(n.distDivs[n.currDist].find(":input"),function(e,t){t.value.trim().length===0&&(u=!1)});if(!t&&!s||!u)e=Number.NaN;else if(t&&s&&i>o)e=0;else{n.expectSpan.empty();var a,f,l,c,h,p;switch(n.currDist){case"Binomial":a=parseFloat(n.distDivs[n.currDist].find(".n").val()),f=parsePercent(n.distDivs[n.currDist].find(".p").val()),l=s?binomialCdf(a,f,o):1,c=t?binomialCdf(a,f,i-1):0,e=l-c,n.options.showExpect&&n.expectSpan.append("E(X) = "+(a*f).toFixed(n.options.paramDigits)+"; SE(X) = "+Math.sqrt(a*f*(1-f)).toFixed(n.options.paramDigits));break;case"Geometric":f=parsePercent(n.distDivs[n.currDist].find(".p").val()),l=s?geoCdf(f,o):1,c=t?geoCdf(f,i-1):0,n.options.showExpect&&n.expectSpan.append("E(X) = "+(1/f).toFixed(n.options.paramDigits)+"; SE(X) = "+(Math.sqrt(1-f)/f).toFixed(n.options.paramDigits)),e=l-c;break;case"Negative Binomial":f=parsePercent(n.distDivs[n.currDist].find(".p").val()),r=parseFloat(n.distDivs[n.currDist].find(".r").val()),l=s?negBinomialCdf(f,r,o):1,c=t?negBinomialCdf(f,r,i-1):0,e=l-c,n.options.showExpect&&n.expectSpan.append("E(X) = "+(r/f).toFixed(n.options.paramDigits)+"; SE(X) = "+(Math.sqrt(r*(1-f))/f).toFixed(n.options.paramDigits));break;case"Hypergeometric":var d=parseFloat(n.distDivs[n.currDist].find(".N").val()),v=parseFloat(n.distDivs[n.currDist].find(".G").val());a=parseFloat(n.distDivs[n.currDist].find(".n").val()),l=s?hyperGeoCdf(d,v,a,o):1,c=t?hyperGeoCdf(d,v,a,i-1):0,e=l-c;var m=v/d;n.options.showExpect&&n.expectSpan.append("E(X) = "+(a*m).toFixed(n.options.paramDigits)+"; SE(X) = "+Math.sqrt(a*m*(1-m)*(d-a)/(d-1)).toFixed(n.options.paramDigits));break;case"Normal":p=parseFloat(n.distDivs[n.currDist].find(".mean").val());var g=parseFloat(n.distDivs[n.currDist].find(".SD").val());l=s?normCdf((o-p)/g):1,c=t?normCdf((i-p)/g):0,e=l-c,n.options.showExpect&&n.expectSpan.append("E(X) = "+p.toFixed(n.options.paramDigits)+"; SE(X) = "+g.toFixed(n.options.paramDigits));break;case"Student t":h=parseFloat(n.distDivs[n.currDist].find(".degrees_of_freedom").val()),l=s?tCdf(h,o):1,c=t?tCdf(h,i):0,e=l-c;var y=h>2?Math.sqrt(h/(h-2)).toFixed(n.options.paramDigits):Number.NaN;n.options.showExpect&&n.expectSpan.append("E(X) = 0; SE(X) = "+y);break;case"Chi-square":h=parseFloat(n.distDivs[n.currDist].find(".degrees_of_freedom").val()),l=s?chi2Cdf(h,o):1,c=t?chi2Cdf(h,i):0,n.options.showExpect&&n.expectSpan.append("E(X) = "+h.toFixed(n.options.paramDigits)+"; SE(X) = "+Math.sqrt(2*h).toFixed(n.options.paramDigits)),e=l-c;break;case"Exponential":p=parseFloat(n.distDivs[n.currDist].find(".mean").val()),l=s?expCdf(p,o):1,c=t?expCdf(p,i):0,e=l-c,n.options.showExpect&&n.expectSpan.append("E(X) = "+p.toFixed(n.options.paramDigits)+"; SE(X) = "+p.toFixed(n.options.paramDigits));break;case"Poisson":p=parseFloat(n.distDivs[n.currDist].find(".mean").val()),l=s?poissonCdf(p,o):1,c=t?poissonCdf(p,i):0,e=l-c,n.options.showExpect&&n.expectSpan.append("E(X) = "+p.toFixed(n.options.paramDigits)+"; SE(X) = "+Math.sqrt(p).toFixed(n.options.paramDigits));break;default:console.log("unexpected distribution in distCalc.calcProb "+dist)}}n.theDisplay.val((100*e).toFixed(n.options.digits-3)+"%")}var n=this;this.container=$("#"+e);if(!t instanceof Object){console.error("distCalc parameters should be an object");return}this.options={distributions:[["Binomial",["n","p"]],["Geometric",["p"]],["Negative Binomial",["p","r"]],["Hypergeometric",["N","G","n"]],["Normal",["mean","SD"]],["Student t",["degrees of freedom"]],["Chi-square",["degrees of freedom"]],["Exponential",["mean"]],["Poisson",["mean"]]],digits:8,paramDigits:4,showExpect:!0},$.extend(this.options,t),n.lo=0,n.hi=0,n.currDist=null,n.distDivs=[],i()}Array.prototype.max=function(){return Math.max.apply(null,this)},Array.prototype.min=function(){return Math.min.apply(null,this)},Number.prototype.fix=function(e){return parseFloat(this.toFixed(e))},jQuery(function(){typeof rand=="undefined"?(console.log("rand has not been defined already, creating in stat_utils"),rand=rng()):console.log("Skipping creation of rand because it already exists.")}),function(){$.fn.popbox=function(e){var t=$.extend({selector:this.selector,open:".open",box:".box",arrow:".arrow",arrow_border:".arrow-border",close:".close"},e),n={open:function(e){e.preventDefault();var r=$(this),i=$(this).parent().find(t.box);i.find(t.arrow).css({left:i.width()/2-10}),i.find(t.arrow_border).css({left:i.width()/2-10}),i.css("display")=="block"?n.close():i.css({display:"block",top:10,left:r.parent().width()/2-i.width()/2}),typeof $(this).parent().data("onPopBox")!="undefined"&&$(this).parent().data("onPopBox")()},close:function(){$(t.selector).find(t.box).fadeOut("fast")}};return $(document).bind("keyup",function(e){e.keyCode==27&&n.close()}),$(document).bind("click",function(e){$(e.target).closest(t.selector).length||n.close()}),this.each(function(){if($(this).data("isPopBox")===!0)return;$(this).data("isPopBox",!0),$(this).css("width")||$(this).css({width:$(t.box).width()}),$(t.open,this).bind("click",n.open),$(t.open,this).parent().find(t.close).bind("click",function(e){e.preventDefault(),n.close()})})}}.call(this);
+// Javascript rewrite of
+// http://statistics.berkeley.edu/~stark/Java/Html/HistHiLite.htm
+//
+// Author: James Eady <jeady@berkeley.edu>
+//
+// container_id: the CSS ID of the container to create the histogram (and
+//               controls) in.
+// params: A javascript object with various parameters to customize the chart.
+//  // Show normal by default. Normal can still be toggled by the button.
+//  - showNormal: false
+//
+//  // Whether or not to display the 'Show Normal' button.
+//  - showNormalButton: true
+//
+//  // Default number of bins to display.
+//  - bins: 10
+//
+//  // Whether the user can set the number of bins.
+//  - changeNumBins: true
+//
+//  // Whether or not to display the 'Show Univariate Stats' button.
+//  - showUnivariateStats: true
+//
+//  // Initial bounds for area from/to sliders.
+//  - hiLiteHi: null
+//  - hiLiteLo null
+//
+//  // There are three different ways to supply input to the histogram:
+//  // 1) External JSON-encoded data file.
+//  // 2) Manual specification of bin ends and counts.
+//  // 3) Binomial distribution generated from given n and p.
+//  //
+//  // These input methods are all mutually exclusive - if the parameters for a
+//  // particular input method are set, then the parameters for the other input
+//  // methods should not be set.
+//
+//  // 1) External JSON-encoded data file
+//
+//  // Array of URLs (as strings) of json-encoded datasets.
+//  - data: null
+//
+//  // Whether or not to display the 'List Data' button.
+//  - listData: true
+//
+//  // Whether or not the user can select restricted subsets of the data.
+//  - restrict: false
+//
+//  // 2) Manual specification of bin ends and counts.
+//  //
+//  // showNormal, showNormalButton, showUnivariateStats, changeNumBins, and
+//  // listData will all automatically be set to false by default. The normal
+//  // curve may be enabled, but mu and sd must be specified.
+//
+//  // Array of bin counts to use instead of parsing data.
+//  - counts: null
+//
+//  // Array of bin ends. If counts is set, ends must also be set.
+//  - ends: null
+//
+//  // Manually specify data mean.
+//  - mu: null
+//
+//  // Manually specify data standard deviation.
+//  - sd: null
+//
+//  // 3) Binomial distribution generated from given n and p.
+//
+//  // Number of trials.
+//  - n: null
+//
+//  // Probability of success.
+//  - p: null
+
+function Stici_HistHiLite(container_id, params) {
+  var self = this;
+
+  if (!params instanceof Object) {
+    console.error('Stici_HistHiLite params should be an object');
+    return;
+  }
+
+  // Configuration option defaults.
+  this.options = {
+    showNormalButton: true,
+    showNormal: false,
+    bins: 10,
+    changeNumBins: true,
+    showUnivariateStats: true,
+    hiLiteHi: null,
+    hiLiteLo: null,
+    data: null,
+    listData: true,
+    restrict: false,
+    counts: null,
+    ends: null,
+    n: null,
+    p: null
+  };
+
+  // For debugging: Warn of user params that are unknown.
+  jQuery.each(params, function(key) {
+    if (typeof(self.options[key]) == 'undefined')
+      console.warn('Stici_HistHiLite: Unknown key \'' + key + '\'');
+  });
+
+  // Override options with anything specified by the user.
+  jQuery.extend(this.options, params);
+
+  // jQuery object containing the entire chart.
+  this.container = jQuery('#' + container_id);
+
+  // Labels for the data.
+  this.dataFields = null;
+
+  // The data itself.
+  this.dataValues = null;
+
+  // The URL we got the JSON-encoded data from.
+  this.dataSource = null;
+
+  // Currently rendered data.
+  this.data = null;
+  this.restrictedData = null;
+
+  // Histogram information calculated via stat_utils.js. Cached here.
+  this.nBins = self.options.bins;
+  this.binEnds = null;
+  this.binCounts = null;
+  this.restrictedCounts = null;
+  this.sd = 0;
+  this.mu = 0;
+  this.restrictedSd = 0;
+  this.restrictedMu = 0;
+
+  // Various handles to important jQuery objects.
+  this.urlInput = null;
+  this.dataSelect = null;
+  this.variableSelect = null;
+  this.chartDiv = null;
+  this.overlayDiv = null;  // Used for the area selection feature.
+  this.normalOverlayDiv = null;
+  this.areaFromInput = null;
+  this.areaFromSlider = null;
+  this.areaToInput = null;
+  this.areaToSlider = null;
+  this.areaInfoDiv = null;
+  this.showNormalButton = null;
+  this.showingOriginal = null;
+  this.showingRestricted = null;
+  this.additionalInfo = null;
+
+  // Restricted variable handles.
+  this.restrictedVariable = null;
+  this.restrictLowerEnable = null;
+  this.restrictLower = null;
+  this.restrictUpperEnable = null;
+  this.restrictUpper = null;
+
+  // This method will be set according to which data source we are using.
+  this.reloadData = null;
+
+  if (self.options.n !== null || self.options.p !== null) {
+    // Binomial data source.
+    self.options.showUnivariateStats = false;
+    self.options.listData = false;
+    self.options.changeNumBins = false;
+    self.reloadData = loadBinomialData;
+  } else if (self.options.counts !== null || self.options.ends !== null) {
+    // Manually specified data source.
+    self.dataSource = null;
+    if (!params.showNormal)
+      self.options.showNormal = false;
+    if (!params.showNormalButton)
+      self.options.showNormalButton = false;
+    self.options.showUnivariateStats = false;
+    self.options.listData = false;
+    self.options.changeNumBins = false;
+    self.reloadData = loadManualData;
+  } else if (self.options.data instanceof Array) {
+    // External data source.
+    self.dataSource = self.options.data[0];
+    if (self.options.restrict) {
+      self.reloadData = function() {
+        loadExternalData(updateVariableRestrictionControls);
+      };
+    } else {
+      self.reloadData = loadExternalData;
+    }
+  } else {
+    console.error('Unknown data source.');
+    return;
+  }
+
+  this.showingNormal = self.options.showNormal;
+
+  this.reloadChart = function() {
+    redrawChart();
+
+    self.areaFromSlider.slider('option', 'min', self.binEnds.min());
+    self.areaFromSlider.slider('option', 'max', self.binEnds.max());
+    if (self.options.hiLiteLo === null) {
+      self.areaFromSlider.slider('option', 'value', self.binEnds.min());
+      self.areaFromInput.val(self.binEnds.min());
+    } else {
+      self.areaFromSlider.slider('option', 'value', self.options.hiLiteLo);
+      self.areaFromInput.val(self.options.hiLiteLo);
+    }
+    self.areaToSlider.slider('option', 'min', self.binEnds.min());
+    self.areaToSlider.slider('option', 'max', self.binEnds.max());
+    if (self.options.hiLiteHi === null) {
+      self.areaToSlider.slider('option', 'value', self.binEnds.min());
+      self.areaToInput.val(self.binEnds.min());
+    } else {
+      self.areaToSlider.slider('option', 'value', self.options.hiLiteHi);
+      self.areaToInput.val(self.options.hiLiteHi);
+    }
+  };
+  function redrawChart() {
+    var i;
+    self.chartDiv.children().remove();
+    var normalChartDiv = jQuery('<div/>').addClass('chart_box');
+    self.overlayDiv = normalChartDiv.clone().addClass('overlay');
+    self.normalOverlayDiv = jQuery('<div/>').addClass('chart_box');
+    self.chartDiv.append(normalChartDiv);
+    self.chartDiv.append(self.overlayDiv);
+    self.chartDiv.append(self.normalOverlayDiv);
+
+    // Background calculations.
+    var width = self.overlayDiv.width();
+    var height = self.overlayDiv.height();
+    var graphWidth = self.binEnds.max() - self.binEnds.min();
+
+    // Calculate the scaling by taking the max of the histogram bar heights
+    // and the y-coordinate of the points on the normal curve.
+    var normalCurveY = function(d) {
+      var x =
+        self.binEnds[0] +
+        d * (self.binEnds[self.nBins] - self.binEnds[0]) / (width - 1);
+      var y = normPdf(self.mu, self.sd, x);
+      return y;
+    };
+    var yScale = null;
+    // TODO(jmeady): Include height in yScale.
+    for (i = 0; i < width; i++) {
+      if ((yScale === null || normalCurveY(i) > yScale) &&
+          !isNaN(normalCurveY(i)))
+        yScale = normalCurveY(i);
+    }
+    yScale = Math.max(self.binCounts.max(), yScale);
+    var restrictedNormalCurveY = null;
+    if (null !== self.restrictedCounts) {
+      restrictedNormalCurveY = function(d) {
+        var x =
+          self.binEnds[0] +
+          d * (self.binEnds[self.nBins] - self.binEnds[0]) / (width - 1);
+        var y = normPdf(self.restrictedMu, self.restrictedSd, x);
+        return y;
+      };
+      for (i = 0; i < width; i++) {
+        if ((yScale === null || restrictedNormalCurveY(i) > yScale) &&
+            !isNaN(restrictedNormalCurveY(i)))
+          yScale = restrictedNormalCurveY(i);
+      }
+      yScale = Math.max(self.restrictedCounts.max(), yScale);
+    }
+    yScale /= (height - 1);
+
+    // Draw the histogram as an SVG. We draw a second copy to use as the
+    // area overlay and use absolute positioning to put them on top of each
+    // other.
+    function appendSvg(div) {
+      if (null === self.restrictedCounts ||
+          !self.showingRestricted.is(':checked')) {
+        return d3.select(div.get(0)).append('svg')
+          .selectAll('div')
+          .data(self.binCounts)
+          .enter()
+          .append('rect')
+          .attr('y', function(d) { return height - d / yScale; })
+          .attr('height', function(d) { return d / yScale; })
+          .attr('x', function(d, i) {
+            return (width * (self.binEnds[i] - self.binEnds.min()) /
+                    graphWidth);
+          })
+          .attr('width', function(d, i) {
+            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
+              graphWidth;
+          });
+      } else {
+        var svg = d3.select(div.get(0)).append('svg').selectAll('div');
+        var dat = jQuery.map(self.binCounts, function(o, i) {
+          // Need double array because jQuery auto-flattens result.
+          if (!self.showingOriginal.is(':checked'))
+            return [[null, self.restrictedCounts[i]]];
+          else
+            return [[self.binCounts[i], self.restrictedCounts[i]]];
+        });
+        svg.data(dat)
+          .enter()
+          .append('rect')
+          .attr('y', function(d) { return height - d.max() / yScale; })
+          .attr('height', function(d) { return d.max() / yScale; })
+          .attr('x', function(d, i) {
+            return (width * (self.binEnds[i] - self.binEnds.min()) /
+                    graphWidth);
+          })
+          .attr('width', function(d, i) {
+            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
+              graphWidth;
+          })
+          .attr('class', function(d) {
+            if (d[0] == d[1])
+              return 'restricted';
+            else if (d[1] > d[0])
+              return 'restricted';
+            else
+              return '';
+          });
+        svg.data(dat)
+          .enter()
+          .append('rect')
+          .attr('y', function(d) { return height - d.min() / yScale; })
+          .attr('height', function(d) { return d.min() / yScale; })
+          .attr('x', function(d, i) {
+            return (width * (self.binEnds[i] - self.binEnds.min()) /
+                    graphWidth);
+          })
+          .attr('width', function(d, i) {
+            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
+              graphWidth;
+          })
+          .attr('class', function(d) {
+            if (d[0] == d[1])
+              return '';
+            else if (d[1] < d[0])
+              return 'restricted';
+            else
+              return '';
+          });
+        return svg;
+      }
+    }
+    appendSvg(normalChartDiv);
+    appendSvg(self.overlayDiv);
+    self.overlayDiv.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
+
+    // Draw the axis
+    var axisSvg = d3.select(normalChartDiv.get(0))
+                .append('svg')
+                .attr('class', 'axis');
+    var axisScale = d3.scale.linear()
+                            .domain([self.binEnds.min(), self.binEnds.max()])
+                            .range([0, width]);
+    var axis = d3.svg.axis().scale(axisScale).orient('bottom');
+    axisSvg.append('g').call(axis);
+
+    // Draw the normal curve and then hide it. We can show it by toggling
+    // its css.
+    if (self.options.showNormalButton || self.options.showNormal) {
+      var normalCurve =
+        d3.svg.line()
+          .x(function(d) {return d;})
+          .y(function(d) {
+            return height - (normalCurveY(d) / yScale);
+          });
+      var normSvg = d3.select(self.normalOverlayDiv.get(0)).append('svg');
+      if (null === self.restrictedCounts ||
+          self.showingOriginal.is(':checked') ||
+          !self.showingRestricted.is(':checked')) {
+        var normPath = normSvg.append('path');
+        if (null !== self.restrictedCounts)
+          normPath.attr('class', 'nrestricted');
+        normPath.data([d3.range(0, width)])
+          .attr('d', normalCurve);
+      }
+      if (null !== self.restrictedCounts &&
+          self.showingRestricted.is(':checked')) {
+        var restrictedCurve =
+          d3.svg.line()
+            .x(function(d) {return d;})
+            .y(function(d) {
+              return height - (restrictedNormalCurveY(d) / yScale);
+            });
+        normSvg.append('path')
+          .attr('class', 'restricted')
+          .data([d3.range(0, width)])
+          .attr('d', restrictedCurve);
+      }
+
+      if (self.showingNormal) {
+        self.showNormalButton.text('Hide Normal Curve');
+      } else {
+        self.showNormalButton.text('Show Normal Curve');
+        self.normalOverlayDiv.hide();
+      }
+    }
+
+    refreshSelectedAreaOverlay();
+  }
+
+  function loadExternalData(cb) {
+    self.dataSource = self.dataSelect.val();
+    jQuery.getJSON(self.dataSource, function(data) {
+      self.dataFields = data[0];
+      self.dataValues = data.slice(1);
+      self.variableSelect.children().remove();
+      jQuery.each(self.dataFields, function(i, field) {
+        if (field.indexOf('//') === 0)
+          return;
+
+        self.variableSelect.append(
+          jQuery('<option/>').attr('value', i).text(field)
+        );
+      });
+      self.variableSelect.val(2);  // TODO(jmeady): un-hardcode this.
+
+      refreshFromExternalData();
+      self.reloadChart();
+
+      if (cb)
+        cb();
+    });
+  }
+  function refreshFromExternalData() {
+    self.data = jQuery.map(self.dataValues, function(values) {
+      return parseFloat(values[self.variableSelect.val()]);
+    });
+    self.binEnds = histMakeBins(self.nBins, self.data);
+    self.binCounts = histMakeCounts(self.binEnds, self.data);
+    self.sd = sd(self.data);
+    self.mu = mean(self.data);
+
+    var info = 'n=' + self.data.length;
+    info += '&nbsp;&nbsp;&nbsp;';
+    info += 'Mean=' + self.mu.toFixed(3);
+    info += '&nbsp;&nbsp;&nbsp;';
+    info += 'SD=' + self.sd.toFixed(3);
+    self.additionalInfo.html(info);
+  }
+  function loadManualData() {
+    self.data = [self.options.ends.min(), self.options.ends.max()];
+    if (self.options.sd === null)
+      self.sd = sd(self.data);
+    else
+      self.sd = self.options.sd;
+    if (self.options.mu === null)
+      self.mu = mean(self.data);
+    else
+      self.mu = self.options.mu;
+    self.binEnds = self.options.ends;
+    self.binCounts = self.options.counts;
+    var total = self.binCounts.reduce(function(a, b) { return a + b; });
+    for (var i = 0; i < self.binCounts.length; i++) {
+      self.binCounts[i] /= total * (self.binEnds[i + 1] - self.binEnds[i]);
+    }
+    self.reloadChart();
+  }
+  function loadBinomialData() {
+    var p = self.options.p;
+    var n = self.options.n;
+    self.nBins = n + 1;
+    self.binCounts = [Math.pow((1 - p), n)];
+    self.binEnds = [-0.5];
+    for (var i = 1; i < self.nBins; i++) {
+      if (p < 1) {
+        self.binCounts.push(
+          self.binCounts[i - 1] * p * (n - i + 1) / ((1 - p) * i));
+      } else {
+        self.binCounts.push(0);
+      }
+      self.binEnds.push(i - 0.5);
+    }
+    self.binEnds.push(n + 0.5);
+    if (p == 1)
+      self.binCounts[self.nBins - 1] = 1;
+    self.sd = Math.sqrt(n * p * (1 - p));
+    self.mu = n * p;
+    self.reloadChart();
+    self.additionalInfo.html('n=' + n + '&nbsp;&nbsp;&nbsp;p=' + p);
+  }
+
+  // Initializes the chart controls. Adds the sliders, input fields, etc.
+  function initControls() {
+    // Create html for basic structure:
+    // top_controls -> stici_chart -> area_info -> botom_controls.
+    var o = jQuery('<div/>').addClass('stici').addClass('stici_histogram');
+    self.container.append(o);
+    var top = jQuery('<div/>').addClass('top_controls');
+    o.append(top);
+    self.chartDiv = jQuery('<div/>')
+                      .addClass('stici_chart')
+                      .addClass('chart_box');
+    o.append(self.chartDiv);
+    self.areaInfoDiv = jQuery('<div/>')
+                         .addClass('area_info');
+    o.append(self.areaInfoDiv);
+    var bottom = jQuery('<div/>').addClass('bottom_controls');
+    o.append(bottom);
+
+    var rowHeight = 30;  // px
+    var topOffset = 0;
+    var bottomOffset = 0;
+    function appendHeaderRow(o) {
+      top.append(o);
+      topOffset += rowHeight;
+    }
+    function appendFooterRow(o) {
+      bottom.append(o);
+      bottomOffset += rowHeight;
+    }
+    // TODO(jmeady): Move this into a more general file
+    function createPopBox() {
+      var parent = jQuery('<div/>').addClass('popbox');
+      var open = jQuery('<button/>').addClass('open').text('Click Here!');
+      var collapse = jQuery('<div/>').addClass('collapse');
+      collapse.html(
+        '<div class="box">' +
+        '  <div class="arrow"></div>' +
+        '  <div class="arrow-border"></div>' +
+        '  <div class="popbox-content">' +
+        '  </div>' +
+        '  <a href="#" class="close">close</a>' +
+        '</div>');
+      parent.append(open).append(collapse);
+
+      var content = collapse.find('.popbox-content');
+      content.text('Content Here :)');
+
+      parent.data('onPopBox', function() {
+        parent.find('.viewport').parent().width(content.width() + 20);
+      });
+
+      return {
+        parent: parent,
+        button: open,
+        content: content
+      };
+    }
+    function createSelectDataSourceControls() {
+      // TODO(jmeady): It should not be necessary to keep these controls as
+      // member variables.
+      self.urlInput = jQuery('<input type="text" />');
+      self.dataSelect = jQuery('<select/>').change(self.reloadData);
+      self.variableSelect = jQuery('<select/>').change(function() {
+        refreshFromExternalData();
+        updateVariableRestrictionControls();
+        self.reloadChart();
+      });
+
+      var dataSelectControls = jQuery('<div/>');
+      dataSelectControls.append('Data: ');
+      if (self.options.data.length > 1) {
+        dataSelectControls.append(self.dataSelect);
+      } else {
+        dataSelectControls.append(
+          self.options.data[0].replace(/^.*[\\\/]/, ''));
+        dataSelectControls.append('&nbsp;&nbsp;&nbsp;');
+      }
+      jQuery.each(self.options.data, function(i, dataUrl) {
+        self.dataSelect.append(jQuery('<option/>')
+                       .attr('value', dataUrl)
+                       .text(dataUrl.replace(/^.*[\\\/]/, '')));
+      });
+      dataSelectControls.append('Variable: ').append(self.variableSelect);
+
+      if (self.options.restrict) {
+        self.showingOriginal = jQuery('<input type="checkbox" />');
+        self.showingOriginal.prop('checked', true);
+        self.showingOriginal.change(function() {
+          redrawChart();
+        });
+        dataSelectControls.append(self.showingOriginal)
+                          .append('Show original data');
+        self.showingRestricted = jQuery('<input type="checkbox" />');
+        self.showingRestricted.prop('checked', true);
+        self.showingRestricted.change(function() {
+          redrawChart();
+        });
+        dataSelectControls.append(self.showingRestricted)
+                          .append('Show restricted data');
+      }
+
+      appendHeaderRow(dataSelectControls);
+    }
+    function createAreaSelectControls() {
+      var row = jQuery('<div/>');
+
+      // Area from input/slider.
+      self.areaFromInput = jQuery('<input type="text" />').change(function() {
+        self.areaFromSlider.slider('value', self.areaFromInput.val());
+      });
+      var updateAreaFromInput = function() {
+        self.areaFromInput.val(self.areaFromSlider.slider('value'));
+        refreshSelectedAreaOverlay();
+      };
+      self.areaFromSlider = jQuery('<span/>').addClass('slider').slider({
+        change: updateAreaFromInput,
+        slide: updateAreaFromInput,
+        step: 0.001
+      });
+      row.append('Area from: ').append(self.areaFromInput)
+                                .append(self.areaFromSlider);
+
+      // Area to input/slider.
+      self.areaToInput = jQuery('<input type="text" />').change(function() {
+        self.areaToSlider.slider('value', self.areaToInput.val());
+      });
+      var updateAreaToInput = function() {
+        self.areaToInput.val(self.areaToSlider.slider('value'));
+        refreshSelectedAreaOverlay();
+      };
+      self.areaToSlider = jQuery('<span/>').addClass('slider').slider({
+        change: updateAreaToInput,
+        slide: updateAreaToInput,
+        step: 0.001
+      });
+      row.append(' to: ').append(self.areaToInput).append(self.areaToSlider);
+
+      if (self.options.changeNumBins) {
+        var binsInput = jQuery('<input type="text" />')
+                           .val(self.options.bins);
+        binsInput.change(function() {
+          self.nBins = parseInt(binsInput.val(), 10);
+          self.binEnds = histMakeBins(self.nBins, self.data);
+          self.binCounts = histMakeCounts(self.binEnds, self.data);
+          if (self.options.restrict)
+            updateRestrictedData();
+          redrawChart();
+        });
+        row.append('Bins: ').append(binsInput);
+      } else {
+        row.append('Bins: ' + self.options.bins);
+      }
+      appendFooterRow(row);
+    }
+    function createRestrictionControls() {
+      var row = jQuery('<div/>');
+      self.restrictedVariable = self.variableSelect.clone();
+      self.restrictedVariable.change(updateRestrictedData);
+      row.append('Restrict to ').append(self.restrictedVariable);
+      self.restrictLowerEnable = jQuery('<input type="checkbox" />');
+      row.append(self.restrictLowerEnable).append('>= ');
+      self.restrictLower = jQuery('<input type="text" />');
+      row.append(self.restrictLower);
+      self.restrictUpperEnable = jQuery('<input type="checkbox" />');
+      row.append(self.restrictUpperEnable).append('and <= ');
+      self.restrictUpper = jQuery('<input type="text" />');
+      row.append(self.restrictUpper);
+
+      jQuery.each([self.restrictLowerEnable,
+                   self.restrictLower,
+                   self.restrictUpperEnable,
+                   self.restrictUpper],
+                   function(i, o) {
+        o.change(updateRestrictedData);
+      });
+
+      var clearAll = jQuery('<button/>').text('Clear Restrictions');
+      clearAll.click(function() {
+        self.restrictUpperEnable.prop('checked', false);
+        self.restrictUpper.val(self.binEnds.max());
+        self.restrictLowerEnable.prop('checked', false);
+        self.restrictLower.val(self.binEnds.min());
+        updateRestrictedData();
+      });
+      row.append(' ').append(clearAll);
+      appendFooterRow(row);
+    }
+    function createExtraInfoControls() {
+      var row = jQuery('<div/>');
+
+      // Extra info buttons
+      var lastListDataHeader = null;
+      var listDataButton = createPopBox();
+      listDataButton.button.text('List Data');
+      listDataButton.button.click(function(e) {
+        e.preventDefault();
+        // Thank you Ken
+        var dataFields  = self.dataFields,
+            dataValues  = self.dataValues,
+            numDataFields = dataFields.length,
+            tempDataRow,
+            tempDataCell,
+            tempConcatData,
+            html;
+
+        html = '<div class="table-container">'+
+            '<div class="table-header">' +
+              '<table class="data-fields">' +
+                '<thead>' +
+                  '<tr>';
+        for (var i = 0; i < dataFields.length; i++) {
+          html += '<td>' + dataFields[i] + '</td>';
+        }
+        html += '</tr>' +
+            '</thead>' +
+          '</table>' +
+        '</div>';
+
+        html += '<div class="table-body">' +
+          '<table class="data-values">' +
+            '<tbody>';
+        for (var j = 0; j < dataValues.length; j++) {
+          tempDataRow = dataValues[j];
+          if (tempDataRow.length > dataFields.length) {
+            // concat last elements
+            tempConcatData = tempDataRow.slice(dataFields.length - 1)
+                                        .join(' ')
+                                        .replace(/[\/]/g, '');
+            tempDataRow = tempDataRow.slice(0, dataFields.length - 1);
+            tempDataRow.push(tempConcatData);
+          }
+          html += '<tr data-index="' + j + '">';
+          for (var k = 0; k < tempDataRow.length; k++) {
+            tempDataCell = tempDataRow[k];
+            html += '<td>' + tempDataCell + '</td>';
+          }
+          html += '</tr>';
+        }
+        html += '</tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>';
+        listDataButton.content.html(html);
+      });
+      if (self.options.listData) {
+        row.append(listDataButton.parent);
+      }
+
+      var statsButton = createPopBox();
+      statsButton.button.text('Univariate Stats');
+      statsButton.button.click(function(e) {
+        e.preventDefault();
+
+        // Thank you Ken
+        var html = '<div class="univariate-stats-container">';
+        $.each(self.dataFields, function(index) {
+          if (self.dataFields[index].indexOf('//') === 0)
+            return;
+          html += '<div class="univariate-stat-wrapper">' + 
+                    '<h3>' + self.dataFields[index] + '</h3>';
+          var data = $.map(self.dataValues, function(values) {
+            return parseFloat(values[index]);
+          });
+          html += '<ul class="stat-list">' +
+            '<li class="stat-item">Cases: ' +
+              data.length + '</li>' +
+            '<li class="stat-item">Mean: ' +
+              mean(data).toFixed(2) + '</li>' +
+            '<li class="stat-item">SD: ' +
+              sd(data).toFixed(2) + '</li>' +
+            '<li class="stat-item">Min: ' +
+              data.min().toFixed(2) + '</li>' +
+            '<li class="stat-item">LQ: ' +
+              percentile(data, 25).toFixed(2) + '</li>' +
+            '<li class="stat-item">Median: ' +
+              percentile(data, 50).toFixed(2) + '</li>' +
+            '<li class="stat-item">UQ: ' +
+              percentile(data, 75).toFixed(2) + '</li>' +
+            '<li class="stat-item">Max: ' +
+              data.max().toFixed(2) + '</li>' +
+            '</ul>';
+          html += '</div>';
+        });
+        html += '</div>';
+        statsButton.content.html(html);
+      });
+      if (self.options.showUnivariateStats)
+        row.append(statsButton.parent);
+
+      self.showNormalButton = jQuery('<button/>')
+                           .addClass('open');
+      if (self.showingNormal)
+        self.showNormalButton.text('Hide Normal Curve');
+      else
+        self.showNormalButton.text('Show Normal Curve');
+      self.showNormalButton.click(function(e) {
+        e.preventDefault();
+        self.normalOverlayDiv.toggle();
+        if (!self.showingNormal)
+          self.showNormalButton
+              .text(self.showNormalButton.text().replace('Show', 'Hide'));
+        else
+          self.showNormalButton
+              .text(self.showNormalButton.text().replace('Hide', 'Show'));
+        self.showingNormal = !self.showingNormal;
+        refreshSelectedAreaOverlay();
+      });
+      if (self.options.showNormalButton)
+        row.append(self.showNormalButton);
+
+      if (row.children().length > 0)
+        appendFooterRow(row);
+    }
+
+    // Top controls only show if the file/variable can be changed.
+    if (self.dataSource !== null)
+      createSelectDataSourceControls();
+    createAreaSelectControls();
+    if (self.options.restrict)
+      createRestrictionControls();
+    createExtraInfoControls();
+    var additionalInfoDiv = jQuery('<div/>').addClass('additional_info');
+    self.additionalInfo = jQuery('<p/>');
+    additionalInfoDiv.append(self.additionalInfo);
+    appendFooterRow(additionalInfoDiv);
+
+    jQuery('.popbox').popbox();
+
+    // Set vertical positions based upon available controls.
+    self.areaInfoDiv.css('bottom', bottomOffset + 'px');
+    top.css('height', topOffset + 'px');
+    bottom.css('height', bottomOffset + 'px');
+    self.chartDiv.css('margin-bottom', (bottomOffset + 15) + 'px');
+    self.chartDiv.css('margin-top', (topOffset) + 'px');
+  }
+  function updateVariableRestrictionControls() {
+    if (!self.options.restrict)
+      return;
+    self.restrictedVariable.html(self.variableSelect.html());
+    self.restrictedVariable.val(self.variableSelect.val());
+    self.restrictUpper.val(self.binEnds.max());
+    self.restrictLower.val(self.binEnds.min());
+  }
+  function updateRestrictedData() {
+    self.restrictedData = jQuery.map(self.dataValues, function(values) {
+      return parseFloat(values[self.restrictedVariable.val()]);
+    });
+    if (self.restrictUpperEnable.is(':checked')) {
+      self.restrictedData = jQuery.grep(self.restrictedData, function(o) {
+        if (o <= self.restrictUpper.val())
+          return true;
+        else
+          return false;
+      });
+    }
+    if (self.restrictLowerEnable.is(':checked')) {
+      self.restrictedData = jQuery.grep(self.restrictedData, function(o) {
+        if (o >= self.restrictLower.val())
+          return true;
+        else
+          return false;
+      });
+    }
+    if (!self.restrictUpperEnable.is(':checked') &&
+        !self.restrictLowerEnable.is(':checked')) {
+      self.restrictedCounts = null;
+    } else {
+      self.restrictedCounts = histMakeCounts(self.binEnds, self.restrictedData);
+      if (isNaN(self.restrictedCounts[0]))
+        self.restrictedCounts = null;
+      self.restrictedMu = mean(self.restrictedData);
+      self.restrictedSd = sd(self.restrictedData);
+      var info = 'n=' + self.data.length;
+      info += '&nbsp;&nbsp;&nbsp;';
+      info += 'Mean=' + self.mu.toFixed(3);
+      info += '&nbsp;&nbsp;&nbsp;';
+      info += 'SD=' + self.sd.toFixed(3);
+      info += '&nbsp;&nbsp;&nbsp;';
+      info += 'Subset: n=' + self.restrictedData.length;
+      info += '&nbsp;&nbsp;&nbsp;';
+      info += 'Mean=' + self.restrictedMu.toFixed(3);
+      info += '&nbsp;&nbsp;&nbsp;';
+      info += 'SD=' + self.restrictedSd.toFixed(3);
+      self.additionalInfo.html(info);
+    }
+    redrawChart();
+  }
+  // Helper function that is called whenever any of the area overlay
+  // sliders or inputs are changed.
+  function refreshSelectedAreaOverlay() {
+    var lower = parseFloat(self.areaFromSlider.slider('value'));
+    var upper = parseFloat(self.areaToSlider.slider('value'));
+    var scale = self.chartDiv.width() /
+      (self.binEnds.max() - self.binEnds.min());
+    var left = (lower - self.binEnds.min()) * scale;
+    var right = (upper - self.binEnds.min()) * scale;
+    self.overlayDiv.css('clip',
+                        'rect(0px,' +
+                              right + 'px,' +
+                              self.chartDiv.height() + 'px,' +
+                              left + 'px)');
+    var p = histHiLitArea(lower, upper, self.binEnds, self.binCounts);
+    p *= 100;
+    var text = 'Selected area: ' + p.fix(2) + '%';
+    if (self.showingNormal) {
+      var m = self.mu;
+      var s = self.sd;
+      p = Math.max(
+        0,
+        (normCdf((upper - m) / s) - normCdf((lower - m) / s)) * 100
+      );
+      text += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+      text += 'Normal approx: ' + p.fix(2) + '%';
+    }
+
+    if (self.restrictedCounts !== null) {
+      text += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+      p = histHiLitArea(lower, upper, self.binEnds, self.restrictedCounts);
+      p *= 100;
+      text += 'Subset data: ' + p.fix(2) + '%';
+      if (self.showingNormal) {
+        rm = self.restrictedMu;
+        rs = self.restrictedSd;
+        p = Math.max(
+          0,
+          (normCdf((upper - rm) / rs) - normCdf((lower - rm) / rs)) * 100
+        );
+        text += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+        text += 'Normal approx: ' + p.fix(2) + '%';
+      }
+    }
+
+    self.areaInfoDiv.html(text);
+  }
+
+  initControls();
+  this.reloadData();
+}
+
+// Javascript rewrite of
+// http://statistics.berkeley.edu/~stark/Java/Html/ScatterPlot.htm
+//
+// Author: Ken Yu <kenniyu@gmail.com>
+//
+// container_id: the CSS ID of the container to create the scatterplot (and
+//               controls) in.
+// params: A javascript object with various parameters to customize the chart.
+//  // title
+//  - title: null
+//
+//  // Whether or not to show the 'Graph of Ave' button.
+//  - graphAveButton: true
+//
+//  // Number of points in Graph of Ave.
+//  - graphOfAvePoints: 9
+//
+//  // Boolean, true if user is allowed to add points to the chart.
+//  - addPoints: true
+//
+//  // Whether or not to show the 'Regression Line' button.
+//  - regressButton: true
+//
+//  // Whether or not to show the 'Plot Residuals' button.
+//  - residualsButton: true
+//
+//  // Whether or not to show the 'SDs' button.
+//  - sdButton: true
+//
+//  // Whether or not to show the 'SD Line' button.
+//  - sdLineButton: true
+//
+//  // Whether or not to show the 'R=' info.
+//  - showR: true
+//
+//  // Whether or not to show the 'R=' and 'N=' slider bars.
+//  - showRBar: true
+//
+//  // Whether or not to show the SD Lines by default.
+//  - showSDs: false
+//
+//  // Whether or not to show the SD Line by default.
+//  - showSdLine: false
+//
+//  // Whether or not to show the Graph of Ave by default.
+//  - showGraphOfAve: false
+//
+//  // Whether or not to show the Regression Line by default.
+//  - showRegress: false
+//
+//  // Whether or not to show the residuals by default.
+//  - showResiduals: false
+//
+//  // There are three different ways to supply input to the scatterplot:
+//  // 1) External JSON-encoded data file.
+//  // 2) Manual specification of data x and y values.
+//  // 3) Normal bivariate with specified realized correlation coefficient.
+//  //
+//  // These input methods are all mutually exclusive - if the parameters for a
+//  // particular input method are set, then the parameters for the other input
+//  // methods should not be set.
+//
+//  // 1) External JSON-encoded data file
+//
+//  // Array of URLs (as strings) of json-encoded datasets
+//  - files: null
+//
+//  // Variable name to display on the X-axis by default.
+//  - Xinit: null
+//
+//  // Variable name to display on the Y-axis by default.
+//  - Yinit: null
+//
+//  // 2) Manual specification of data x and y values.
+//
+//  // Data points. x and y should be arrays of the same length.
+//  - x: null
+//  - y: null
+//
+//  // 3) Normal bivariate with specified realized correlation coefficient.
+//
+//  // Correlation coefficient of generated data
+//  - r: null
+//
+//  // Number of generated data points
+//  - n: null
+function Stici_Scatterplot(container_id, params) {
+  var self = this;
+
+  if (!params instanceof Object) {
+    console.error('Stici_ScatterPlot params should be an object');
+    return;
+  }
+
+  // Configuration option defaults.
+  this.options = {
+    title: null,
+    graphAveButton: true,
+    graphOfAvePoints: 9,
+    addPoints: true,
+    regressButton: true,
+    residualsButton: true,
+    sdButton: true,
+    sdLineButton: true,
+    showR: true,
+    showRBar: true,
+    showSDs: false,
+    showSdLine: false,
+    showGraphOfAve: false,
+    showRegress: false,
+    showResiduals: false,
+    files: null,
+    Xinit: null,
+    Yinit: null,
+    r: null,
+    n: null,
+    x: null,
+    y: null
+  };
+
+  // For debugging: Warn of user params that are unknown.
+  jQuery.each(params, function(key) {
+    if (typeof(self.options[key]) == 'undefined')
+      console.warn('Stici_Scatterplot: Unknown key \'' + key + '\'');
+  });
+
+  // Override options with anything specified by the user.
+  jQuery.extend(this.options, params);
+
+  if (!this.options.showRBar || !this.options.showR) {
+    this.options.showRBar = false;
+    this.options.showR = false;
+  }
+
+  // jQuery object containing the entire chart.
+  this.container = $('#' + container_id);
+
+  // Check to make sure we know where the data is coming from before we do
+  // anything else.
+  if (!dataIsGenerated() && !dataIsFromExternalFile() && !dataIsManual()) {
+    console.error('Unknown scatterplot data source.');
+    self.container.html('Unable to load scatterplot: unknown data source.');
+    return;
+  }
+
+  // Labels for the data.
+  this.dataFields = null;
+
+  // The data itself.
+  this.dataValues = null;
+
+  // The URL we got the JSON-encoded data from.
+  this.dataSource = null;
+
+  // Used so that some options are only triggered when the chart is initially
+  // loaded (e.g. showSDs) - the user can change them afterwards and the chart
+  // can reload without resetting the user preferences.
+  this.inited = false;
+
+  // Various handles to important jQuery objects.
+  this.urlInput = null;
+  this.dataSelect = null;
+  this.xVariableSelect = null;
+  this.yVariableSelect = null;
+  this.currentData = null;
+  this.xScale = null;
+  this.yScale = null;
+  this.chartWidth   = this.container.width() - 20;
+  this.chartHeight  = this.container.height() - 100;
+  this.chartDiv = null;
+  this.r = null;
+  this.n = null;
+  this.rInput = null;
+  // TODO(jmeady): Put this in the css file.
+  this.chartMargins    = { 'top': '10', 'right': '10', 'bottom': '25', 'left': '40' };
+  this.bottomControls = {
+    'sds': false,
+    'sd-line': false,
+    'avg-graph': false,
+    'reg-line': false,
+    'res-plot': false,
+    'use-points': false,
+    'plot-mean': true,
+    'r-hat': true
+  };
+
+  // Select which function to use for reloading the data.
+  this.reloadData = null;
+  if (dataIsFromExternalFile()) {
+    if (!params.files instanceof Array) {
+      this.dataSource = null;
+      this.options.files = [];
+    } else {
+      this.dataSource = this.options.files[0];
+    }
+
+    this.reloadData = loadExternalData;
+  } else if (dataIsGenerated()) {
+    this.n = self.options.n;
+    this.r = self.options.r;
+    this.reloadData = loadGeneratedData;
+  } else if (dataIsManual()) {
+    if (self.options.x.length != self.options.y.length) {
+      console.error('Data has been manually specified, but x and y options ' +
+                    'have different numbers of data points.');
+      self.container.html('Invalid data supplied.');
+      return;
+    }
+    this.reloadData = loadManualData;
+  }
+
+  // Reloads chart data from this.dataSource
+  // upon new data set selection
+  function loadExternalData() {
+    var $bottomControls = self.container.find('.bottom_controls'),
+        $popboxControls = self.container.find('.popbox-controls');
+
+    self.options.files = [];
+    self.dataFields = [];
+    self.dataValues = [];
+    self.dataSource = self.dataSelect.val();
+
+    // TODO unhardcode this
+    var Xinit = 3;
+    var Yinit = 2;
+
+    jQuery.getJSON(self.dataSource, function(data) {
+      self.dataFields = data[0];
+      self.dataValues = data.slice(1);
+
+
+      // remove all data chilren
+      self.xVariableSelect.empty();
+      self.yVariableSelect.empty();
+
+      // append all options for x and y variables
+      $.each(self.dataFields, function(i, field) {
+        // don't have option to graph ordinal or comments...
+        if (field.indexOf('//') > -1) {
+          return true;
+        }
+        if (!self.inited &&
+            null !== self.options.Xinit &&
+            field == self.options.Xinit)
+        Xinit = i;
+        if (!self.inited &&
+            null !== self.options.Yinit &&
+            field == self.options.Yinit)
+        Yinit = i;
+        self.xVariableSelect.append(
+          $('<option/>').attr('value', i).text(field)
+        );
+        self.yVariableSelect.append(
+          $('<option/>').attr('value', i).text(field)
+        );
+      });
+
+      self.xVariableSelect.val(Xinit);
+      self.yVariableSelect.val(Yinit);
+
+      // create popbox controls
+      self.container.find('.popbox-controls').empty();
+      self.createPopbox('list-data');
+      self.createPopbox('univar-stats');
+      self.container.find('.popbox').popbox({'toggler': ['list-data', 'univar-stats']});
+      self.container.find('.popbox-content table').css('width', self.dataFields.length * 100 + 'px');
+      self.container.find('.popbox').on('mouseover mouseout click', function(e) {
+        handlePopboxMouseEvents(e);
+      });
+
+      // reload the chart after new data set
+      self.prepareData();
+      self.reloadChart();
+
+    });
+  }
+
+  // Generates and loads data according to the specified r/n options.
+  function loadGeneratedData() {
+    var raw = cNormPoints(self.n, self.r);
+    var xVals = raw[0];
+    var yVals = raw[1];
+    if (self.n == 1) {
+      xVals = [5.5];
+      yVals = [5.5];
+    }
+    // get array of x and y points
+    self.currentData = $.map(xVals, function(xVal, index) {
+      return { 'x': xVals[index],
+               'y': yVals[index],
+               'index': index,
+               'added': false,
+               'selected': false
+      };
+    });
+    self.reloadChart();
+  }
+
+  // Loads data that has been manually specified in the chart x and y options.
+  function loadManualData() {
+    self.currentData = $.map(self.options.x, function(xVal, index) {
+      return { 'x': self.options.x[index],
+               'y': self.options.y[index],
+               'index': index,
+               'added': false,
+               'selected': false
+      };
+    });
+    self.reloadChart();
+  }
+
+  this.prepareData = function() {
+    // get array of x and y points
+    self.currentData = $.map(self.dataValues, function(values, index) {
+      return { 'x': parseFloat(values[self.xVariableSelect.val()]),
+               'y': parseFloat(values[self.yVariableSelect.val()]),
+               'index': index,
+               'added': false,
+               'selected': self.container.find('.popbox.list-data tr[data-index="' + index + '"]').hasClass('selected') };
+    });
+  };
+
+  this.setScale = function(data) {
+    // x scale. range from 0 to width
+    var chartWidth    = self.chartWidth,
+        chartMargins  = self.chartMargins,
+        xMin = d3.min(data, function(d) { return d.x; }),
+        xMax = d3.max(data, function(d) { return d.x; }),
+        xScale,
+        yMin = d3.min(data, function(d) { return d.y; }),
+        yMax = d3.max(data, function(d) { return d.y; }),
+        yScale;
+    if (xMin == xMax) {
+      xMin -= 4.5;
+      xMax += 4.5;
+    }
+    if (yMin == yMax) {
+      yMin -= 4.5;
+      yMax += 4.5;
+    }
+
+    xScale = d3.scale.linear()
+                     .domain([xMin, xMax])
+                     .range([0, chartWidth - chartMargins.left - chartMargins.right])
+                     .nice();
+
+    if (yMax < 0.001 && yMin > -0.001) {
+      yMax = 1;
+      yMin = -1;
+    }
+
+    yScale = d3.scale.linear()
+              .domain([yMin, yMax])
+              .range([self.chartHeight - self.chartMargins.top - self.chartMargins.bottom, 0])
+              .nice();
+
+    self.xScale = xScale;
+    self.yScale = yScale;
+  };
+
+  this.initCanvas = function() {
+    // empty canvas
+    self.chartDiv.empty();
+
+    var chartWidth  = self.chartWidth,
+        chartHeight = self.chartHeight,
+        svg         = d3.select(self.chartDiv.get(0))
+                        .append('svg')
+                        .attr('width', self.chartWidth)
+                        .attr('height', self.chartHeight);
+  };
+
+  this.drawDataPlot = function() {
+    var data          = self.currentData;
+
+    // initialize blank canvas
+    self.initCanvas();
+
+    // set scale
+    self.setScale(data);
+
+    // plot axes
+    self.plotAxes('data');
+
+    // add points
+    self.plotPoints(data, 'data');
+
+    // draw mouse rectangle
+    self.drawMouseRect();
+
+    // update r-hat
+    self.updateRHat();
+  };
+
+  this.plotAxes = function(plotType) {
+    // function generating x axis, passed to another function later
+    var xScale        = self.xScale,
+        yScale        = self.yScale,
+        chartMargins  = self.chartMargins,
+        chartWidth    = self.chartWidth,
+        chartHeight   = self.chartHeight,
+        xAxis         = d3.svg.axis()
+                          .scale(xScale)
+                          .orient('bottom'),
+        yAxis         = d3.svg.axis()
+                          .scale(yScale)
+                          .orient('left'),
+        svg           = d3.select(self.chartDiv.get(0)).select('svg');
+
+    // add axes
+    if (plotType === 'data') {
+      svg.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', 'translate(' + chartMargins.left + ', ' + (chartHeight - chartMargins.bottom) + ')')
+        .call(xAxis);
+    } else {
+      svg.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', 'translate(' + chartMargins.left + ', ' + (yScale(0) + 1*chartMargins.top) + ')')
+        .call(xAxis);
+    }
+
+    svg.append('g')
+      .attr('class', 'y axis')
+      .attr('transform', 'translate(' + chartMargins.left + ', ' + chartMargins.top + ')')
+      .call(yAxis);
+    svg.select('g.x.axis')
+      .append('line')
+      .attr('class', 'line x-axis')
+      .attr('x1', 0)
+      .attr('x2', chartWidth - chartMargins.left)
+      .attr('y1', 0)
+      .attr('y2', 0);
+    svg.select('g.y.axis')
+      .append('line')
+      .attr('class', 'line y-axis')
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', chartHeight - chartMargins.bottom - chartMargins.top);
+  };
+
+  this.reloadChart = function() {
+    if (self.bottomControls['res-plot'] === true) {
+      self.toggleResPlot(true);
+    } else {
+      self.drawDataPlot();
+      self.plotSelectedOptions(['res-plot']);
+    }
+
+    if (!self.inited) {
+      if (self.options.showSdLine)
+        simulateBtnPress('sd-line');
+      if (self.options.showSDs)
+        simulateBtnPress('sds');
+      if (self.options.showGraphOfAve)
+        simulateBtnPress('graph-of-ave');
+      if (self.options.showRegress)
+        simulateBtnPress('reg-line');
+      if (self.options.showResiduals)
+        simulateBtnPress('res-plot');
+    }
+    self.inited = true;
+  };
+
+  this.updateRHat = function() {
+    var data  = self.filterData(),
+        xData = $.map(data, function(d) { return d.x; }),
+        yData = $.map(data, function(d) { return d.y; }),
+        cc    = corr(xData, yData).toFixed(2);
+
+    if (dataIsGenerated())
+      self.rInput.val(cc);
+    self.container.find('.r-hat').text('r: ' + cc);
+  };
+
+  /***
+   * plotSelectedOptions: called when chart redrawn
+   * params: Array discardOptions - options to ignore plotting
+   ***/
+  this.plotSelectedOptions = function(discardOptions) {
+    var tempSelected;
+    discardOptions = (discardOptions || []);
+    for (var option in self.bottomControls) {
+      if (discardOptions.indexOf(option) > -1) {
+        continue;
+      }
+      tempSelected = self.bottomControls[option];
+      self.toggleOption(option, tempSelected);
+    }
+  };
+
+  /***
+   * toggleOption:  toggles an option in bottom controls
+   * params:      String option - the option to plot, 
+   *              Boolean show
+   ***/
+  this.toggleOption = function(option, show) {
+    switch (option) {
+      case 'sds':
+        self.toggleSds(show);
+        break;
+      case 'sd-line':
+        self.toggleSdLine(show);
+        break;
+      case 'graph-of-ave':
+        self.toggleGraphOfAve(show);
+        break;
+      case 'reg-line':
+        self.toggleRegLine(show);
+        break;
+      case 'res-plot':
+        self.toggleResPlot(show);
+        break;
+      case 'use-points':
+        self.toggleUsePoints();
+        break;
+      case 'clear-points':
+        self.toggleClearPoints();
+        break;
+      case 'plot-mean':
+        self.plotMean();
+        break;
+      case 'r-hat':
+        self.updateRHat();
+        break;
+      default:
+        break;
+    }
+  };
+
+  /***
+   * createListDataHtml - creates html for list data button
+   ***/
+  this.createPopbox = function(popboxClass) {
+    var content,
+        btnTitle,
+        btnId,
+        popboxHtml;
+    if (popboxClass === 'list-data') {
+      btnTitle  = 'List Data';
+      content   = self.createListDataHtml();
+      btnId     = 'list-data';
+    } else if (popboxClass === 'univar-stats') {
+      btnTitle  = 'Univariate Stats';
+      content   = self.createUnivarStatsHtml();
+      btnId     = 'univar-stats';
+    }
+    popboxHtml = '' +
+      '<div class="popbox ' + popboxClass + '">' +
+        '<button class="open" id="' + btnId + '">' + btnTitle + '</button>' +
+        '<div class="collapse">' +
+          '<div class="box">' +
+            '<div class="arrow"></div>' +
+            '<div class="arrow-border"></div>' +
+            '<div class="popbox-content">' + content + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    self.container.find('.bottom_controls .popbox-controls').append(popboxHtml);
+  };
+
+  this.createUnivarStatsHtml = function() {
+    var html = '<div class="univariate-stats-container">';
+    $.each(self.dataFields, function(index) {
+      if (self.dataFields[index].indexOf('//') === 0)
+        return;
+      html += '<div class="univariate-stat-wrapper">' + 
+                '<h3>' + self.dataFields[index] + '</h3>';
+      var data = $.map(self.dataValues, function(values) {
+        return parseFloat(values[index]);
+      });
+      html += '<ul class="stat-list">' +
+        '<li class="stat-item">Cases: ' + data.length + '</li>' +
+        '<li class="stat-item">Mean: ' + mean(data).toFixed(2) + '</li>' +
+        '<li class="stat-item">SD: ' + sd(data).toFixed(2) + '</li>' +
+        '<li class="stat-item">Min: ' + data.min().toFixed(2) + '</li>' +
+        '<li class="stat-item">LQ: ' + percentile(data, 25).toFixed(2) + '</li>' +
+        '<li class="stat-item">Median: ' + percentile(data, 50).toFixed(2) + '</li>' +
+        '<li class="stat-item">UQ: ' + percentile(data, 75).toFixed(2) + '</li>' +
+        '<li class="stat-item">Max: ' + data.max().toFixed(2) + '</li>' +
+        '</ul>';
+      html += '</div>';
+    });
+    html += '</div>';
+    return html;
+  };
+
+  /***
+   * createListDataHtml - creates html for list data button
+   ***/
+  this.createListDataHtml = function() {
+    var dataFields  = self.dataFields,
+        dataValues  = self.dataValues,
+        numDataFields = dataFields.length,
+        tempDataRow,
+        tempDataCell,
+        tempConcatData,
+        html;
+
+    html = '<div class="table-container">'+
+        '<div class="table-header">' +
+          '<table class="data-fields">' +
+            '<thead>' +
+              '<tr>';
+    for (var i = 0; i < dataFields.length; i++) {
+      html += '<td>' + dataFields[i] + '</td>';
+    }
+    html += '</tr>' +
+        '</thead>' +
+      '</table>' +
+    '</div>';
+
+    html += '<div class="table-body">' +
+      '<table class="data-values">' +
+        '<tbody>';
+    for (var j = 0; j < dataValues.length; j++) {
+      tempDataRow = dataValues[j];
+      if (tempDataRow.length > dataFields.length) {
+        // concat last elements
+        tempConcatData = tempDataRow.slice(dataFields.length - 1).join(' ').replace(/[\/]/g, '');
+        tempDataRow = tempDataRow.slice(0, dataFields.length - 1);
+        tempDataRow.push(tempConcatData);
+      }
+      html += '<tr data-index="' + j + '">';
+      for (var k = 0; k < tempDataRow.length; k++) {
+        tempDataCell = tempDataRow[k];
+        html += '<td>' + tempDataCell + '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>';
+    return html;
+  };
+
+
+  /***
+   * toggleClearPoints: toggles when clear added points is clicked
+   ***/
+  this.toggleClearPoints = function() {
+    self.currentData = $.grep( self.currentData, function(data, index) {
+      return data.added === false;
+    });
+    d3.select(self.chartDiv.get(0)).selectAll('.data-point[data-added="true"]').remove();
+    self.plotSelectedOptions(['res-plot', 'use-points']);
+  };
+
+  /***
+   * toggleUsePoints: toggles when use added points is clicked
+   ***/
+  this.toggleUsePoints = function() {
+    self.plotSelectedOptions(['res-plot', 'use-points']);
+    if (self.bottomControls['res-plot']) {
+      self.toggleResPlot(true);
+    }
+  };
+
+  /***
+   * toggleResPlot: toggles residual plot
+   * params:  boolean show - true or false
+   ***/
+  this.toggleResPlot = function(show) {
+    var filteredData = self.filterData(),
+        xData = $.map(filteredData, function(d) { return d.x; }),
+        yData = $.map(filteredData, function(d) { return d.y; }),
+        xMean = mean(xData),
+        yMean = mean(yData),
+        xSd   = sd(xData),
+        ySd   = sd(yData),
+        cc    = corr(xData, yData),
+        slope = cc * ySd / xSd,
+        expectedY,
+        tempData,
+        tempRes,
+        tempAdded,
+        numPoints = self.currentData.length;
+
+    if (show) {
+      // initialize blank canvas
+      self.initCanvas();
+
+      // empty residual data, and recalculate for each point
+      self.residualData = [];
+      for (var i = 0; i < numPoints; i++) {
+        tempData    = self.currentData[i];
+        expectedY   = yMean - slope * (xMean - tempData.x);
+        tempRes     = tempData.y - expectedY;
+        self.residualData.push({  'x': tempData.x,
+                                  'y': tempRes,
+                                  'added': tempData.added,
+                                  'index': tempData.index });
+      }
+
+      // recalculate scales
+      self.setScale(self.residualData);
+
+      // plot axes
+      self.plotAxes('residual');
+
+      // add points
+      self.plotPoints(self.residualData, 'residual');
+
+      // draw rectangle to detect mouse position
+      self.drawMouseRect();
+
+      // plot selected options but ignore residual plot and use points
+      self.plotSelectedOptions(['res-plot', 'use-points']);
+    } else {
+      // draw data plot, and plot selected options, but ignore residual plot
+      self.drawDataPlot();
+      self.plotSelectedOptions(['res-plot']);
+    }
+  };
+
+  /***
+   * plotPoints: plots data points
+   * params:  Array data - array of data points
+   *          String plotType - identifies intent of chart to plot (residual or data)
+   ***/
+  this.plotPoints = function(data, plotType) {
+    var chartMargins  = self.chartMargins,
+        xScale        = self.xScale,
+        yScale        = self.yScale,
+        plotClass     = plotType === 'data' ? 'plot-data' : 'plot-residual',
+        pointPlot     = d3.select(self.chartDiv.get(0)).select('svg').append('g')
+                      .attr('class', plotClass + ' plot')
+                      .attr('transform', 'translate(' + chartMargins.left + ',' + chartMargins.top + ')'),
+        selectedDataPoints;
+
+    pointPlot.selectAll('circle')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('class', function(d) {
+          var className   = 'data-point',
+              selectedMod = d.selected ? 'selected' : '',
+              addedMod    = d.added ? 'added' : '';
+          return className + ' ' + selectedMod + ' ' + addedMod;
+        })
+        .attr('cx', function(d) { return xScale(d.x); })
+        .attr('cy', function(d) { return yScale(d.y); })
+        .attr('stroke', '#333')
+        .attr('stroke-width', '1')
+        .attr('data-index', function(d) { return d.index; })
+        .attr('data-added', function(d) { return d.added; })
+        .attr('data-x', function(d) { return d.x; })
+        .attr('data-y', function(d) { return d.y; })
+        .attr('r', function(d) {
+          return (d.selected ? 3.5 : 2);
+        })
+        .attr('fill', function(d) {
+          return 'rgba(0, 0, 255, 1)';
+        });
+
+    d3.select(self.chartDiv.get(0)).selectAll('.data-point')
+      .sort(function(d) {
+        if (d && d.selected === true) {
+          return 1;
+        } else {
+          return -1;
+        }
+      });
+  };
+
+  this.drawMouseRect = function() {
+    var chartMargins  = self.chartMargins,
+        chartWidth    = self.chartWidth,
+        chartHeight   = self.chartHeight,
+        xScale        = self.xScale,
+        yScale        = self.yScale,
+        plotContainer = d3.select(self.chartDiv.get(0)).select('.plot');
+
+    plotContainer.append('rect')
+      .attr('class', 'mouse-event-handler')
+      .attr('width', chartWidth - chartMargins.left - chartMargins.right)
+      .attr('height', chartHeight - chartMargins.top - chartMargins.bottom)
+      .attr('fill', 'rgba(0, 0, 0, 0)')
+      .on('mousemove', function() {
+        var pos = d3.mouse(this),
+            xPos = pos[0],
+            yPos = pos[1],
+            xVal = (xScale.invert(xPos)).toFixed(2),
+            yVal = (yScale.invert(yPos)).toFixed(2);
+        self.container.find('.cursor-pos').text(' x = ' + xVal + '  y = ' + yVal);
+      });
+
+    d3.select(self.chartDiv.get(0)).select('.plot-data.plot .mouse-event-handler')
+      .on('click', function() {
+        if (!self.options.addPoints)
+          return;
+
+        var pos = d3.mouse(this),
+            xPos      = pos[0],
+            yPos      = pos[1],
+            xVal      = (xScale.invert(xPos)).toFixed(2),
+            yVal      = (yScale.invert(yPos)).toFixed(2),
+            tempPoint = { 'x': parseFloat(xVal),
+                          'y': parseFloat(yVal),
+                          'added': true,
+                          'index': self.currentData.length };
+        self.currentData.push(tempPoint);
+
+        // draw points again
+        self.plotPoint(tempPoint);
+
+        // update any existing plots, if using added points
+        if (!self.bottomControls['res-plot'] && self.bottomControls['use-points']) {
+          self.plotSelectedOptions(['res-plot', 'use-points']);
+        }
+      });
+  };
+
+  this.plotPoint = function(tempPoint) {
+    var yScale = self.yScale,
+        xScale = self.xScale;
+        pointPlot = d3.select(self.chartDiv.get(0)).select('.plot-data.plot');
+
+    pointPlot.insert('circle', '.data-point')
+          .attr('class', 'data-point added')
+          .attr('cx', xScale(tempPoint.x))
+          .attr('cy', yScale(tempPoint.y))
+          .attr('stroke', '#333')
+          .attr('stroke-width', '1')
+          .attr('data-index', tempPoint.index)
+          .attr('data-added', tempPoint.added)
+          .attr('data-x', tempPoint.x)
+          .attr('data-y', tempPoint.y)
+          .attr('r', 2);
+  };
+
+  /***
+   * toggleRegLine: toggles regression line
+   * params:  boolean show - true or false
+   ***/
+  this.toggleRegLine = function(show) {
+    var data = self.filterData(),
+        xData,
+        yData,
+        xMean,
+        yMean,
+        xMin,
+        xMax,
+        xSd,
+        ySd,
+        slope,
+        cc,
+        regLine,
+        pointMean,
+        point1,
+        point2;
+
+    self.container.find('svg g.reg-line').remove();
+    if (show) {
+      xData = $.map(data, function(d) { return d.x; });
+      yData = $.map(data, function(d) { return d.y; });
+      xMin  = d3.min(xData);
+      xMax  = d3.max(xData);
+      xMean = mean(xData);
+      yMean = mean(yData);
+      xSd   = sd(xData);
+      ySd   = sd(yData);
+      cc    = corr(xData, yData);
+      slope = cc * ySd / xSd;
+
+      pointMean = { 'x': xMean, 'y': yMean };
+      point1    = { 'x': xMin, 'y': pointMean.y - slope * (pointMean.x - xMin) };
+      point2    = { 'x': xMax, 'y': pointMean.y - slope * (pointMean.x - xMax) };
+
+      regLine = d3.select(self.chartDiv.get(0)).select('.plot-data')
+        .append('g')
+        .attr('class', 'reg-line');
+
+      regLine.append('line')
+        .attr('x1', self.xScale(point1.x))
+        .attr('x2', self.xScale(point2.x))
+        .attr('y1', self.yScale(point1.y))
+        .attr('y2', self.yScale(point2.y));
+    }
+  };
+
+  /***
+   * toggleGraphOfAve: toggles graph of averages
+   * params:  boolean show - true or false
+   ***/
+  this.toggleGraphOfAve = function(show) {
+    var plotType = self.bottomControls['res-plot'] === true ? 'plot-residual' : 'plot-data',
+        data = self.filterData(),
+        xData,
+        yData,
+        xMax,
+        xMin,
+        xMean,
+        yMean,
+        xSd,
+        ySd,
+        cc,
+        slope,
+        expectedY,
+        tempRes,
+        tempXMin,
+        tempXMax,
+        numPointsInBin,
+        tempPointOfAve,
+        xRangeIncrement,
+        cumY,
+        avgY,
+        graphOfAve;
+
+    self.container.find('svg g.graph-of-ave').remove();
+    if (show) {
+      xData = $.map(data, function(d) { return d.x; });
+      yData = $.map(data, function(d) { return d.y; });
+      xMax  = d3.max(xData);
+      xMin  = d3.min(xData);
+      xRangeIncrement = (xMax - xMin) / self.options.graphOfAvePoints;
+
+      xMean = mean(xData);
+      yMean = mean(yData);
+      xSd   = sd(xData);
+      ySd   = sd(yData);
+      cc    = corr(xData, yData);
+      slope = cc * ySd / xSd;
+
+      graphOfAve = d3.select(self.chartDiv.get(0)).select('.' + plotType)
+        .append('g')
+        .attr('class', 'graph-of-ave');
+
+      for (var i = 0; i < self.options.graphOfAvePoints; i++) {
+        cumY            = 0;
+        numPointsInBin  = 0;
+        tempXMin        = xMin + i*xRangeIncrement;
+        tempXMax        = xMin + (i+1)*xRangeIncrement;
+        for (var j = 0; j < data.length; j++) {
+          if (i === self.options.graphOfAvePoints - 1) {
+            // fix to include largest endpoint in range
+            if (data[j].x >= tempXMin && data[j].x <= tempXMax) {
+              numPointsInBin += 1;
+              cumY += data[j].y;
+            }
+          } else {
+            if (data[j].x >= tempXMin && data[j].x < tempXMax) {
+              numPointsInBin += 1;
+              cumY += data[j].y;
+            }
+          }
+        }
+
+        if (numPointsInBin > 0) {
+          // calculate average, create point
+          avgY = cumY/numPointsInBin;
+          tempPointOfAve  = { 'x': (tempXMin + tempXMax)/2, 'y': avgY };
+
+          if (plotType === 'plot-residual') {
+            // residual plot, plot on residual scale
+            expectedY   = yMean - slope * (xMean - tempPointOfAve.x);
+            tempRes     = avgY - expectedY;
+            tempPointOfAve  = { 'x': (tempXMin + tempXMax)/2, 'y': avgY - expectedY };
+          }
+
+          // plot the point
+          graphOfAve.append('rect')
+            .attr('x', self.xScale(tempPointOfAve.x) - 2.5)
+            .attr('y', self.yScale(tempPointOfAve.y) - 2.5)
+            .attr('height', 5)
+            .attr('width', 5);
+        }
+      }
+    }
+  };
+
+  /***
+   * toggleSdLine: toggles SD line
+   * params:  boolean show - true or false
+   ***/
+  this.toggleSdLine = function(show) {
+    var data = self.filterData(),
+        xData,
+        yData,
+        xMean,
+        yMean,
+        xMax,
+        xMin,
+        xSd,
+        ySd,
+        cc,
+        slope,
+        pointMean,
+        point1,
+        point2,
+        sdLine;
+
+    self.container.find('svg g.sd-line').remove();
+    if (show) {
+      xData = $.map(data, function(d) { return d.x; });
+      yData = $.map(data, function(d) { return d.y; });
+      xMean = mean(xData);
+      yMean = mean(yData);
+      xSd   = sd(xData);
+      ySd   = sd(yData);
+      cc    = corr(xData, yData);
+      xMax  = d3.max(xData);
+      xMin  = d3.min(xData);
+      yMin  = d3.min(yData);
+      yMax  = d3.max(yData);
+      slope = (cc >= 0 ? 1 : -1 ) * ySd/xSd;
+
+      pointMean = { 'x': xMean, 'y': yMean };
+      point1    = { 'x': xMin, 'y': pointMean.y - slope * (pointMean.x - xMin) };
+      point2    = { 'x': xMax, 'y': pointMean.y - slope * (pointMean.x - xMax) };
+
+      if (point1.y < yMin) {
+        // y is below axes, get x "intercept" (y = yMin)
+        point1.x = pointMean.x - (pointMean.y - yMin)/slope;
+        point1.y = yMin;
+      }
+      if (point2.y < yMin) {
+        point2.x = (yMin - pointMean.y)/slope + xMean;
+        point2.y = yMin;
+      }
+
+      sdLine = d3.select(self.chartDiv.get(0)).select('.plot-data')
+        .append('g')
+        .attr('class', 'sd-line');
+
+      sdLine.append('line')
+        .attr('x1', self.xScale(point1.x))
+        .attr('x2', self.xScale(point2.x))
+        .attr('y1', self.yScale(point1.y))
+        .attr('y2', self.yScale(point2.y));
+    }
+
+  };
+
+  this.filterData = function() {
+    var useAddedPoints  = self.bottomControls['use-points'],
+        allData         = self.currentData,
+        numData         = allData.length,
+        tempDataPoints;
+    if (useAddedPoints) {
+      return allData;
+    } else {
+      // if not using added points, filter points that have added = false
+      tempDataPoints = $.grep( allData, function(data, index) {
+        return data.added === false;
+      });
+      return tempDataPoints;
+    }
+  };
+
+  /***
+   * highlightDataPoint: highlights and unhighlights data point
+   * params:  dataIndex: index of data point to highlight
+   ***/
+  this.highlightDataPoint = function(dataIndex, eventType) {
+    var selectedDataPoint = d3.select(self.chartDiv.get(0)).select('.data-point[data-index="' + dataIndex + '"]'),
+        dataSticky        = selectedDataPoint.classed('selected'),
+        newStickyState;
+
+    if (eventType === 'mouseover') {
+      // reorders the elements such that the one to be highlighted is on top
+      selectedDataPoint.node().parentNode.appendChild(selectedDataPoint.node());
+      // apply the active class, emphasize data point
+      selectedDataPoint.classed('active', true)
+        .transition()
+        .duration(200)
+        .attr('r', 5);
+    } else if (eventType === 'mouseout') {
+      // revert circle back to looks of regular data point, unless sticky
+      selectedDataPoint.classed('active', false)
+        .transition()
+        .duration(200)
+        .attr('r', function() { return (dataSticky ? 3.5 : 2); });
+    } else if (eventType === 'click') {
+      // remove other sticky data points
+      /*
+      d3.select(self.chartDiv.get(0)).select('.data-point.selected:not([data-index="' + dataIndex + '"])')
+        .classed('selected', false)
+        .classed('highlight', false)
+        .transition()
+        .duration(200)
+        .attr('r', 2);
+       */
+
+      newStickyState = !dataSticky;
+      // toggle sticky on data point
+      selectedDataPoint.classed('selected', newStickyState);
+
+      // new sticky state
+      self.currentData[dataIndex].selected = newStickyState;
+
+      // update class for corresponding data in data-list
+      // self.container.find('.popbox.list-data tr:not([data-index="' + dataIndex + '"])').removeClass('selected');
+      self.container.find('.popbox.list-data tr[data-index="' + dataIndex + '"]').toggleClass('selected');
+    }
+  };
+
+
+  /***
+   * plotMean: plots mean
+   ***/
+  this.plotMean = function() {
+    // called whenever data changes
+    var data  = self.filterData(),
+        xData = $.map(data, function(d) { return d.x; }),
+        yData = $.map(data, function(d) { return d.y; }),
+        xMean = mean(xData),
+        yMean = (self.bottomControls['res-plot'] === true ? 0 : mean(yData)),
+        xScale = self.xScale,
+        yScale = self.yScale,
+        rectSize = 5;
+
+    d3.select(self.chartDiv.get(0)).select('.mean-point').remove();
+
+    d3.select(self.chartDiv.get(0)).select('svg .plot')
+        .append('rect')
+        .attr('x', xScale(xMean) - rectSize/2)
+        .attr('y', yScale(yMean) - rectSize/2)
+        .attr('class', 'mean-point')
+        .attr('width', rectSize)
+        .attr('height', rectSize)
+        .attr('fill', 'rgba(255, 0, 0, 1)')
+        .attr('stroke', '#000');
+  };
+
+  /***
+   * toggleSds: toggles SDs
+   * params:  boolean show - true or false
+   ***/
+  this.toggleSds = function(show) {
+    var data = self.filterData(),
+        xMean,
+        yMean,
+        xSd,
+        ySd,
+        xData,
+        yData,
+        xSdPlots,
+        ySdPlots,
+        sds;
+
+    self.container.find('svg g.sds').remove();
+    if (show) {
+      // compute lines
+      xData     = $.map(data, function(d) { return d.x; });
+      yData     = $.map(data, function(d) { return d.y; });
+      xMean     = mean(xData);
+      yMean     = mean(yData);
+      xSd       = sd(xData);
+      ySd       = sd(yData);
+      xSdPlots  = [(xMean - xSd), (xMean + xSd)];
+      ySdPlots  = [(yMean - ySd), (yMean + ySd)];
+
+      // plot lines
+      sds = d3.select(self.chartDiv.get(0)).select('.plot-data')
+        .append('g')
+        .attr('class', 'sds');
+      sds.append('line')
+        .attr('x1', self.xScale(xSdPlots[0]))
+        .attr('x2', self.xScale(xSdPlots[0]))
+        .attr('y1', 0)
+        .attr('y2', self.chartHeight - self.chartMargins.bottom - self.chartMargins.top);
+      sds.append('line')
+        .attr('x1', self.xScale(xSdPlots[1]))
+        .attr('x2', self.xScale(xSdPlots[1]))
+        .attr('y1', 0)
+        .attr('y2', self.chartHeight - self.chartMargins.bottom - self.chartMargins.top);
+      sds.append('line')
+        .attr('x1', 0)
+        .attr('x2', self.chartWidth - self.chartMargins.left - self.chartMargins.right)
+        .attr('y1', self.yScale(ySdPlots[0]))
+        .attr('y2', self.yScale(ySdPlots[0]));
+      sds.append('line')
+        .attr('x1', 0)
+        .attr('x2', self.chartWidth - self.chartMargins.left - self.chartMargins.right)
+        .attr('y1', self.yScale(ySdPlots[1]))
+        .attr('y2', self.yScale(ySdPlots[1]));
+    }
+  };
+
+
+  // Initializes the chart controls (top, data, and bottom)
+  function initControls() {
+    var $stici = $('<div/>').addClass('stici').addClass( 'stici_scatterplot'),
+        $topControls = $('<div/>').addClass('top_controls');
+
+    self.container.append($stici);
+    $stici.append($topControls);
+
+    if (typeof(self.options.title) == "string") {
+      $topControls.append(self.options.title);
+    }
+
+    // Chart (for svg container)
+    self.chartDiv = $('<div/>').addClass('stici_chart').addClass('chart_box');
+    $stici.append(self.chartDiv);
+
+    // Top controls
+    if (dataIsFromExternalFile()) {
+      self.urlInput = $('<input type="text" />');
+      self.dataSelect = $('<select class="data_select"/>').change(self.reloadData);
+      self.xVariableSelect = $('<select class="variable_select"/>').change(function() {
+        self.prepareData();
+        self.reloadChart();
+      });
+      self.yVariableSelect = $('<select class="variable_select"/>').change(function() {
+        self.prepareData();
+        self.reloadChart();
+      });
+
+      $topControls.append('Data: ');
+      if (self.options.files.length > 1) {
+        $topControls.append(self.dataSelect);
+      } else {
+        $topControls.append(self.options.files[0].replace(/^.*[\\\/]/, ''));
+        $topControls.append('&nbsp;&nbsp;&nbsp;');
+      }
+
+      // for each data set, append option to option select
+      $.each(self.options.files, function(i, dataUrl) {
+        self.dataSelect.append($('<option/>')
+                       .attr('value', dataUrl)
+                       .text(dataUrl.replace(/^.*[\\\/]/, '')));
+      });
+
+      // append x and y variable selects
+      $topControls.append(self.yVariableSelect);
+      $topControls.append(' vs ');
+      $topControls.append(self.xVariableSelect);
+    } else if (dataIsGenerated()) {
+      // r controls
+      self.rInput = jQuery('<input type="text" />').change(function() {
+        rSlider.slider('value', self.rInput.val());
+        self.r = self.rInput.val();
+        loadGeneratedData();
+      });
+      var updateRInput = function() {
+        self.rInput.val(rSlider.slider('value'));
+        self.r = rSlider.slider('value');
+        loadGeneratedData();
+      };
+      var rSlider = jQuery('<span/>').addClass('slider').slider({
+        change: updateRInput,
+        slide: updateRInput,
+        step: 0.001,
+        max: 1,
+        min: -1
+      });
+      self.rInput.val(self.r);
+      rSlider.slider('value', self.rInput.val());
+      if (self.options.showRBar) {
+        $topControls.append('r: ').append(self.rInput).append(rSlider);
+      }
+
+      // n controls
+      var nInput = jQuery('<input type="text" />').change(function() {
+        nSlider.slider('value', nInput.val());
+        self.n = nInput.val();
+        loadGeneratedData();
+      });
+      var updateNInput = function() {
+        nInput.val(nSlider.slider('value'));
+        self.n = nSlider.slider('value');
+        loadGeneratedData();
+      };
+      var nSlider = jQuery('<span/>').addClass('slider').slider({
+        change: updateNInput,
+        slide: updateNInput,
+        step: 1,
+        max: 200,
+        min: 3
+      });
+      if (self.options.showRBar) {
+        nInput.val(self.n);
+        nSlider.slider('value', nInput.val());
+        $topControls.append('n: ').append(nInput).append(nSlider);
+      }
+    }
+
+    // Bottom controls
+    var $bottom = $('<div/>').addClass('bottom_controls').addClass('extended'),
+        $rHat = $('<span/>').data('btnId', 'r-hat').text('r: 0.16'),
+        $toggleSd = $('<button/>').data('btnId', 'sds').text('SDs'),
+        $toggleSdLine = $('<button/>').data('btnId', 'sd-line').text('SD Line'),
+        $toggleGraphOfAve = $('<button/>').data('btnId', 'graph-of-ave').text('Graph of Ave'),
+        $toggleRegLine  = $('<button/>').data('btnId', 'reg-line').text('Regression Line'),
+        $toggleResPlot  = $('<button/>').data('btnId', 'res-plot').text('Plot Residuals'),
+        $popboxControls = $('<div/>').attr('class', 'popbox-controls'),
+        $toggleUsePoints  = $('<button/>').data('btnId', 'use-points').text('Use Added Points'),
+        $toggleClearPoints = $('<button/>').data('btnId', 'clear-points').text('Clear Added Points'),
+        $cursorPos  = $('<span/>').addClass('cursor-pos').text('');
+
+    $stici.append($bottom);
+
+    if (self.options.showR && !dataIsGenerated())
+      $bottom.append($rHat);
+    if (self.options.sdButton)
+      $bottom.append($toggleSd);
+    if (self.options.sdLineButton)
+      $bottom.append($toggleSdLine);
+    if (self.options.graphAveButton)
+      $bottom.append($toggleGraphOfAve);
+    if (self.options.regressButton)
+      $bottom.append($toggleRegLine);
+    if (self.options.residualsButton)
+      $bottom.append($toggleResPlot);
+    $bottom.append('<br/>').append($popboxControls);
+    if (self.options.addPoints)
+      $bottom.append($toggleUsePoints).append($toggleClearPoints);
+    $bottom.append($cursorPos);
+  }
+
+
+  /***
+   * handleBtnToggle: Handles button toggle
+   * params: Event e
+   ***/
+  function handleBtnToggle(e) {
+    var $target = self.container.find(e.target),
+        btnId   = $target.data('btnId');
+    if (btnId === 'clear-points' || btnId === 'list-data' || btnId === 'univar-stats') {
+    } else {
+      $target.toggleClass('selected');
+      self.bottomControls[btnId] = (self.bottomControls[btnId] === true ? false : true);
+    }
+    self.toggleOption(btnId, $target.hasClass('selected'));
+  }
+
+  /***
+   * handleMouseOver: event handler for mouse over data
+   * params: Event e
+   ***/
+  function handlePopboxMouseEvents(e) {
+    var eventType     = e.type,
+        $target       = self.container.find(e.target),
+        $closestTable = $target.closest('table'),
+        $closestRow,
+        dataIndex;
+    if ($closestTable.hasClass('data-values')) {
+      $closestRow = $target.closest('tr');
+      dataIndex   = $closestRow.attr('data-index');
+      self.highlightDataPoint(dataIndex, eventType);
+    }
+  }
+
+  /***
+   * Simulates a click on one of the bottom buttons given its btnId,
+   * e.g. 'sd-line'. Used during initialization to set the buttons to the
+   * state defined in the initialization parameters.
+   */
+  function simulateBtnPress(btnId) {
+    self.container.find('.bottom_controls').children().filter(function() {
+      return $(this).data('btnId') == btnId;
+    }).click();
+  }
+
+  /***
+   * Returns true if data source is an external json-encoded file, false
+   * otherwise.
+   */
+  function dataIsFromExternalFile() {
+    if (self.options.files !== null)
+      return true;
+    else
+      return false;
+  }
+
+  /***
+   * Returns true if data is generated according to a normal bivariate with
+   * specified realized correlation coefficient.
+   */
+  function dataIsGenerated() {
+    if (self.options.r !== null || self.options.n !== null)
+      return true;
+    else
+      return false;
+  }
+
+  /***
+   * Returns true if the data points have been manually specified.
+   */
+  function dataIsManual() {
+    if (self.options.x !== null || self.options.y !== null)
+      return true;
+    else
+      return false;
+  }
+
+  // document ready
+  $().ready(function() {
+    self.container.find('button').on('click', function(e) {
+      handleBtnToggle(e);
+    });
+  });
+
+  initControls();
+  this.reloadData();
+}
+
+/* script stat_utils: statistical functions, vector functions, linear algebra
+  
+   copyright (c) 1997-2013. P.B. Stark, statistics.berkeley.edu/~stark
+   Version 1.0
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    See <http://www.gnu.org/licenses/>
+*/
+
+// !!!!Beginning of the code!!!!
+
+Array.prototype.max = function() { // beware: do not use for long arrays
+  return Math.max.apply(null, this);
+};
+
+Array.prototype.min = function() { // beware: do not use for long arrays
+  return Math.min.apply(null, this);
+};
+Number.prototype.fix = function(n) { // beware: do not use for long arrays
+  return parseFloat(this.toFixed(n));
+};
+
+// ============================================================================
+// ========================= STATISTICAL SUBROUTINES ==========================
+
+function mean(list) { // computes the mean of the list
+    return(vSum(list)/list.length);
+}
+
+function vMult(a, list) { // multiply a vector times a scalar
+    var list2 = new Array(list.length);
+    for (var i=0; i < list.length; i++) {
+        list2[i] = a*list[i];
+    }
+    return(list2);
+}
+
+function vScalarSum(list, scalar) { // adds the scalar to every component of the list
+    var vs = new Array(list.length);
+    for (var i =0; i < list.length; i++) {
+        vs[i] = list[i] + scalar;
+    }
+    return(vs);
+}
+
+function vVectorSum(list1, list2) { // vector addition
+    if (list1.length != list2.length) {
+        alert('Error #1 in irGrade.vVectorSum: vector lengths are not equal');
+        return(Math.NaN);
+    } else {
+        var vs = new Array(length(list1));
+        for (var i =0; i < list1.length; i++) {
+            vs[i] = list1[i] + list2[i];
+        }
+        return(vs);
+    }
+}
+
+function vPointwiseMult(list1, list2) { // componentwise multiplication of two vectors
+    var list3 = Math.NaN;
+    if (list1.length != list2.length) {
+        alert('Error #1 in irGrade.vPointwiseMult: vector lengths do not match!');
+    } else {
+        list3 = new Array(list1.length);
+        for (var i=0; i < list1.length; i++) {
+            list3[i] = list1[i]*list2[i];
+        }
+    }
+    return(list3);
+}
+
+function vFloor(list) { // takes floor of all components
+    var list2 = new Array(list.length);
+    for (var i = 0; i < list.length; i++) {
+        list2[i] = Math.floor(list[i]);
+    }
+    return(list2);
+}
+
+function vCeil(list) { // takes ceil of all components
+    var list2 = new Array(list.length);
+    for (var i = 0; i < list.length; i++) {
+        list2[i] = Math.ceil(list[i]);
+    }
+    return(list2);
+}
+
+function vRoundToInts(list) { // round all components to the nearest int
+    var list2 = new Array(list.length);
+    var tmp;
+    for (var i = 0; i < list.length; i++) {
+        list2[i] = Math.floor(list[i]);
+        if (list[i] - list2[i] >= 0.5) {
+            list2[i]++;
+        }
+    }
+    return(list2);
+}
+
+function vSum(list) { // computes the sum of the elements of list
+    var tot = 0.0;
+    for (var i = 0; i < list.length; i++) {
+        tot += list[i];
+    }
+    return(tot);
+}
+
+function vProd(list) { // computes the product of the elements of list
+    var p = 1.0;
+    for (var i = 0; i < list.length; i++) {
+        p *= list[i];
+    }
+    return(p);
+}
+
+function vCum(list) { // vector of cumulative sum
+    var list2 = list;
+    for (var i = 1; i < list.length; i++ ) {
+        list2[i] += list2[i-1];
+    }
+    return(list2);
+}
+
+function vDiff(list) { // vector of differences; 1st element unchanged
+    var list2 = new Array(list.length);
+    for (var i = list.length-1; i > 0; i-- ) {
+        list2[i] = list[i] - list[i-1];
+    }
+    list2[0] = list[0];
+    return(list2);
+}
+
+
+function vInterval(list) { // vector of differences between successive elements; 0 subtracted from first element
+    var list2 = [];
+    list2[0] = list[0];
+    for (var i = 1; i < list.length; i++) {
+        list2[i] = list[i] - list[i-1];
+    }
+    return(list2);
+}
+
+function vZero(n) { // returns a vector of zeros of length n
+    var list = new Array(n);
+    for (var i=0; i < n; i++) {
+        list[i] = 0.0;
+    }
+    return(list);
+}
+
+function vOne(n) { // returns a vector of ones of length n
+    var list = new Array(n);
+    for (var i=0; i < n; i++) {
+        list[i] = 1.0;
+    }
+    return(list);
+}
+
+function twoNorm(list) { // two norm of a vector
+    var tn = 0.0;
+    for (var i=0; i < list.length; i++) {
+        tn += list[i]*list[i];
+    }
+    return(Math.sqrt(tn));
+}
+
+function convolve(a,b) { // convolve two lists
+    var c = new Array(a.length + b.length - 1);
+    var left; var right;
+    for (var i=0; i < a.length + b.length - 1; i++) {
+        c[i] = 0;
+        right = Math.min(i+1, a.length);
+        left = Math.max(0, i - b.length + 1);
+        for (var j=left; j < right; j++) {
+            c[i] += a[j]*b[b.length - i - 1 + j];
+        }
+    }
+    return(c);
+}
+
+function nFoldConvolve(a,n) {
+    var b = a;
+    for (var i=0; i < n; i++ ) {
+        b = convolve(b,a);
+    }
+    return(b);
+}
+
+function numberLessThan(a,b) { // numerical ordering for javascript sort function
+    var diff = parseFloat(a)-parseFloat(b);
+    if (diff < 0) {
+        return(-1);
+    } else if (diff === 0) {
+        return(0);
+    } else {
+        return(1);
+    }
+}
+
+function numberGreaterThan(a,b) { // numerical ordering for javascript sort function
+    var diff = parseFloat(a)-parseFloat(b);
+    if (diff < 0) {
+        return(1);
+    } else if (diff === 0) {
+        return(0);
+    } else {
+        return(-1);
+    }
+}
+
+function sd(list) { // computes the SD of the list
+    ave = mean(list);
+    ssq = 0;
+    for (var i = 0; i < list.length; i++) {
+        ssq += (list[i] - ave)*(list[i] - ave);
+    }
+    ssq = Math.sqrt(ssq/list.length);
+    return(ssq);
+}
+
+function sampleSd(list) { // computes the sample SD of the list
+    ave = mean(list);
+    ssq = 0;
+    for (var i = 0; i < list.length; i++) {
+        ssq += (list[i] - ave)*(list[i] - ave);
+    }
+    ssq = Math.sqrt(ssq/(list.length - 1.0));
+    return(ssq);
+}
+
+function corr(list1, list2) {
+// computes the correlation coefficient of list1 and list2
+    if (list1.length != list2.length) {
+        alert('Error #1 in irGrade.corr(): lists have different lengths!');
+        return(Math.NaN);
+    } else {
+        var ave1 = mean(list1);
+        var ave2 = mean(list2);
+        var sd1 = sd(list1);
+        var sd2 = sd(list2);
+        var cc = 0.0;
+        for (var i=0; i < list1.length; i++) {
+            cc += (list1[i] - ave1)*(list2[i] - ave2);
+        }
+        cc /= sd1*sd2*list1.length;
+        return(cc);
+    }
+}
+
+function percentile(list,p) { // finds the pth percentile of list
+    var n = list.length;
+    var sList = list.slice(0);
+    sList.sort(numberLessThan);
+    var ppt = Math.max(Math.ceil(p*n/100),1);
+    return(sList[ppt-1]);
+}
+
+function histMakeCounts(binEnd, data) {  // makes vector of histogram heights
+        var nBins = binEnd.length - 1;
+        var counts = new Array(nBins);
+        var i = 0;
+        for (i=0; i < nBins; i++) {
+            counts[i] = 0;
+        }
+        for (i=0; i < data.length; i++) {
+           for (var k=0; k < nBins - 1; k++) {
+              if (data[i] >= binEnd[k] && data[i] < binEnd[k+1] ) {
+                  counts[k] += 1;
+              }
+           }
+           if (data[i] >= binEnd[nBins - 1] ) {
+              counts[nBins - 1] += 1;
+           }
+        }
+        for (i=0; i < nBins; i++) {
+           counts[i] /= data.length*(binEnd[i+1]-binEnd[i]);
+        }
+        return(counts);
+}
+
+function histMakeBins(nBins, data) { // makes equispaced histogram bins that span the range of data
+        binEnd = new Array(nBins+1);
+        dMnMx = vMinMax(data);
+        for (var i=0; i < nBins+1; i++) {
+           binEnd[i] = dMnMx[0] + i*(dMnMx[1] - dMnMx[0])/nBins;
+        }
+        return(binEnd);
+}
+
+function histEstimatedPercentile(pct, binEnd, counts) {  // estimates the pth percentile from a histogram
+        var p = pct/100.0;
+        var pctile;
+        if (p > 1.0) {
+            pctile = Math.NaN;
+        } else if (p == 1.0) {
+            pctile = binEnd[nBins];
+        } else {
+            var area = 0.0;
+            var j = 0;
+            while (area < p) {
+               j++;
+               area = histHiLitArea(binEnd[0], binEnd[j], binEnd, counts);
+            }
+            j--;
+            area = p - histHiLitArea(binEnd[0], binEnd[j], binEnd, counts);
+            var nextBinArea = histHiLitArea(binEnd[j], binEnd[j+1], binEnd, counts);
+            pctile = binEnd[j] + (area/nextBinArea) * (binEnd[j+1] - binEnd[j]);
+        }
+        return(pctile);
+}
+
+function histHiLitArea(loEnd, hiEnd, binEnd, counts) { // area of counts from loEnd to hiEnd
+          var nBins = binEnd.length - 1;
+          var area = 0;
+          if (loEnd < hiEnd) {
+             for (var i=0; i < nBins; i++) {
+                if( binEnd[i]  > hiEnd ||  binEnd[i+1] <= loEnd) {
+                } else if (binEnd[i] >= loEnd && binEnd[i+1] <= hiEnd) {
+                   area += counts[i]*(binEnd[i+1]-binEnd[i]);
+                } else if (binEnd[i] >= loEnd && binEnd[i+1] > hiEnd) {
+                   area += counts[i]*(hiEnd - binEnd[i]);
+                } else if (binEnd[i] <= loEnd && binEnd[i+1] <= hiEnd) {
+                   area += counts[i]*(binEnd[i+1]-loEnd);
+                } else if (binEnd[i] < loEnd && binEnd[i+1] > hiEnd) {
+                   area += counts[i]*(hiEnd - loEnd);
+                }
+            }
+         }
+      return(area);
+}
+
+function listOfRandSigns(n) { // random +-1 vector
+    var list = new Array(n);
+    for (var i=0; i < n; i++) {
+        var rn = rand.next();
+        if (rn < 0.5) {
+            list[i] = -1;
+        } else {
+            list[i] = 1;
+        }
+    }
+    return(list);
+}
+
+function listOfRandUniforms(n, lo, hi) { // n random variables uniform on (lo, hi)
+    if ( (typeof(lo) == 'undefined') || (lo === null) ) {
+        lo = 0.0;
+    }
+    if ( (typeof(hi) == 'undefined') || (hi === null) ) {
+            hi = 1.0;
+    }
+    var list = new Array(n);
+    for (var i=0; i < n; i++) {
+        list[i] = lo + (hi-lo)*rand.next();
+    }
+    return(list);
+}
+
+function listOfRandInts(n, lo, hi) { // n random integers between lo and hi
+    var list = new Array(n);
+    for (var i=0; i < n; i++) {
+        list[i] = Math.floor((hi+1 - lo)*rand.next()) + lo;
+    }
+    return(list);
+}
+
+function listOfDistinctRandInts(n, lo, hi) { // n dintinct random integers between lo and hi
+    var list = new Array(n);
+    var trial;
+    var i=0;
+    var unique;
+    while (i < n) {
+        trial = Math.floor((hi+1 - lo)*rand.next()) + lo;
+        unique = true;
+        for (var j = 0; j < i; j++) {
+            if (trial == list[j]) unique = false;
+        }
+        if (unique) {
+            list[i] = trial;
+            i++;
+        }
+    }
+    return(list);
+}
+
+function randomSample(list, ssize, replace) {
+  // sample from list, size ssize w/ or w/o replacement.
+  // default is without replacement
+    var sample = [];
+    var indices = [];
+    if (replace !== null && replace ) {
+        indices = listOfRandInts(ssize,0,list.length-1);
+    } else {
+        indices = listOfDistinctRandInts(ssize,0,list.length - 1);
+    }
+    for (var i=0; i < ssize; i++) {
+        sample[i] = list[indices[i]];
+    }
+    return(sample) ;
+}
+
+function randomPartition(list, n) {
+  // randomly partition list into n nonempty groups
+    var bars = listOfDistinctRandInts(n-1, 1, list.length-1).sort(numberLessThan);
+    bars[bars.length] = list.length;
+    var parts = new Array(n);
+    var i = 0;
+    for (i = 0; i < parts.length; i++) {
+        parts[i] = [];
+    }
+    for (i=0; i < bars[0]; i++) {
+        parts[0][i] = list[i];
+    }
+    for (var j=1; j < n; j++) {
+        for (i=0; i < bars[j]-bars[j-1]; i++) {
+           parts[j][i] = list[bars[j-1]+i];
+        }
+    }
+    return(parts);
+}
+
+function constrainedRandomPartition(list, n, mx) {
+  // randomly partition list into n nonempty groups no bigger than mx
+    if (n*mx < list.length) {
+        alert('Error in irGrade.constrainedRandomPartition: mx too small!');
+        return(false);
+    } else {
+        var bars = listOfDistinctRandInts(n-1, 1, list.length-1).sort(numberLessThan);
+        bars[bars.length] = list.length;
+        vm = vMinMax(vDiff(bars))[1];
+        while (vm > mx) {
+            bars = listOfDistinctRandInts(n-1, 1, list.length-1).sort(numberLessThan);
+            bars[bars.length] = list.length;
+            vm = vMinMax(vDiff(bars))[1];
+        }
+        var parts = new Array(n);
+        var i = 0;
+        for (i = 0; i < parts.length; i++) {
+            parts[i] = [];
+        }
+        for (i=0; i < bars[0]; i++) {
+            parts[0][i] = list[i];
+        }
+        for (var j=1; j < n; j++) {
+            for (i=0; i < bars[j]-bars[j-1]; i++) {
+               parts[j][i] = list[bars[j-1]+i];
+            }
+        }
+        return(parts);
+    }
+}
+
+function multinomialSample(pVec, n) { // multinomial sample of size n with probabilities pVec
+    pVec = vMult(1.0/vSum(pVec), pVec); // renormalize in case
+    var pCum = vCum(pVec);
+    var counts = vZero(pVec.length);
+    var rv;
+    var inx;
+    for (var i=0; i < n; i++) {
+        rv = rand.next();
+        inx = 0;
+        while ( (rv > pCum[inx]) && (inx < n) ) {
+            inx++;
+        }
+        counts[inx]++;
+    }
+    return(counts);
+}
+
+function normPoints(n, mu, s, dig) {   // n normals with expected value mu, sd s, rounded to dig
+    var round = true;
+    if ( (typeof(dig) == 'undefined') || (dig === null) ) {
+        round = false;
+    }
+    var xVal = new Array(n);
+    var i = 0;
+    if (round) {
+        for (i=0; i < n; i++) {
+            xVal[i] = roundToDig(mu + s*rNorm(),dig);
+        }
+    } else {
+        for (i=0; i < n; i++) {
+            xVal[i] = mu + s*rNorm();
+        }
+    }
+    return(xVal);
+}
+
+function cNormPoints(n, r) {
+ // generate n pseudorandom normal bivariates w/ specified realized correlation coefficient r
+ // if n = 1, this is impossible; if n=2, this is possible only if r \in {-1, 0, 1}
+    var xVal = new Array(n);
+    var yVal = new Array(n);
+    var i;
+    if (n == 2) {  // only three possible values of r
+        if (r == -1) {
+            xVal[0] = -10;
+            xVal[1] = 10;
+            yVal[0] = 10;
+            yVal[1] = -10;
+        } else if (r === 0) {
+            xVal[0] = -10;
+            xVal[1] = 10;
+            yVal[0] = 0;
+            yVal[1] = 0;
+        } else if (r == 1) {
+            xVal[0] = -10;
+            xVal[1] = 10;
+            yVal[0] = -10;
+            yVal[1] = 10;
+       } else {
+            xVal[0] = Number.NaN;
+            yVal[0] = Number.NaN;
+       }
+    } else if (n > 2) { // anything should be possible
+        for (i=0; i<n ; i++ ) {
+            xVal[i]= rNorm();
+            yVal[i] = rNorm();
+        }
+        var rAtt = corr(xVal, yVal);
+        var s = sgn(rAtt)*sgn(r);
+        var xBarAtt = mean(xVal);
+        var yBarAtt = mean(yVal);
+        var xSdAtt = sd(xVal);
+        var ySdAtt = sd(yVal);
+        var pred = new Array(n);
+        var resid = new Array(n);
+        for (i=0; i < n; i++) {
+            xVal[i] = (xVal[i] - xBarAtt)/xSdAtt;
+            pred[i] = s*rAtt*xVal[i]*ySdAtt+ yBarAtt;
+            resid[i] = s*yVal[i] - pred[i];
+        }
+        var resNrm = rms(resid);
+        for (i = 0; i < n; i++) {
+            yVal[i] = Math.sqrt(1.0-r*r)*resid[i]/resNrm + r*xVal[i];
+        }
+        var ymnmx = vMinMax(yVal);
+        var xmnmx = vMinMax(xVal);
+        var xscl = 8.5/(xmnmx[1] - xmnmx[0]);
+        var yscl = 8.5/(ymnmx[1] - ymnmx[0]);
+        for (i=0; i < n; i++) {
+            xVal[i] = (xVal[i] - xmnmx[0]) * xscl  + 1.0;
+            yVal[i] = (yVal[i] - ymnmx[0]) * yscl + 1.0;
+        }
+    } else { // n = 1 is nonsense
+        xVal[0] = Number.NaN;
+        yVal[0] = Number.NaN;
+    }
+    var lists = new Array(xVal,yVal);
+    return(lists);
+}// ends cNormPoints
+
+function listOfRandReals(n,lo,hi) { // n-vector of uniforms on [lo, hi]
+    var list = new Array(n);
+    for (var i=0; i < n; i++) {
+        list[i] = (hi - lo)*rand.next() + lo;
+    }
+    return(list);
+}
+
+function rNorm() {  // standard normal pseudorandom variable
+    var y = normInv(rand.next());
+    return(y);
+} // ends rNorm()
+
+function normCdf(y) { // normal distribution cumulative distribution function
+   return(0.5*erfc(-y*0.7071067811865475));
+}
+
+function erfc(x) { // error function
+     var xbreak = 0.46875;     // for normal cdf
+// coefficients for |x| <= 0.46875
+    var a = [3.16112374387056560e00, 1.13864154151050156e02,
+             3.77485237685302021e02, 3.20937758913846947e03,
+             1.85777706184603153e-1];
+    var b = [2.36012909523441209e01, 2.44024637934444173e02,
+            1.28261652607737228e03, 2.84423683343917062e03];
+// coefficients for 0.46875 <= |x| <= 4.0
+    var c = [5.64188496988670089e-1, 8.88314979438837594e00,
+             6.61191906371416295e01, 2.98635138197400131e02,
+             8.81952221241769090e02, 1.71204761263407058e03,
+             2.05107837782607147e03, 1.23033935479799725e03,
+             2.15311535474403846e-8];
+    var d = [1.57449261107098347e01, 1.17693950891312499e02,
+             5.37181101862009858e02, 1.62138957456669019e03,
+             3.29079923573345963e03, 4.36261909014324716e03,
+             3.43936767414372164e03, 1.23033935480374942e03];
+// coefficients for |x| > 4.0
+    var p = [3.05326634961232344e-1, 3.60344899949804439e-1,
+             1.25781726111229246e-1, 1.60837851487422766e-2,
+             6.58749161529837803e-4, 1.63153871373020978e-2];
+    var q = [2.56852019228982242e00, 1.87295284992346047e00,
+             5.27905102951428412e-1, 6.05183413124413191e-2,
+             2.33520497626869185e-3];
+    var y, z, xnum, xden, result, del;
+
+/*
+Translation of a FORTRAN program by W. J. Cody,
+Argonne National Laboratory, NETLIB/SPECFUN, March 19, 1990.
+The main computation evaluates near-minimax approximations
+from "Rational Chebyshev approximations for the error function"
+by W. J. Cody, Math. Comp., 1969, PP. 631-638.
+*/
+
+//  evaluate  erf  for  |x| <= 0.46875
+
+    var i = 0;
+    if(Math.abs(x) <= xbreak) {
+        y = Math.abs(x);
+        z = y * y;
+        xnum = a[4]*z;
+        xden = z;
+        for (i = 0; i< 3; i++) {
+            xnum = (xnum + a[i]) * z;
+            xden = (xden + b[i]) * z;
+        }
+        result = 1.0 - x* (xnum + a[3])/ (xden + b[3]);
+    } else if (Math.abs(x) <= 4.0) {
+        y = Math.abs(x);
+        xnum = c[8]*y;
+        xden = y;
+        for (i = 0; i < 7; i++) {
+            xnum = (xnum + c[i])* y;
+            xden = (xden + d[i])* y;
+        }
+        result = (xnum + c[7])/(xden + d[7]);
+        if (y > 0.0) {
+            z = Math.floor(y*16)/16.0;
+        } else {
+            z = Math.ceil(y*16)/16.0;
+        }
+        del = (y-z)*(y+z);
+        result = Math.exp(-z*z) * Math.exp(-del)* result;
+    } else {
+        y = Math.abs(x);
+        z = 1.0 / (y*y);
+        xnum = p[5]*z;
+        xden = z;
+        for (i = 0; i < 4; i++) {
+            xnum = (xnum + p[i])* z;
+            xden = (xden + q[i])* z;
+        }
+        result = z * (xnum + p[4]) / (xden + q[4]);
+        result = (1.0/Math.sqrt(Math.PI) -  result)/y;
+        if (y > 0.0) {
+            z = Math.floor(y*16)/16.0;
+        } else {
+            z = Math.ceil(y*16)/16.0;
+        }
+        del = (y-z)*(y+z);
+        result = Math.exp(-z*z) * Math.exp(-del) * result;
+    }
+    if (x < -xbreak) {
+        result = 2.0 - result;
+    }
+    return(result);
+}
+
+function normInv(p) {
+    if ( p === 0.0 ) {
+        return(Math.NEGATIVE_INFINITY);
+    } else if ( p >= 1.0 ) {
+        return(Math.POSITIVE_INFINITY);
+    } else {
+        return(Math.sqrt(2.0) * erfInv(2*p - 1));
+    }
+}
+
+function erfInv(y) {
+    var a = [ 0.886226899, -1.645349621, 0.914624893, -0.140543331];
+    var b = [-2.118377725, 1.442710462, -0.329097515, 0.012229801];
+    var c = [-1.970840454, -1.624906493, 3.429567803, 1.641345311];
+    var d = [ 3.543889200, 1.637067800];
+    var y0 = 0.7;
+    var x = 0;
+    var z = 0;
+    if (Math.abs(y) <= y0) {
+        z = y*y;
+        x = y * (((a[3]*z+a[2])*z+a[1])*z+a[0])/
+         ((((b[3]*z+b[2])*z+b[1])*z+b[0])*z+1.0);
+    } else if (y > y0 && y < 1.0) {
+        z = Math.sqrt(-Math.log((1-y)/2));
+        x = (((c[3]*z+c[2])*z+c[1])*z+c[0]) / ((d[1]*z+d[0])*z+1);
+    } else if (y < -y0 && y > -1) {
+        z = Math.sqrt(-Math.log((1+y)/2));
+        x = -(((c[3]*z+c[2])*z+c[1])*z+c[0])/ ((d[1]*z+d[0])*z+1);
+    }
+    x = x - (1.0 - erfc(x) - y) / (2/Math.sqrt(Math.PI) * Math.exp(-x*x));
+    x = x - (1.0 - erfc(x) - y) / (2/Math.sqrt(Math.PI) * Math.exp(-x*x));
+
+    return(x);
+} // ends erfInv
+
+function betaCdf( x,  a,  b) {
+   if (a <= 0 || b <= 0) {
+      return(Math.NaN);
+   } else if (x >= 1) {
+      return(1.0);
+   } else if ( x > 0.0) {
+      return(Math.min(incBeta(x ,a ,b),1.0));
+   } else {
+      return(0.0);
+   }
+}
+
+function betaPdf( x,  a,  b) {
+    if (a <= 0 || b <= 0 || x < 0 || x > 1) {
+        return(Math.NaN);
+    } else if ((x === 0 && a < 1) || (x == 2 && b < 1)) {
+        return(Math.POSITIVE_INFINITY);
+    } else if (!(a <= 0 || b <= 0 || x <= 0 || x >= 1)) {
+        return(Math.exp((a - 1)*Math.log(x) + (b-1)*Math.log(1 - x) - lnBeta(a,b)));
+    } else {
+        return(0.0);
+    }
+}
+
+function lnBeta( x, y) {
+    return(lnGamma(x) + lnGamma(y) - lnGamma(x+y));
+}
+
+function betaInv( p,  a,  b) {
+    if (p < 0 || p > 1 || a <= 0 || b <= 0) {
+        return(Math.NaN);
+    } else if ( p === 0 ) {
+        return(Math.NEGATIVE_INFINITY);
+    } else if ( p == 1) {
+        return(Math.POSITIVE_INFINITY);
+    } else {
+        var maxIt = 100;
+        var it = 0;
+        var tol = Math.sqrt(eps);
+        var work = 1.0;
+        var next;
+        var x;
+        if (a === 0.0 ) {
+            x = Math.sqrt(eps);
+        } else if ( b === 0.0) {
+            x = 1 - Math.sqrt(eps);
+        } else {
+            x = a/(a+b);
+        }
+        while (Math.abs(work) > tol*Math.abs(x) && Math.abs(work) > tol && it < maxIt) {
+           it++;
+           work = (betaCdf(x,a,b) - p)/betaPdf(x,a,b);
+           next =  x - work;
+           while (next < 0 || next > 1) {
+               work = work/2;
+               next = x - work;
+           }
+           x = next;
+         }
+         return(x);
+     }
+}
+
+function lnGamma(x) {
+/*  natural ln(gamma(x)) without computing gamma(x)
+    P.B. Stark
+
+      JavaScript subroutine is based on a MATLAB program by C. Moler,
+      in turn based on a FORTRAN program by W. J. Cody,
+      Argonne National Laboratory, NETLIB/SPECFUN, June 16, 1988.
+
+      References:
+
+      1) W. J. Cody and K. E. Hillstrom, 'Chebyshev Approximations for
+         the Natural Logarithm of the Gamma Function,' Math. Comp. 21,
+         1967, pp. 198-203.
+
+      2) K. E. Hillstrom, ANL/AMD Program ANLC366S, DGAMMA/DLGAMA, May,
+         1969.
+
+      3) Hart, Et. Al., Computer Approximations, Wiley and sons, New
+         York, 1968.
+*/
+
+     var d1 = -5.772156649015328605195174e-1;
+     var p1 = [4.945235359296727046734888e0, 2.018112620856775083915565e2,
+           2.290838373831346393026739e3, 1.131967205903380828685045e4,
+           2.855724635671635335736389e4, 3.848496228443793359990269e4,
+           2.637748787624195437963534e4, 7.225813979700288197698961e3];
+     var q1 = [6.748212550303777196073036e1, 1.113332393857199323513008e3,
+           7.738757056935398733233834e3, 2.763987074403340708898585e4,
+           5.499310206226157329794414e4, 6.161122180066002127833352e4,
+           3.635127591501940507276287e4, 8.785536302431013170870835e3];
+     var d2 = 4.227843350984671393993777e-1;
+     var p2 = [4.974607845568932035012064e0, 5.424138599891070494101986e2,
+           1.550693864978364947665077e4, 1.847932904445632425417223e5,
+           1.088204769468828767498470e6, 3.338152967987029735917223e6,
+           5.106661678927352456275255e6, 3.074109054850539556250927e6];
+     var q2 = [1.830328399370592604055942e2, 7.765049321445005871323047e3,
+           1.331903827966074194402448e5, 1.136705821321969608938755e6,
+           5.267964117437946917577538e6, 1.346701454311101692290052e7,
+           1.782736530353274213975932e7, 9.533095591844353613395747e6];
+     var d4 = 1.791759469228055000094023e0;
+     var p4 = [1.474502166059939948905062e4, 2.426813369486704502836312e6,
+           1.214755574045093227939592e8, 2.663432449630976949898078e9,
+           2.940378956634553899906876e10, 1.702665737765398868392998e11,
+           4.926125793377430887588120e11, 5.606251856223951465078242e11];
+     var q4 = [2.690530175870899333379843e3, 6.393885654300092398984238e5,
+           4.135599930241388052042842e7, 1.120872109616147941376570e9,
+           1.488613728678813811542398e10, 1.016803586272438228077304e11,
+           3.417476345507377132798597e11, 4.463158187419713286462081e11];
+     var c = [-1.910444077728e-03, 8.4171387781295e-04,
+          -5.952379913043012e-04, 7.93650793500350248e-04,
+          -2.777777777777681622553e-03, 8.333333333333333331554247e-02,
+           5.7083835261e-03];
+
+     var lng = Math.NaN;
+     var mach = 1.e-12;
+     var den = 1.0;
+     var num = 0;
+     var xm1, xm2, xm4;
+     var i = 0;
+
+   if (x < 0) {
+       return(lng);
+   } else if (x <= mach) {
+       return(-Math.log(x));
+   } else if (x <= 0.5) {
+      for (i = 0; i < 8; i++) {
+            num = num * x + p1[i];
+            den = den * x + q1[i];
+      }
+      lng = -Math.log(x) + (x * (d1 + x * (num/den)));
+   } else if (x <= 0.6796875) {
+      xm1 = x - 1.0;
+      for (i = 0; i < 8; i++) {
+         num = num * xm1 + p2[i];
+         den = den * xm1 + q2[i];
+      }
+      lng = -Math.log(x) + xm1 * (d2 + xm1*(num/den));
+   } else if (x <= 1.5) {
+      xm1 = x - 1.0;
+      for (i = 0; i < 8; i++) {
+         num = num*xm1 + p1[i];
+         den = den*xm1 + q1[i];
+      }
+      lng = xm1 * (d1 + xm1*(num/den));
+   } else if (x <= 4.0) {
+      xm2 = x - 2.0;
+      for (i = 0; i<8; i++) {
+         num = num*xm2 + p2[i];
+         den = den*xm2 + q2[i];
+      }
+      lng = xm2 * (d2 + xm2 * (num/den));
+   } else if (x <= 12) {
+      xm4 = x - 4.0;
+      den = -1.0;
+      for (i = 0; i < 8; i++)  {
+         num = num * xm4 + p4[i];
+         den = den * xm4 + q4[i];
+      }
+      lng = d4 + xm4 * (num/den);
+   } else {
+      var r = c[6];
+      var xsq = x * x;
+      for (i = 0; i < 6; i++) {
+         r = r / xsq + c[i];
+      }
+      r = r / x;
+      var lnx = Math.log(x);
+      var spi = 0.9189385332046727417803297;
+      lng = r + spi - 0.5*lnx + x*(lnx-1);
+    }
+    return(lng);
+} // ends lnGamma
+
+
+function normPdf( mu,  sigma, x) {
+     return(Math.exp(-(x-mu)*(x-mu)/(2*sigma*sigma))/
+            (Math.sqrt(2*Math.PI)*sigma));
+} // ends normPdf
+
+
+function tCdf(df, x) { // cdf of Student's t distribution with df degrees of freedom
+    var ans;
+    if (df < 1) {
+        ans = Math.NaN;
+    } else if (x === 0.0) {
+        ans = 0.5;
+    } else if (df == 1) {
+        ans = 0.5 + Math.atan(x) / Math.PI;
+    } else if (x > 0) {
+        ans = 1 - (incBeta(df/(df+x*x), df/2.0, 0.5))/2;
+    } else if (x < 0) {
+        ans = incBeta(df/(df+x*x), df/2.0, 0.5)/2;
+    }
+    return(ans);
+}
+
+function tInv(p, df ) { // inverse Student-t distribution with
+                                              // df degrees of freedom
+    var z;
+    if (df < 0 || p < 0) {
+        return(Math.NaN);
+    } else if (p === 0.0) {
+        return(Math.NEGATIVE_INFINITY);
+    } else if (p == 1) {
+        return(Math.POSITIVE_INFINITY);
+    } else if (df == 1) {
+        return(Math.tan(Math.PI*(p-0.5)));
+    } else if ( p >= 0.5) {
+        z = betaInv(2.0*(1-p),df/2.0,0.5);
+        return(Math.sqrt(df/z - df));
+    } else {
+        z = betaInv(2.0*p,df/2.0,0.5);
+        return(-Math.sqrt(df/z - df));
+    }
+}
+
+function incBeta(x, a, b) { // incomplete beta function
+       // I_x(z,w) = 1/beta(z,w) * integral from 0 to x of t^(z-1) * (1-t)^(w-1) dt
+       // Ref: Abramowitz & Stegun, Handbook of Mathemtical Functions, sec. 26.5.
+    var res;
+    if (x < 0 || x > 1) {
+        res = Math.NaN;
+    } else {
+        res = 0;
+        var bt = Math.exp(lnGamma(a+b) - lnGamma(a) - lnGamma(b) +
+                    a*Math.log(x) + b*Math.log(1-x));
+        if (x < (a+1)/(a+b+2)) {
+            res = bt * betaGuts(x, a, b) / a;
+        } else {
+            res = 1 - bt*betaGuts(1-x, b, a) / b;
+        }
+    }
+    return(res);
+}
+
+function betaGuts( x, a, b) { // guts of the incomplete beta function
+    var ap1 = a + 1;
+    var am1 = a - 1;
+    var apb = a + b;
+    var am = 1;
+    var bm = am;
+    var y = am;
+    var bz = 1 - apb*x/ap1;
+    var d = 0;
+    var app = d;
+    var ap = d;
+    var bpp = d;
+    var bp = d;
+    var yold = d;
+    var m = 1;
+    var t;
+    while (y-yold > 4*eps*Math.abs(y)) {
+       t = 2 * m;
+       d = m * (b - m) * x / ((am1 + t) * (a + t));
+       ap = y + d * am;
+       bp = bz + d * bm;
+       d = -(a + m) * (apb + m) * x / ((a + t) * (ap1 + t));
+       app = ap + d * y;
+       bpp = bp + d * bz;
+       yold = y;
+       am = ap / bpp;
+       bm = bp / bpp;
+       y = app / bpp;
+       if (m == 1) bz = 1;
+       m++;
+    }
+    return(y);
+}
+
+function chi2Cdf(df,  x) {
+    var p =  (df == Math.floor(df)) ? gammaCdf(x,df/2,2) : Number.NaN;
+    return(p);
+}
+
+function chi2Inv( p, df ) { // kluge for chi-square quantile function.
+    var guess = Math.NaN;
+    if (p === 0.0) {
+        guess = 0.0;
+    } else if ( p == 1.0 ) {
+        guess = Math.POSITIVE_INFINITY;
+    } else if ( p < 0.0 ) {
+        guess = Math.NaN;
+    } else {
+        var tolAbs = 1.0e-8;
+        var tolRel = 1.0e-3;
+        guess = Math.max(0.0, df + Math.sqrt(2*df)*normInv(p)); // guess from normal approx
+        var currP = chi2Cdf( guess, df);
+        var loP = currP;
+        var hiP = currP;
+        var guessLo = guess;
+        var guessHi = guess;
+        while (loP > p) { // step down
+            guessLo = 0.8*guessLo;
+            loP = chi2Cdf( guessLo, df);
+        }
+        while (hiP < p) { // step up
+            guessHi = 1.2*guessHi;
+            hiP = chi2Cdf( guessHi, df);
+        }
+        guess = (guessLo + guessHi)/2.0;
+        currP = chi2Cdf( guess, df);
+        while ( (Math.abs(currP - p) > tolAbs) || (Math.abs(currP - p)/p > tolRel) ) { // bisect
+            if ( currP < p ) {
+                guessLo = guess;
+            } else {
+                guessHi = guess;
+            }
+            guess = (guessLo + guessHi)/2.0;
+            currP = chi2Cdf(guess, df);
+        }
+    }
+    return(guess);
+}
+
+function gammaCdf( x,  a,  b) { // gamma distribution CDF.
+    var p = Math.NaN;
+    if (a <= 0 || b <= 0) {
+    } else if (x <= 0) {
+        p = 0.0;
+    } else {
+        p = Math.min(incGamma(x/b, a), 1.0);
+    }
+    return(p);
+}
+
+function incGamma( x,  a) {
+    var inc = 0;
+    var gam = lnGamma(a+rmin);
+    if (x === 0.0) {
+        inc = 0;
+    } else if (a === 0) {
+        inc = 1;
+    } else if (x < a+1) {
+        var ap = a;
+        var sum = 1.0/ap;
+        var del = sum;
+        while (Math.abs(del) >= 10*eps*Math.abs(sum)) {
+            del *= x/(++ap);
+            sum += del;
+        }
+        inc = sum * Math.exp(-x + a*Math.log(x) - gam);
+    } else if (x >= a+1) {
+       var a0 = 1;
+       var a1 = x;
+       var b0 = 0;
+       var b1 = 1;
+       var fac = 1;
+       var n = 1;
+       var g = 1;
+       var gold = 0;
+       var ana;
+       var anf;
+       while (Math.abs(g-gold) >= 10*eps*Math.abs(g)) {
+            gold = g;
+            ana = n - a;
+            a0 = (a1 + a0 *ana) * fac;
+            b0 = (b1 + b0 *ana) * fac;
+            anf = n*fac;
+            a1 = x * a0 + anf * a1;
+            b1 = x * b0 + anf * b1;
+            fac = 1.0 / a1;
+            g = b1 * fac;
+            n++;
+       }
+       inc = 1 - Math.exp(-x + a*Math.log(x) - gam) * g;
+    }
+    return(inc);
+}
+
+function poissonPmf( lambda, k) {  // Poisson probability mass function
+    var p = 0.0;
+    if (k != Math.floor(k)) {
+      p = Number.NaN;
+    } else {
+        if (k >= 0) {
+           p = Math.exp(-lambda)*Math.pow(lambda,k)/factorial(k);
+        }
+    }
+    return(p);
+}
+
+function poissonCdf( lambda, k) {  // Poisson CDF
+    var p = 0;
+    var b = 0;
+    var m = 0;
+    if (k != Math.floor(k)) {
+        p = Number.NaN;
+    } else {
+        while (m <= k) {
+           b += Math.pow(lambda, m++)/factorial(k);
+        }
+        p += Math.exp(-lambda)*b;
+    }
+    return(p);
+}
+
+function poissonTail(lambda, k) {  // upper tail probability of the Poisson
+    return(1.0-poissonCdf(lambda, k-1));
+}
+
+function expCdf(lambda, x) {   // exponential CDF
+        return(1-Math.exp(-x/lambda));
+    }
+
+function expPdf(lambda, x) {  // exponential density
+        return((1.0/lambda)*Math.exp(-x/lambda));
+}
+
+
+function factorial(n) { // computes n!
+  var fac = Number.NaN;
+    if (n != Math.floor(n)) {
+      fac = Number.NaN;
+    } else {
+      fac=1;
+      for (var i=n; i > 1; i--) {
+        fac *= i;
+      }
+    }
+    return(Math.round(fac));
+}
+
+function binomialCoef(n,k) { // computes n choose k
+    if (n != Math.floor(n) || k != Math.floor(k)) {
+        return(Number.NaN);
+    } else if (n < k || n < 0) {
+        return(0.0);
+    } else if ( k === 0 || n === 0 || n == k) {
+        return(1.0);
+    } else {
+        var minnk = Math.min(k, n-k);
+        var coef = 1;
+        for (var j = 0; j < minnk; j++) {
+            coef *= (n-j)/(minnk-j);
+        }
+        return(Math.round(coef));
+    }
+}
+
+function binomialPmf(n, p, k) {  // binomial pmf at k.
+    var pmf = binomialCoef(n,k)*Math.pow(p,k)*Math.pow((1-p),(n-k));
+    return(pmf);
+}
+
+function binomialCdf(n, p, k) {  // binomial CDF:  Pr(X <= k), X~B(n,p)
+    if (k < 0) {
+        return(0.0);
+    } else if (k >= n) {
+        return(1.0);
+    } else {
+        var cdf = 0.0;
+        for (var i = 0; i <= k; i++) {
+            cdf += binomialPmf(n, p, i);
+        }
+        return(cdf);
+    }
+}
+
+function binomialTail(n,p,k) { // binomial tail probability Pr(X >= k), X~B(n,p)
+    if (k < 0) {
+        return(1.0);
+    } else if (k >= n) {
+        return(0.0);
+    } else {
+        var tailP = 0.0;
+        for (var i = k; i <= n; i++) {
+            tailP += binomialPmf(n, p, i);
+        }
+        return(tailP);
+    }
+}
+
+function binomialInv(n, p, pt) { // binomial percentile function
+    var t = 0;
+    if (pt < 0 || pt > 1) {
+        t = NaN;
+    } else if (pt === 0.0) {
+        t = 0;
+    } else if (pt == 1.0) {
+        t = n;
+    } else {
+        t = 0;
+        var pc = 0.0;
+        while ( pc < pt ) {
+            pc += binomialPmf(n, p, t++);
+        }
+        t -= 1;
+    }
+    return(t);
+}
+
+function multinomialCoef(list, n) { // multinomial coefficient.
+// WARNING:  not very stable algorithm; avoid for large n.
+    var val = 0;
+    var lmn = vMinMax(list);
+    if (typeof(n) == 'undefined' || n === null) {
+        n = vSum(list);
+    }
+    if (lmn[0] < 0.0) {
+        alert('Error #1 in irGrade.multinomialCoef: a number of outcomes is negative!');
+    } else if (n == vSum(list)) {
+        val = factorial(n);
+        for (var i=0; i < list.length; i++) {
+            val /= factorial(list[i]);
+        }
+    }
+    return(val);
+}
+
+function multinomialPmf(olist, plist, n) { // multinomial pmf; not stable algorithm
+    var val = 0.0;
+    var pmn = vMinMax(plist);
+    var omn = vMinMax(olist);
+    if (typeof(n) == 'undefined' || n === null) {
+        n = vSum(olist);
+    }
+    if (olist.length != plist.length) {
+        alert('Error #1 in irGrade.multinomialPmf: length of outcome and probability vectors ' +
+               'do not match!');
+    } else if (pmn[0] < 0.0) {
+        alert('Error #2 in irGrade.multinomialPmf: a probability is negative!');
+    } else if (omn[0] < 0.0) {
+        alert('Error #3 in irGrade.multinomialPmf: a number of outcomes is negative!');
+    } else if (n == vSum(olist)) {
+        var pl = vMult(1.0/vSum(plist), plist);  // just in case
+        val = factorial(n);
+        for (var i=0; i< olist.length; i++) {
+            val *= Math.pow(pl[i], olist[i])/factorial(olist[i]);
+        }
+    }
+    return(val);
+}
+
+
+function geoPmf( p,  k) {
+  // chance it takes k trials to the first success in iid Bernoulli(p) trials
+  // EX = 1/p; SD(X) = sqrt(1-p)/p
+    var prob = 0.0;
+    if (k != Math.floor(k)) {
+        prob = Number.NaN;
+    } else if (k < 1 || p === 0.0) {
+        prob = 0.0;
+    } else {
+        prob = Math.pow((1-p),k-1)*p;
+    }
+    return(prob);
+}
+
+function geoCdf( p, k) {
+  // chance it takes k or fewer trials to the first success in iid Bernoulli(p) trials
+    var prob = 0.0;
+    if (k != Math.floor(k)) {
+        prob = Number.NaN;
+    } else if (k < 1 || p === 0.0) {
+        prob = 0.0;
+    } else {
+        prob = 1-Math.pow( 1-p, k);
+    }
+    return(prob);
+}
+
+function geoTail( p,  k) {
+  // chance of k or more trials to the first success in iid Bernoulli(p) trials
+    return(1 - geoCdf(p, k-1));
+}
+
+function geoInv(p, pt) { // geometric percentile function
+    var t = 0;
+    if (pt < 0 || pt > 1) {
+        t = Math.NaN;
+    } else if (pt === 0.0) {
+        t = 0;
+    } else if (pt == 1.0) {
+        t = Math.POSITIVE_INFINITY;
+    } else {
+        t = 0;
+        var pc = 0.0;
+        while ( pc < pt ) {
+            pc += geoPmf(p, t++);
+        }
+    }
+    return(t);
+}
+
+function hyperGeoPmf( N,  M,  n,  m) {
+  // chance of drawing m of M objects in a sample of size n from
+  // N objects in all.  p = (M C m)*(N-M C n-m)/(N C n)
+  // EX = n*M/N; SD(X)= sqrt((N-n)/(N-1))*sqrt(np(1-p));
+    var p = 0.0;
+    if (N != Math.floor(N) || M != Math.floor(M) || n != Math.floor(n) || m != Math.floor(m)) {
+        p = Number.NaN;
+    } else if ( n < m || N < M || M < m  || m < 0 || N < 0) {
+        p = 0.0;
+    } else {
+        p = binomialCoef(M,m)*binomialCoef(N-M,n-m)/binomialCoef(N,n);
+    }
+    return(p);
+}
+
+function hyperGeoCdf( N,  M,  n,  m) {
+  // chance of drawing m or fewer of M objects in a sample of size n from
+  // N objects in all
+    var p=0.0;
+    if (N != Math.floor(N) || M != Math.floor(M) || n != Math.floor(n) || m != Math.floor(m)) {
+        p = Number.NaN;
+    } else {
+        var mMax = Math.min(m,M);
+        mMax = Math.min(mMax,n);
+        for (var i = 0; i <= mMax; i++) {
+            p += hyperGeoPmf(N, M, n, i);
+        }
+    }
+    return(p);
+}
+
+function hyperGeoTail( N,  M,  n,  m) {
+  // chance of drawing m or more of M objects in a sample of size n from
+  // N objects in all
+    var p=0.0;
+    if (N != Math.floor(N) || M != Math.floor(M) || n != Math.floor(n) || m != Math.floor(m)) {
+        p = Number.NaN;
+    } else {
+        for (var i = m; i <= Math.min(M,n); i++) {
+            p += hyperGeoPmf(N, M, n, i);
+        }
+    }
+    return(p);
+}
+
+function negBinomialPmf( p,  s,  t) {
+  // chance that the sth success in iid Bernoulli trials is on the tth trial
+  // EX = s/p; SD(X) = sqrt(s(1-p))/p
+    var prob = 0.0;
+    if (s != Math.floor(s) || t != Math.floor(t)) {
+        prob = Number.NaN;
+    } else if (s > t || s < 0) {
+        prob = 0.0;
+    } else {
+        prob = p*binomialPmf(t-1,p,s-1);
+    }
+    return(prob);
+}
+
+function negBinomialCdf( p,  s,  t) {
+  // chance the sth success in iid Bernoulli trials is on or before the tth trial
+    var prob = 0.0;
+    if (s != Math.floor(s) || t != Math.floor(t)) {
+         prob = Number.NaN;
+    } else {
+         for (var i = s; i <= t; i++) {
+             prob += negBinomialPmf(p, s, i);
+         }
+    }
+    return(prob);
+}
+
+function pDieRolls(rolls,spots) { // chance that the sum of 'rolls' rolls of a die = 'spots'
+    if (rolls > 4) {
+        alert('Error #1 in irGrade.pDiceRolls: too many rolls ' + rolls + '. ');
+        return(Math.NaN);
+    } else {  // BRUTE FORCE!
+        var found = 0;
+        if (spots < rolls || spots > 6*rolls) {return(0.0);}
+        var possible = Math.pow(6,rolls);
+        var i = 0;
+        var j = 0;
+        var k = 0;
+        if (rolls == 1) {
+            return(1/possible);
+        } else if (rolls == 2) {
+            for (i=1; i <=6; i++ ) {
+                for (j=1; j <= 6; j++ ) {
+                    if (i+j == spots ) {found++;}
+                }
+            }
+        } else if (rolls == 3 ) {
+            for (i=1; i <=6; i++ ) {
+                for (j=1; j<=6; j++ ) {
+                    for (k=1; k<=6; k++ ) {
+                        if (i+j+k == spots ) {found++;}
+                    }
+                }
+            }
+        } else if (rolls == 4 ) {
+            for (i=1; i <=6; i++ ) {
+                for (j=1; j<=6; j++ ) {
+                    for (k=1; k<=6; k++ ) {
+                        for (var m=1; m <=6; m++ ) {
+                            if (i+j+k+m == spots ) {found++;}
+                        }
+                    }
+                }
+            }
+        }
+        return(found/possible);
+    }
+    return(false);
+}
+
+function permutations(n,k) { // number of permutations of k of n things
+    var coef;
+    if ((Math.floor(n) != n ) || (Math.floor(k) != k)) {
+        coef = Number.NaN;
+    } else if (n < k || n < 0) {
+        coef = 0;
+    } else if ( k===0 || n === 0) {
+        coef = 1;
+    } else {
+        coef=1;
+        for (var j=0; j < k; j++) coef *= (n-j);
+    }
+    return(Math.round(coef));
+}
+
+
+function sgn(x) {  // signum function
+    if (x >= 0) {
+        return(1);
+    } else if (x < 0) {
+        return (-1);
+    }
+}
+
+function linspace(lo,hi,n) { // n linearly spaced points between lo and hi
+    var spaced = new Array(n);
+    var dx =(hi-lo)/(n-1);
+    for (var i=0; i < n; i++) {
+        spaced[i] = lo + i*dx;
+    }
+    return(spaced);
+}
+
+function rms(list) { // rms
+    var r = 0;
+    for (var i=0; i < list.length; i++) r += list[i]*list[i];
+    r /= list.length;
+    return(Math.sqrt(r));
+}
+
+function vMinMax(list){ // returns min and max of list
+    var mn = list[0];
+    var mx = list[0];
+    for (var i=1; i < list.length; i++) {
+        if (mn > list[i]) mn = list[i];
+        if (mx < list[i]) mx = list[i];
+    }
+    var vmnmx =  new Array(mn,mx);
+    return(vmnmx);
+}
+
+function vMinMaxIndices(list){ // returns min, max, index of min, index of max
+    var mn = list[0];
+    var indMn = 0;
+    var mx = list[0];
+    var indMx = 0;
+    for (var i=1; i < list.length; i++) {
+        if (mn > list[i]) {
+            mn = list[i];
+            indMn = i;
+        }
+        if (mx < list[i]) {
+            mx = list[i];
+            indMx = i;
+        }
+    }
+    var vmnmx =  new Array(mn,mx,indMn,indMx);
+    return(vmnmx);
+}
+
+function vMinMaxAbs(list) {
+// returns min and max of absolute values of a list's elements
+    var mn = Math.abs(list[0]);
+    var mx = Math.abs(list[0]);
+    var val;
+    for (var i=1; i < list.length; i++) {
+        val = Math.abs(list[i]);
+            if (mn > val) mn = val;
+            if (mx < val) mx = val;
+    }
+    var vmnmx =  new Array(mn,mx);
+    return(vmnmx);
+}
+
+function randBoolean(p){ // random boolean value, prob p that it is true
+    if (typeof(p) == 'undefined' || p === null) {
+        p = 0.5;
+    }
+    if (rand.next() <= p) {
+        return(false);
+    } else {
+        return(true);
+    }
+}
+
+function sortUnique(list,order) { // sort a list, remove duplicate entries
+    var temp = list;
+    if (typeof(order) != 'undefined' && order !== null) {
+        temp.sort(order);
+    } else {
+        temp.sort();
+    }
+    var temp2 = [];
+    temp2[0] = temp[0];
+    var ix = 0;
+    for (var i=1; i < temp.length; i++) {
+        if (temp[i] != temp2[ix] ) {
+            temp2[++ix] = temp[i];
+        }
+    }
+    return(temp2);
+}
+
+function uniqueCount(list) { // unique elements and their counts
+    var temp = {};
+    temp[list[0]] = list[0];
+    var j = 0;
+    for (j=1; j < list.length; j++) {
+        if (typeof(temp[list[j]]) == 'undefined' || temp[list[j]] === null) {
+             temp[list[j]] = 1;
+        } else {
+             temp[list[j]]++;
+        }
+    }
+    uc = new Array(2);
+    uc[0] = [];
+    uc[1] = [];
+    var k = 0;
+    for (j in temp) {
+        uc[0][k] = j;
+        uc[1][k++] = temp[j];
+    }
+    return(uc);
+}
+
+function unique(list) {
+    return(uniqueCount(list)[0]);
+}
+
+function randPermutation(list,index) { // returns a random permutation of list
+    var randIndex = listOfDistinctRandInts(list.length,0,list.length-1);
+    var thePermutation = new Array(list.length);
+    var i = 0;
+    for (i=0; i < list.length; i++) {
+        thePermutation[i] = list[randIndex[i]];
+    }
+    var p = 0;
+    if (typeof(index) != 'undefined' && index == 'forward') { // original indices
+        p = new Array(2);
+        p[0] = thePermutation;
+        p[1] = randIndex;
+        thePermutation = p;
+    } else if (typeof(index) != 'undefined' && index == 'inverse') { // inverse permutation
+        p = new Array(2);
+        p[0] = thePermutation;
+        p[1] = new Array(list.length);
+        for (i=0; i < list.length; i++) {
+            p[1][randIndex[i]] = i;
+        }
+        thePermutation = p;
+    }
+    return(thePermutation);
+}
+
+
+function cyclicPermutation(n, k) { // cyclic permutation by k of of the integers 0 to n-1
+    if (typeof(k) == 'undefined' || k === null) {
+        k = 1;
+    }
+    var perm = new Array(n);
+    for (var i = 0; i < n; i++) {
+            perm[i] = (i+k)%n;
+    }
+    return(perm);
+}
+
+function distinctPermutation(n, k) { // returns a permutation of the integers 0 to n-1
+                                     // in which no index maps to itself
+    if (typeof(k) == 'undefined' || k === null) {
+            k = Math.min(3, n-1);
+    }
+    return(cyclicPermutation(n,k));
+}
+
+function distinctRandPermutation(n) { // returns a random permutation of the integers 0 to n-1
+                                        // in which no index maps to itself
+    function isInPlace(x) {  // is any index in its original place?
+        v = false;
+        for (var i=0; i < x.length; i++) {
+           if (x[i] == i) {
+              v = true;
+           }
+        }
+        return(v);
+    }
+    var x = new Array(n);
+    for (var i = 0; i < n; i++) {
+        x[i] = i;
+    }
+    x = randPermutation(x);
+    while (isInPlace(x)) {
+       x = randPermutation(x);
+    }
+    return(x);
+}
+
+
+
+
+function fakeBivariateData(nPoints, funArray, heteroFac, snr, loEnd, hiEnd) {
+   // returns a 2-d array of synthetic data generated from a polynomial,
+   // according to the contents of funArray.
+   // if funArray[0] == 'polynomial', uses the other elements of funArray as
+   // the coefficients of a polynomial.
+   // funArray[1] + funArray[2]*X + funArray[3]*X^2 + ...
+   // 1/3 of the points have noise level heteroFac times larger than the rest.
+   // Normalizes the errors  to signal/noise ratio snr  in 2-norm
+    var data = new Array(2);
+    data[0] = new Array(nPoints);
+    data[1] = new Array(nPoints);
+    if (snr === 0) {
+            snr = 2;
+    }
+    var x;
+    var fVal;
+    var xPow;
+    var i;
+    if (funArray[0] == 'polynomial') {
+        if (typeof(loEnd) == 'undefined' || loEnd === null) {   // lower limit of X variable
+            loEnd = -10;
+        }
+        if (typeof(hiEnd) == 'undefined' || hiEnd === null) {   // upper limit of X variable
+            hiEnd = 10;
+        }
+        var dX = (hiEnd - loEnd)/(nPoints - 1);
+        for (i=0; i < nPoints; i++) {
+            x = loEnd + i*dX;
+            data[0][i] = x;
+            fVal = 0.0;
+            xPow = 1.0;
+            for (var j=1;  j < funArray.length; j++) {
+                fVal +=  xPow*funArray[j];
+                xPow *= x;
+            }
+            data[1][i] = fVal;
+        }
+    } else {
+        alert('Error #1 in irGrade.fakeBivariateData()!\n' +
+            'Unsupported function type: ' + funArray[0].toString());
+        return(null);
+    }
+// now add noise.
+    var sigNorm = twoNorm(data[1]);
+    var noise = new Array(nPoints);
+    for (i=0; i < nPoints; i++) {
+        noise[i] = rNorm();
+    }
+// pick a random set to perturb for heteroscedastic noise
+    var segLen = Math.floor(nPoints/3);
+    var startPt = Math.floor(2*nPoints/3*rand.next());
+    for (i=startPt; i < startPt+segLen; i++) {
+        noise[i] = noise[i]*heteroFac;
+    }
+    var noiseNorm = twoNorm(noise);
+    for (i=0; i < nPoints; i++) {
+        data[1][i] += noise[i]*sigNorm/noiseNorm/snr;
+    }
+    return(data);
+}
+
+function nextRand() {  // generates next random number in a sequence
+    var up   = this.seed / this.Q;
+    var lo   = this.seed % this.Q;
+    var trial = this.A * lo - this.R * up;
+    if (trial > 0) {
+        this.seed = trial;
+    } else {
+        this.seed = trial + this.M;
+    }
+    return (this.seed * this.oneOverM);
+}
+
+function rng(s) {
+       if ( typeof(s)=='undefined' || s === null ){
+           var d = new Date();
+           this.seed = 2345678901 +
+             (d.getSeconds() * 0xFFFFFF) +
+             (d.getMinutes() * 0xFFFF);
+       } else {
+           this.seed = s;
+       }
+       this.A = 48271;
+       this.M = 2147483647;
+       this.Q = this.M / this.A;
+       this.R = this.M % this.A;
+       this.oneOverM = 1.0 / this.M;
+       this.next = nextRand;
+       this.getSeed = getRandSeed;
+       return(this);
+}
+
+// Only define rand if it has not already been defined - the page may want to
+// define a rand using a custom seed. It can do this before the page loads
+// if it wants.
+jQuery(function() {
+  if (typeof(rand) == 'undefined') {
+    console.log('rand has not been defined already, creating in stat_utils');
+    rand = rng();
+  } else {
+    console.log('Skipping creation of rand because it already exists.');
+  }
+});
+
+function getRandSeed() { // get seed of random number generator
+    return(this.seed);
+}
+
+function crypt(s,t) {
+    var slen = s.length;
+    var tlen = t.length;
+    var rad = 16;
+    var r = 0;
+    var i;
+    var j = -1;
+    var result = '';
+    if (s.substr(0,2) == '0x') {
+        for (i=2; i < slen; i+=2) {
+            if (++j >= tlen) {j = 0;}
+            r = parseInt(s.substr(i,2),rad) ^ t.charCodeAt(j);
+            result += String.fromCharCode(r);
+        }
+    } else {
+        result +='0x';
+        for ( i=0; i < slen; i++) {
+           if (++j >= tlen) {j = 0;}
+           r = s.charCodeAt(i) ^ t.charCodeAt(j);
+           result += (r < rad ? '0' : '') + r.toString(rad);
+        }
+    }
+    return(result);
+}
+
+
+
+/*
+This file contains two functions:
+    statCalc: a simple calculator
+    distCalc: a calculator probability distributions
+
+copyright (c) 2013 by P.B. Stark
+last modified 27 January 2013.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Affero Public License for more details.
+    http://www.gnu.org/licenses/
+
+Dependencies: irGrade, jQuery, jQuery-ui
+
+*/
+
+function statCalc(container_id, params) {
+    var self = this;
+    this.container = $('#' + container_id);
+
+    if (!params instanceof Object) {
+       console.error('statCalc parameters should be an object');
+       return;
+    }
+
+// default options
+    this.options = {
+                    keys: [ [["7","num"],["8","num"],["9","num"],["/","bin"], ["nCk","bin"]],
+                            [["4","num"],["5","num"],["6","num"],["*","bin"], ["nPk","bin"]],
+                            [["1","num"],["2","num"],["3","num"],["-","bin"], ["!","una"]],
+                            [["0","num"],[".","num"],["+/-","una"],["+","bin"], ["1/x","una"]],
+                            [["=","eq"],  ["CE","una"],  ["C","una"], ["Sqrt","una"], ["x^2","una"]]
+                          ],
+                    buttonsPerRow: 5,
+/*      Full set of keys:
+                    keys: [ [["7","num"],["8","num"],["9","num"],["/","bin"], ["nCk","bin"], ["nPk","bin"]],
+                            [["4","num"],["5","num"],["6","num"],["*","bin"], ["!","una"], ["U[0,1]","una"]],
+                            [["1","num"],["2","num"],["3","num"],["-","bin"], ["Sqrt","una"], ["x^2","una"]],
+                            [["0","num"],[".","num"],["+/-","una"],["+","bin"], ["1/x","una"], ["x^y","bin"]],
+                            [["=","eq"],  ["CE","una"],  ["C","una"], ["exp(x)","una"], ["log(x)","una"],  ["log_y(x)", "bin"]]
+                          ],
+                    buttonsPerRow: 6
+*/
+                    digits: 16
+    };
+
+// Extend options
+    $.extend(this.options, params);
+
+    self.x = 0.0;
+    self.inProgress = false;
+    self.currentOp = null;
+
+    function initCalc() {
+        var me = $('<div />').addClass('calc');
+        self.container.append(me);
+        // display
+        self.theDisplay = $('<input type="text" />').attr('size',self.options.digits);
+        me.append(self.theDisplay);
+        // buttons
+        self.buttonDiv = $('<div />').addClass('buttonDiv');
+        self.numButtonDiv = $('<div />').addClass('numButtonDiv');
+        self.fnButtonDiv = $('<div />').addClass('fnButtonDiv');
+        self.numButtonTable = $('<table />').addClass('numButtonTable');
+        self.fnButtonTable = $('<table />').addClass('fnButtonTable');
+        self.numButtonDiv.append(self.numButtonTable);
+        self.fnButtonDiv.append(self.fnButtonTable);
+        self.buttonDiv.append(self.numButtonDiv);
+        self.buttonDiv.append(self.fnButtonDiv);
+        $.each(self.options.keys, function(j, rowKeys) {
+          var row = $('<tr>');
+          self.numButtonTable.append(row);
+          $.each(rowKeys, function(i, v) {
+            if (null === v) {
+              row.append($('<td/>'));
+              return;
+            }
+            newBut = $('<input type="button" value="' + v[0] + '">')
+              .button()
+              .addClass(v[1])
+              .addClass('calcButton')
+              .click( function() {buttonClick(v[0], v[1]);});
+            row.append($('<td/>').append(newBut));
+          });
+        });
+        me.append(self.buttonDiv);
+    }
+    initCalc();
+
+//  action functions
+
+    function buttonClick(v, opType) {
+        var t = self.theDisplay.val().replace(/[^0-9e.\-]+/gi,'').replace(/^0+/,'');
+        try {
+            switch(opType) {
+               case 'num':
+                   self.theDisplay.val(t+v);
+                   break;
+
+               case 'una':
+                   switch(v) {
+                      case '+/-':
+                         t = (t.indexOf('-') === 0) ? t.substring(1) : '-'+t;
+                         self.theDisplay.val(t);
+                         break;
+                      case '!':
+                         self.theDisplay.val(factorial(t).toString());
+                         break;
+                      case 'Sqrt':
+                         self.theDisplay.val(Math.sqrt(t).toString());
+                         break;
+                      case 'x^2':
+                         self.theDisplay.val((t*t).toString());
+                         break;
+                      case 'exp(x)':
+                         self.theDisplay.val(Math.exp(t).toString());
+                         break;
+                      case 'ln(x)':
+                         self.theDisplay.val(Math.log(t).toString());
+                         break;
+                      case '1/x':
+                         self.theDisplay.val((1/t).toString());
+                         break;
+                      case 'U[0,1]':
+                         self.theDisplay.val(rand.next());
+                         break;
+                      case 'N(0,1)':
+                         self.theDisplay.val(rNorm());
+                         break;
+                      case 'CE':
+                         self.theDisplay.val('0');
+                         break;
+                      case 'C':
+                         self.x = 0;
+                         self.inProgress = false;
+                         self.currentOp = null;
+                         self.theDisplay.val('0');
+                    }
+                    break;
+
+               case 'bin':
+                   if (self.inProgress) {
+                        self.x = doBinaryOp(self.x, self.currentOp, t);
+                        self.theDisplay.val(self.x.toString());
+                   } else {
+                        self.x = t;
+                        self.theDisplay.val('?');
+                        self.inProgress = true;
+                   }
+                   self.currentOp = v;
+                   break;
+
+               case 'eq':
+                   if (self.inProgress) {
+                        self.x = doBinaryOp(self.x, self.currentOp, t);
+                        self.theDisplay.val(self.x.toString());
+                        self.inProgress = false;
+                        self.currentOp = null;
+                   }
+                   break;
+
+               default:
+                   console.log('unexpected button in statCalc ' + v);
+            }
+        } catch(e) {
+           console.log(e);
+           self.theDisplay.val('NaN');
+        }
+    }
+
+    function doBinaryOp(x, op, y) {
+         var res = Math.NaN;
+         try {
+             switch(op) {
+                 case '+':
+                     res = parseFloat(x)+parseFloat(y);
+                     break;
+                 case '-':
+                     res = parseFloat(x)-parseFloat(y);
+                     break;
+                 case '*':
+                     res = parseFloat(x)*parseFloat(y);
+                     break;
+                 case '/':
+                     res = parseFloat(x)/parseFloat(y);
+                     break;
+                 case 'x^y':
+                     res = parseFloat(x)^parseFloat(y);
+                     break;
+                 case 'nCk':
+                     res = binomialCoef(parseFloat(x), parseFloat(y));
+                     break;
+                 case 'nPk':
+                     res = permutations(parseFloat(x), parseFloat(y));
+                     break;
+                 default:
+                     console.log('unexpected binary function in statCalc ' + op);
+              }
+        } catch(e) {
+        }
+        return(res);
+    }
+
+
+
+
+}
+
+function distCalc(container_id, params) {
+    var self = this;
+    this.container = $('#' + container_id);
+
+    if (!params instanceof Object) {
+       console.error('distCalc parameters should be an object');
+       return;
+    }
+
+// default options
+    this.options = {
+                    distributions: [ ["Binomial", ["n","p"]],
+                                     ["Geometric", ["p"]],
+                                     ["Negative Binomial", ["p","r"]],
+                                     ["Hypergeometric",["N","G","n"]],
+                                     ["Normal", ["mean","SD"]],
+                                     ["Student t", ["degrees of freedom"]],
+                                     ["Chi-square", ["degrees of freedom"]],
+                                     ["Exponential", ["mean"]],
+                                     ["Poisson", ["mean"]]
+                                   ],
+                    digits: 8,
+                    paramDigits: 4,
+                    showExpect: true
+    };
+
+// Extend options
+    $.extend(this.options, params);
+
+    self.lo = 0.0;
+    self.hi = 0.0;
+    self.currDist = null;
+    self.distDivs = [];
+
+    function init() {
+        var me = $('<div />').addClass('distCalc');
+        self.container.append(me);
+
+        // distribution selection
+        self.selectDiv = $('<div />').addClass('selectDiv').append('If X has a ');
+        self.selectDist = $('<select />').change(function() {
+              changeDist($(this).val());
+        });
+
+        // parameters of the distributions
+        $.each(self.options.distributions, function(i, v) {
+               $('<option/>', { value : v[0] }).text(v[0]).appendTo(self.selectDist);
+               self.distDivs[v[0]] = $('<div />').css('display','inline');
+               $.each(v[1], function(j, parm) {
+                     self.distDivs[v[0]].append(parm + ' = ')
+                                        .append(  $('<input type="text" />')
+                                                    .attr('size','paramDigits')
+                                                    .addClass(parm.replace(/ +/g,'_'))
+                                                    .blur(calcProb)
+                                        )
+                                        .append(', ');
+               });
+        });
+
+        self.paramSpan = $('<span />').addClass('paramSpan');
+        self.selectDiv.append(self.selectDist)
+                      .append('distribution with ')
+                      .append(self.paramSpan);
+
+        // start with the first listed distribution
+        self.currDist = self.options.distributions[0][0];
+        self.paramSpan.append(self.distDivs[self.currDist]);
+
+        // range over which to find the probability
+        self.selectDiv.append(' the chance that ')
+                      .append($('<input type="checkbox">').addClass('useLower').click(calcProb))
+                      .append('X &ge;')
+                      .append($('<input type="text" />').addClass('loLim').attr('size',self.options.digits).val("0").blur(calcProb))
+                      .append($('<input type="checkbox">').addClass('useUpper').click(calcProb))
+                      .append('and X &le;')
+                      .append($('<input type="text" />').addClass('hiLim').attr('size',self.options.digits).val("0").blur(calcProb))
+                      .append(' is ');
+
+        // display
+        self.theDisplay = $('<input type="text" readonly />').attr('size',self.options.digits+4);
+        self.expectSpan = $('<span />').addClass('expectSpan');
+        self.selectDiv.append(self.theDisplay).append(self.expectSpan);
+        me.append(self.selectDiv);
+    }
+    init();
+
+//  action functions
+
+    function changeDist(dist) {
+        self.currDist = dist;
+        self.paramSpan.empty();
+        self.expectSpan.empty();
+        var thisDist = $.grep(self.options.distributions, function(v,i) {
+                          return(v[0] === dist);
+        });
+        self.paramSpan.append(self.distDivs[thisDist[0][0]]);  // replace with parameters for current distribution
+        self.theDisplay.val('NaN');
+        calcProb();
+    }
+
+    function calcProb() {
+        var prob  = Number.NaN;
+
+        // get range over which to compute the probability
+        var loCk  = self.selectDiv.find('.useLower').prop('checked');
+        var loLim = loCk ? parseFloat(self.selectDiv.find('.loLim').val()) : Number.NaN;
+        var hiCk  = self.selectDiv.find('.useUpper').prop('checked');
+        var hiLim = hiCk ? parseFloat(self.selectDiv.find('.hiLim').val()) : Number.NaN;
+
+        var allParamsDefined = true;
+        $.each(self.distDivs[self.currDist].find(':input'), function(i, v) {
+               if (v.value.trim().length === 0) {
+                   allParamsDefined = false;
+               }
+        });
+
+        if ((!loCk && !hiCk) || !allParamsDefined) {
+              prob = Number.NaN;
+        } else if (loCk && hiCk && (loLim > hiLim)) {
+              prob = 0.0;
+        } else {
+              self.expectSpan.empty();
+              var n;
+              var p;
+              var t;
+              var b;
+              var df;
+              var m;
+              switch(self.currDist) {
+                   case "Binomial":
+                      n = parseFloat(self.distDivs[self.currDist].find('.n').val());
+                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
+                      t = hiCk ? binomialCdf(n, p, hiLim) : 1.0;
+                      b = loCk ? binomialCdf(n, p, loLim-1) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                          self.expectSpan.append('E(X) = ' + (n*p).toFixed(self.options.paramDigits) +
+                                                 '; SE(X) = ' + Math.sqrt(n*p*(1-p)).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Geometric":
+                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
+                      t = hiCk ? geoCdf(p, hiLim) : 1.0;
+                      b = loCk ? geoCdf(p, loLim-1) : 0.0;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + (1/p).toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(1-p)/p).toFixed(self.options.paramDigits));
+                      }
+                      prob = t - b;
+                      break;
+
+                   case "Negative Binomial":
+                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
+                      r = parseFloat(self.distDivs[self.currDist].find('.r').val());
+                      t = hiCk ? negBinomialCdf( p,  r, hiLim) : 1.0;
+                      b = loCk ? negBinomialCdf( p,  r, loLim-1) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                          self.expectSpan.append('E(X) = ' + (r/p).toFixed(self.options.paramDigits) +
+                                                 '; SE(X) = ' + (Math.sqrt(r*(1-p))/p).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Hypergeometric":
+                      var N = parseFloat(self.distDivs[self.currDist].find('.N').val());
+                      var G = parseFloat(self.distDivs[self.currDist].find('.G').val());
+                      n = parseFloat(self.distDivs[self.currDist].find('.n').val());
+                      t = hiCk ? hyperGeoCdf(N,  G, n, hiLim) : 1.0;
+                      b = loCk ? hyperGeoCdf(N,  G, n, loLim-1) : 0.0;
+                      prob = t - b;
+                      var hyP = G/N;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + (n*hyP).toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(n*hyP*(1-hyP)*(N-n)/(N-1))).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Normal":
+                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
+                      var s = parseFloat(self.distDivs[self.currDist].find('.SD').val());
+                      t = hiCk ? normCdf((hiLim-m)/s) : 1.0;
+                      b = loCk ? normCdf((loLim-m)/s) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + s.toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Student t":
+                      df = parseFloat(self.distDivs[self.currDist].find('.degrees_of_freedom').val());
+                      t = hiCk ? tCdf(df, hiLim) : 1.0;
+                      b = loCk ? tCdf(df, loLim) : 0.0;
+                      prob = t - b;
+                      var se = (df > 2) ? (Math.sqrt(df/(df-2))).toFixed(self.options.paramDigits) : Number.NaN;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = 0; SE(X) = ' + se);
+                      }
+                      break;
+
+                   case "Chi-square":
+                      df = parseFloat(self.distDivs[self.currDist].find('.degrees_of_freedom').val());
+                      t = hiCk ? chi2Cdf(df, hiLim) : 1.0;
+                      b = loCk ? chi2Cdf(df, loLim) : 0.0;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + df.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(2*df)).toFixed(self.options.paramDigits));
+                      }
+                      prob = t - b;
+                      break;
+
+                   case "Exponential":
+                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
+                      t = hiCk ? expCdf(m, hiLim) : 1.0;
+                      b = loCk ? expCdf(m, loLim) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + m.toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Poisson":
+                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
+                      t = hiCk ? poissonCdf(m, hiLim) : 1.0;
+                      b = loCk ? poissonCdf(m, loLim) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(m)).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   default:
+                      console.log('unexpected distribution in distCalc.calcProb ' + dist);
+              }
+        }
+        self.theDisplay.val((100*prob).toFixed(self.options.digits-3)+'%');
+    }
+
+}
+
+(function(){
+
+  $.fn.popbox = function(options){
+    var settings = $.extend({
+      selector      : this.selector,
+      open          : '.open',
+      box           : '.box',
+      arrow         : '.arrow',
+      arrow_border  : '.arrow-border',
+      close         : '.close'
+    }, options);
+
+    var methods = {
+      open: function(event){
+        event.preventDefault();
+
+        var pop = $(this);
+        var box = $(this).parent().find(settings['box']);
+
+        box.find(settings['arrow']).css({'left': box.width()/2 - 10});
+        box.find(settings['arrow_border']).css({'left': box.width()/2 - 10});
+
+        if(box.css('display') == 'block'){
+          methods.close();
+        } else {
+          box.css({'display': 'block', 'top': 10, 'left': ((pop.parent().width()/2) -box.width()/2 )});
+        }
+
+        if (typeof $(this).parent().data('onPopBox') != 'undefined')
+          $(this).parent().data('onPopBox')();
+      },
+
+      close: function(){
+        $(settings.selector).find(settings['box']).fadeOut("fast");
+      }
+    };
+
+    $(document).bind('keyup', function(event){
+      if(event.keyCode == 27){
+        methods.close();
+      }
+    });
+
+    $(document).bind('click', function(event){
+      if(!$(event.target).closest(settings['selector']).length){
+        methods.close();
+      }
+    });
+
+    return this.each(function(){
+      if ($(this).data('isPopBox') === true)
+        return;
+      $(this).data('isPopBox', true);
+      if (!$(this).css('width'))
+        $(this).css({'width': $(settings['box']).width()}); // Width needs to be set otherwise popbox will not move when window resized.
+      $(settings['open'], this).bind('click', methods.open);
+      $(settings['open'], this).parent().find(settings['close']).bind('click', function(event){
+        event.preventDefault();
+        methods.close();
+      });
+    });
+  }
+
+}).call(this);
