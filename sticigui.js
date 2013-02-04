@@ -2154,11 +2154,15 @@ function Stici_Scatterplot(container_id, params) {
     } else if (dataIsGenerated()) {
       // r controls
       self.rInput = jQuery('<input type="text" />').change(function() {
+        if (!self.inited)
+          return;
         rSlider.slider('value', self.rInput.val());
         self.r = self.rInput.val();
         loadGeneratedData();
       });
       var updateRInput = function() {
+        if (!self.inited)
+          return;
         self.rInput.val(rSlider.slider('value'));
         self.r = rSlider.slider('value');
         loadGeneratedData();
@@ -2178,11 +2182,15 @@ function Stici_Scatterplot(container_id, params) {
 
       // n controls
       var nInput = jQuery('<input type="text" />').change(function() {
+        if (!self.inited)
+          return;
         nSlider.slider('value', nInput.val());
         self.n = nInput.val();
         loadGeneratedData();
       });
       var updateNInput = function() {
+        if (!self.inited)
+          return;
         nInput.val(nSlider.slider('value'));
         self.n = nSlider.slider('value');
         loadGeneratedData();
@@ -2232,6 +2240,10 @@ function Stici_Scatterplot(container_id, params) {
     if (self.options.addPoints)
       $bottom.append($toggleUsePoints).append($toggleClearPoints);
     $bottom.append($cursorPos);
+
+    $stici.find('button').on('click', function(e) {
+      handleBtnToggle(e);
+    });
   }
 
 
@@ -2312,9 +2324,6 @@ function Stici_Scatterplot(container_id, params) {
 
   // document ready
   $().ready(function() {
-    self.container.find('button').on('click', function(e) {
-      handleBtnToggle(e);
-    });
   });
 
   initControls();
