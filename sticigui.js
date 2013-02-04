@@ -722,6 +722,9 @@ function Stici_HistHiLite(container_id, params) {
           '</div>' +
         '</div>';
         listDataButton.content.html(html);
+        listDataButton.content
+                      .find('table')
+                      .css('width', self.dataFields.length * 120 + 'px');
       });
       if (self.options.listData) {
         row.append(listDataButton.parent);
@@ -1183,7 +1186,7 @@ function Stici_Scatterplot(container_id, params) {
       self.createPopbox('list-data');
       self.createPopbox('univar-stats');
       self.container.find('.popbox').popbox({'toggler': ['list-data', 'univar-stats']});
-      self.container.find('.popbox-content table').css('width', self.dataFields.length * 100 + 'px');
+      self.container.find('.popbox-content table').css('width', self.dataFields.length * 120 + 'px');
       self.container.find('.popbox').on('mouseover mouseout click', function(e) {
         handlePopboxMouseEvents(e);
       });
