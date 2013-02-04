@@ -656,7 +656,8 @@ function Stici_HistHiLite(container_id, params) {
       });
 
       var clearAll = jQuery('<button/>').text('Clear Restrictions');
-      clearAll.click(function() {
+      clearAll.click(function(e) {
+        e.preventDefault();
         self.restrictUpperEnable.prop('checked', false);
         self.restrictUpper.val(self.binEnds.max());
         self.restrictLowerEnable.prop('checked', false);
@@ -1188,6 +1189,7 @@ function Stici_Scatterplot(container_id, params) {
       self.container.find('.popbox').popbox({'toggler': ['list-data', 'univar-stats']});
       self.container.find('.popbox-content table').css('width', self.dataFields.length * 120 + 'px');
       self.container.find('.popbox').on('mouseover mouseout click', function(e) {
+        e.preventDefault();
         handlePopboxMouseEvents(e);
       });
 
@@ -2245,6 +2247,7 @@ function Stici_Scatterplot(container_id, params) {
     $bottom.append($cursorPos);
 
     $stici.find('button').on('click', function(e) {
+      e.preventDefault();
       handleBtnToggle(e);
     });
   }
@@ -4169,7 +4172,10 @@ function statCalc(container_id, params) {
               .button()
               .addClass(v[1])
               .addClass('calcButton')
-              .click( function() {buttonClick(v[0], v[1]);});
+              .click( function(e) {
+                e.preventDefault();
+                buttonClick(v[0], v[1]);
+              });
             row.append($('<td/>').append(newBut));
           });
         });
@@ -4396,7 +4402,9 @@ function distCalc(container_id, params) {
         calcProb();
     }
 
-    function calcProb() {
+    function calcProb(e) {
+        if (typeof(e) != 'undefined' && e instanceof jQuery.Event)
+          e.preventDefault();
         var prob  = Number.NaN;
 
         // get range over which to compute the probability
