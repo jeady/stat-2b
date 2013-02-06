@@ -10,6 +10,8 @@ Currently the following interactive charts are supported:
    Created by invoking `Stici_HistHiLite`.
 2. Scatterplot
    Created by invoking `Stici_Scatterplot`.
+3. Statistics Calculator
+   Created by invoking `statCalc`.
 
 Usage
 =====
