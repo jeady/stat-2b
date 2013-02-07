@@ -166,6 +166,33 @@
 .stici>.bottom_controls .popbox .box p table {
 }
 
+.stici_normhilite .overlay path {
+  fill: #f8ff53;
+}
+.stici_normhilite .chart_box svg {
+  vertical-align: top;
+  width: 100%;
+}
+.stici_normhilite path {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 2px;
+}
+.stici_normhilite .additional_info {
+  text-align: center;
+  vertical-align: middle;
+  height: 30px;
+}
+.stici_normhilite {
+  font-size: 14px;
+}
+.stici_normhilite .axis path,
+.stici_normhilite .axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
 .stici>.bottom_controls button.selected, .stici>.bottom_controls button:active {
   top: 1px;
   background: rgb(229,229,229); /* Old browsers */
