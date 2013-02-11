@@ -4,9 +4,9 @@
   position:relative;
 }
 
-  .collapse { position:relative; }
+  .popbox .collapse { position:relative; }
 
-  .open {
+  .popbox .open {
     background:#DDD;
     border:solid 1px #FFF;
     border-radius:5px;
@@ -17,7 +17,7 @@
     padding:8px;
   }
 
-    .box {
+    .popbox .box {
       display:block;
       display:none;
       background:#FFF;
@@ -27,14 +27,14 @@
       position:absolute;
     }
 
-      .box a.close {
+      .popbox .box a.close {
        color:red;
        font-size:12px;
        font-family:arial;
        text-decoration:underline;
       }
 
-      .arrow {
+      .popbox .arrow {
       	width: 0;
       	height: 0;
       	border-left: 11px solid transparent;
@@ -46,7 +46,7 @@
       	z-index:1001;
       }
 
-      .arrow-border {
+      .popbox .arrow-border {
       	width: 0;
       	height: 0;
       	border-left: 11px solid transparent;
