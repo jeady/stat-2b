@@ -7,16 +7,15 @@
 }
 
 .stici_venn .container {
-  float: left;
   position: relative;
-  width: 340px;
-  height: 200px;
+  display: inline-block;
 }
 
 .stici_venn .buttons {
   width: 160px;
   margin-top: 25px;
-  float: left;
+  display: inline-block;
+  vertical-align: top;
 }
 
 .stici_venn .scrollbars {
@@ -28,21 +27,20 @@
 }
 
 .stici_venn .text {
-  float: left;
   padding-left: 15%;
   padding-right: 15%;
 }
 
 .stici_venn .button {
   font-size: 12px;
-  float: left;
   width: 70px;
   margin-bottom: 10px;
+  display: inline-block;
 }
 
 .stici_venn .scrollbar {
   width: 140px;
-  float: left;
+  display: inline-block;
 }
 
 .stici_venn .box {
