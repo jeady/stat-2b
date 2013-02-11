@@ -8,6 +8,9 @@
 
 .stici_venn .container {
   float: left;
+  position: relative;
+  width: 340px;
+  height: 200px;
 }
 
 .stici_venn .buttons {
@@ -40,4 +43,19 @@
 .stici_venn .scrollbar {
   width: 140px;
   float: left;
+}
+
+.stici_venn .box {
+ border: 1px solid black;
+ position: absolute;
+ font-size: 14px;
+ font-family: sans-serif;
+}
+
+.stici_venn .box.S {
+ background-color: #eee;
+}
+
+.stici_venn .box.selected {
+ background-color: DodgerBlue;
 }
