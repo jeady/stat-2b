@@ -4907,7 +4907,9 @@ function distCalc(container_id, params) {
 
 }
 
-function Venn(container_id) {
+// Javascript implementation of venn diagram for sticigui. No params are
+// currently available.
+function Stici_Venn(container_id, params) {
   var self = this;
 
   this.env = jQuery('#' + container_id);
