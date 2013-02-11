@@ -4,55 +4,55 @@
   position:relative;
 }
 
-  .popbox .collapse { position:relative; }
+.popbox .collapse { position:relative; }
 
-  .popbox .open {
-    background:#DDD;
-    border:solid 1px #FFF;
-    border-radius:5px;
-    box-shadow: 0px 0px 5px #CCC;
-    background:-webkit-gradient(linear,left top,left bottom,from(#f4f4f4),to(#e8e8e8));
-    background:-moz-linear-gradient(top,#f4f4f4,#e8e8e8);
-    background:linear-gradient(top,#f4f4f4,#e8e8e8);
-    padding:8px;
-  }
+.popbox .open {
+  background:#DDD;
+  border:solid 1px #FFF;
+  border-radius:5px;
+  box-shadow: 0px 0px 5px #CCC;
+  background:-webkit-gradient(linear,left top,left bottom,from(#f4f4f4),to(#e8e8e8));
+  background:-moz-linear-gradient(top,#f4f4f4,#e8e8e8);
+  background:linear-gradient(top,#f4f4f4,#e8e8e8);
+  padding:8px;
+}
 
-    .popbox .box {
-      display:block;
-      display:none;
-      background:#FFF;
-      border:solid 1px #BBBBBB;
-      border-radius:5px;
-      box-shadow:0px 0px 15px #999;
-      position:absolute;
-    }
+.popbox .box {
+  display:block;
+  display:none;
+  background:#FFF;
+  border:solid 1px #BBBBBB;
+  border-radius:5px;
+  box-shadow:0px 0px 15px #999;
+  position:absolute;
+}
 
-      .popbox .box a.close {
-       color:red;
-       font-size:12px;
-       font-family:arial;
-       text-decoration:underline;
-      }
+.popbox .box a.close {
+  color:red;
+  font-size:12px;
+  font-family:arial;
+  text-decoration:underline;
+}
 
-      .popbox .arrow {
-      	width: 0;
-      	height: 0;
-      	border-left: 11px solid transparent;
-      	border-right: 11px solid transparent;
-      	border-bottom: 11px solid #FFF;
-      	position:absolute;
-      	left:1px;
-      	top:-10px;
-      	z-index:1001;
-      }
+.popbox .arrow {
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 11px solid #FFF;
+  position:absolute;
+  left:1px;
+  top:-10px;
+  z-index:1001;
+}
 
-      .popbox .arrow-border {
-      	width: 0;
-      	height: 0;
-      	border-left: 11px solid transparent;
-      	border-right: 11px solid transparent;
-      	border-bottom: 11px solid #BBBBBB;
-      	position:absolute;
-      	top:-12px;
-      	z-index:1000;
-      }
+.popbox .arrow-border {
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 11px solid #BBBBBB;
+  position:absolute;
+  top:-12px;
+  z-index:1000;
+}
