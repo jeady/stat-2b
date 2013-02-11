@@ -46,10 +46,18 @@
 }
 
 .stici_venn .box {
- border: 1px solid black;
  position: absolute;
  font-size: 14px;
  font-family: sans-serif;
+}
+
+.stici_venn .box.outline,
+.stici_venn .box.S {
+ border: 1px solid black;
+}
+
+.stici_venn .box.fill {
+  border: 1px solid transparent;
 }
 
 .stici_venn .box.S {
