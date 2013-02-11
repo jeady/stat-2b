@@ -1,4 +1,4 @@
-.app {
+.stici_venn {
   width: 500px;
   height: 200px;
   margin-left: auto;
@@ -6,17 +6,17 @@
   font-family: "Helvetica", sans-serif;
 }
 
-.container {
+.stici_venn .container {
   float: left;
 }
 
-.buttons {
+.stici_venn .buttons {
   width: 160px;
   margin-top: 25px;
   float: left;
 }
 
-.scrollbars {
+.stici_venn .scrollbars {
   font-weight: bold;
   width: 280px;
   display: block;
@@ -24,20 +24,20 @@
   margin: 0 auto;
 }
 
-.text {
+.stici_venn .text {
   float: left;
   padding-left: 15%;
   padding-right: 15%;
 }
 
-.button {
+.stici_venn .button {
   font-size: 12px;
   float: left;
   width: 70px;
   margin-bottom: 10px;
 }
 
-.scrollbar {
+.stici_venn .scrollbar {
   width: 140px;
   float: left;
 }
