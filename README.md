@@ -12,6 +12,8 @@ Currently the following interactive charts are supported:
    Created by invoking `new Stici_Scatterplot`.
 3. Statistics Calculator
    Created by invoking `new statCalc`.
+4. Venn diagram
+   Created by invoking `new Stici_Venn`.
 
 Usage
 =====

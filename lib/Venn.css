@@ -1,0 +1,69 @@
+.stici_venn {
+  width: 100%;
+  height: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: "Helvetica", sans-serif;
+}
+
+.stici_venn .container {
+  position: relative;
+  display: inline-block;
+}
+
+.stici_venn .buttons {
+  width: 160px;
+  margin-top: 25px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.stici_venn .scrollbars {
+  font-weight: bold;
+  width: 420px;
+  display: block;
+  font-size: 14px;
+  margin: 0 auto;
+}
+
+.stici_venn .text {
+  padding-left: 15%;
+  padding-right: 15%;
+}
+
+.stici_venn .button {
+  font-size: 12px;
+  width: 70px;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.stici_venn .scrollbar,
+.stici_venn .info {
+  width: 140px;
+  display: inline-block;
+}
+
+.stici_venn .box {
+ position: absolute;
+ font-size: 14px;
+ font-family: sans-serif;
+}
+
+.stici_venn .box.outline,
+.stici_venn .box.S {
+ border: 1px solid black;
+}
+
+.stici_venn .box.fill {
+  border: 1px solid transparent;
+}
+
+.stici_venn .box.S,
+.stici_venn .box.opaque {
+ background-color: #eee;
+}
+
+.stici_venn .box.selected {
+ background-color: DodgerBlue;
+}
