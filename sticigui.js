@@ -4928,6 +4928,7 @@ function Stici_Venn(container_id, params) {
 
   var s_outline, a_outline, b_outline;
   var a_fill, b_fill, ab_fill;
+  var ab_text, a_or_b_text;
 
   var button_args = [
     ['A', function () {
@@ -5028,6 +5029,12 @@ function Stici_Venn(container_id, params) {
   createPercentControl('A');
   createPercentControl('B');
 
+  var infoDiv = jQuery('<div/>').addClass('info');
+  ab_text = jQuery('<p/>');
+  a_or_b_text = jQuery('<p/>');
+  infoDiv.append(ab_text).append(a_or_b_text);
+  scrollbars.append(infoDiv);
+
   var scaleFactorX = 0.3;
   var scaleFactorY = 0.3;
 
@@ -5036,19 +5043,19 @@ function Stici_Venn(container_id, params) {
   function syncPositions() {
     // Make sure everything stays in bounds.
     var ax_offset = a_outline.offset().left + a_outline.width() -
-      (a_outline.parent().offset().left + a_outline.parent().width());
+      (s_outline.offset().left + s_outline.width());
     if (ax_offset > 0)
       a_outline.css('left', (a_outline.position().left - ax_offset) + 'px');
     var ay_offset = a_outline.offset().top + a_outline.height() -
-      (a_outline.parent().offset().top + a_outline.parent().height());
+      (s_outline.offset().top + s_outline.height());
     if (ay_offset > 0)
       a_outline.css('top', (a_outline.position().top - ay_offset) + 'px');
     var bx_offset = b_outline.offset().left + b_outline.width() -
-      (b_outline.parent().offset().left + b_outline.parent().width());
+      (s_outline.offset().left + s_outline.width());
     if (bx_offset > 0)
       b_outline.css('left', (b_outline.position().left - bx_offset) + 'px');
     var by_offset = b_outline.offset().top + b_outline.height() -
-      (b_outline.parent().offset().top + b_outline.parent().height());
+      (s_outline.offset().top + s_outline.height());
     if (by_offset > 0)
       b_outline.css('top', (b_outline.position().top - by_offset) + 'px');
 
@@ -5086,6 +5093,13 @@ function Stici_Venn(container_id, params) {
       ab_fill.css('width', (x2 - x1) + 'px');
       ab_fill.css('height', (y2 - y1) + 'px');
     }
+
+    var s_area = s_outline.width() * s_outline.height();
+    var p_a = a_fill.width() * a_fill.height() / s_area;
+    var p_b = b_fill.width() * b_fill.height() / s_area;
+    var p_ab = ab_fill.width() * ab_fill.height() / s_area;
+    ab_text.text('P(AB): ' + (100 * p_ab).fix(2) + '%');
+    a_or_b_text.text('P(A or B): ' + (100 * (p_a + p_b - p_ab)).fix(2) + '%');
   }
 
   function draw() {
@@ -5124,12 +5138,12 @@ function Stici_Venn(container_id, params) {
     self.container.append(a_outline);
     self.container.append(b_outline);
     a_outline.draggable({
-      containment: 'parent',
+      containment: s_outline,
       drag: syncPositions,
       stop: syncPositions
     });
     b_outline.draggable({
-      containment: 'parent',
+      containment: s_outline,
       drag: syncPositions,
       stop: syncPositions
     });

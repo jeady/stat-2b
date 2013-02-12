@@ -427,7 +427,7 @@
 
 .stici_venn .scrollbars {
   font-weight: bold;
-  width: 280px;
+  width: 420px;
   display: block;
   font-size: 14px;
   margin: 0 auto;
@@ -445,7 +445,8 @@
   display: inline-block;
 }
 
-.stici_venn .scrollbar {
+.stici_venn .scrollbar,
+.stici_venn .info {
   width: 140px;
   display: inline-block;
 }
