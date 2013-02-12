@@ -4935,7 +4935,7 @@ function Stici_Venn(container_id, params) {
       a_fill.addClass('selected');
     }],
 
-    ['Ac', function () {
+    ['A<sup>c</sup>', function () {
       s_outline.addClass('selected');
       a_fill.addClass('opaque');
     }],
@@ -4944,7 +4944,7 @@ function Stici_Venn(container_id, params) {
       b_fill.addClass('selected');
     }],
 
-    ['Bc', function () {
+    ['B<sup>c</sup>', function () {
       s_outline.addClass('selected');
       b_fill.addClass('opaque');
     }],
@@ -4958,12 +4958,12 @@ function Stici_Venn(container_id, params) {
       ab_fill.addClass('selected');
     }],
 
-    ['ABc', function () {
+    ['AB<sup>c</sup>', function () {
       a_fill.addClass('selected');
       ab_fill.addClass('opaque');
     }],
 
-    ['AcB', function () {
+    ['A<sup>c</sup>B', function () {
       b_fill.addClass('selected');
       ab_fill.addClass('opaque');
     }],
