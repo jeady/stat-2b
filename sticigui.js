@@ -240,7 +240,6 @@ function Stici_HistHiLite(container_id, params) {
       return y;
     };
     var yScale = null;
-    // TODO(jmeady): Include height in yScale.
     for (i = 0; i < width; i++) {
       if ((yScale === null || normalCurveY(i) > yScale) &&
           !isNaN(normalCurveY(i)))
@@ -543,7 +542,6 @@ function Stici_HistHiLite(container_id, params) {
       self.dataSelect = jQuery('<select/>').change(self.reloadData);
       self.variableSelect = jQuery('<select/>').change(function() {
         refreshFromExternalData();
-        updateVariableRestrictionControls();
         self.reloadChart();
       });
 
@@ -822,17 +820,28 @@ function Stici_HistHiLite(container_id, params) {
     if (!self.options.restrict)
       return;
     self.restrictedVariable.html(self.variableSelect.html());
-    self.restrictedVariable.val(self.variableSelect.val());
-    self.restrictUpper.val(self.binEnds.max());
-    self.restrictLower.val(self.binEnds.min());
+    self.restrictedVariable.val((parseInt(self.variableSelect.val(), 10) + 1) %
+                                 self.variableSelect.children().length);
+    var dat = jQuery.map(self.dataValues, function(values) {
+      return parseFloat(values[self.restrictedVariable.val()]);
+    });
+    self.restrictUpper.val(dat.max());
+    self.restrictLower.val(dat.min());
   }
   function updateRestrictedData() {
+    var info = 'n=' + self.data.length;
+    info += '&nbsp;&nbsp;&nbsp;';
+    info += 'Mean=' + self.mu.toFixed(3);
+    info += '&nbsp;&nbsp;&nbsp;';
+    info += 'SD=' + self.sd.toFixed(3);
     self.restrictedData = jQuery.map(self.dataValues, function(values) {
-      return parseFloat(values[self.restrictedVariable.val()]);
+      return [[
+        parseFloat(values[self.variableSelect.val()]),
+        parseFloat(values[self.restrictedVariable.val()])]];
     });
     if (self.restrictUpperEnable.is(':checked')) {
       self.restrictedData = jQuery.grep(self.restrictedData, function(o) {
-        if (o <= self.restrictUpper.val())
+        if (o[1] <= self.restrictUpper.val())
           return true;
         else
           return false;
@@ -840,12 +849,15 @@ function Stici_HistHiLite(container_id, params) {
     }
     if (self.restrictLowerEnable.is(':checked')) {
       self.restrictedData = jQuery.grep(self.restrictedData, function(o) {
-        if (o >= self.restrictLower.val())
+        if (o[1] >= self.restrictLower.val())
           return true;
         else
           return false;
       });
     }
+    self.restrictedData = jQuery.map(self.restrictedData, function(o) {
+      return o[0];
+    });
     if (!self.restrictUpperEnable.is(':checked') &&
         !self.restrictLowerEnable.is(':checked')) {
       self.restrictedCounts = null;
@@ -855,19 +867,14 @@ function Stici_HistHiLite(container_id, params) {
         self.restrictedCounts = null;
       self.restrictedMu = mean(self.restrictedData);
       self.restrictedSd = sd(self.restrictedData);
-      var info = 'n=' + self.data.length;
-      info += '&nbsp;&nbsp;&nbsp;';
-      info += 'Mean=' + self.mu.toFixed(3);
-      info += '&nbsp;&nbsp;&nbsp;';
-      info += 'SD=' + self.sd.toFixed(3);
       info += '&nbsp;&nbsp;&nbsp;';
       info += 'Subset: n=' + self.restrictedData.length;
       info += '&nbsp;&nbsp;&nbsp;';
       info += 'Mean=' + self.restrictedMu.toFixed(3);
       info += '&nbsp;&nbsp;&nbsp;';
       info += 'SD=' + self.restrictedSd.toFixed(3);
-      self.additionalInfo.html(info);
     }
+    self.additionalInfo.html(info);
     redrawChart();
   }
   // Helper function that is called whenever any of the area overlay
