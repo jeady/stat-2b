@@ -22,14 +22,21 @@
 </head>
 
 <body>
-
+<table align="center">
+  <tr>
+    <td>stats go here</td>
+    <td>
 <div id="chart">
 </div>
+</td>
+<td><div id="popText"></div></td>
+</tr>
+</table>
 
 <script>
 jQuery(function() {
   new Stici_SampleDist('chart', {
-    bins: 100
+    bins: 10
   });
 });
 </script>
