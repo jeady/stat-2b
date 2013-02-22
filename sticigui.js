@@ -296,6 +296,7 @@ function Stici_HistHiLite(container_id, params) {
       if (null === self.restrictedCounts ||
           !self.showingRestricted.is(':checked')) {
         return d3.select(div.get(0)).append('svg')
+          .attr('height', '100%')
           .selectAll('div')
           .data(self.binCounts)
           .enter()
