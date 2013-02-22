@@ -312,7 +312,10 @@ function Stici_HistHiLite(container_id, params) {
               graphWidth;
           });
       } else {
-        var svg = d3.select(div.get(0)).append('svg').selectAll('div');
+        var svg = d3.select(div.get(0))
+                    .append('svg')
+                    .attr('height', '100%')
+                    .selectAll('div');
         var dat = jQuery.map(self.binCounts, function(o, i) {
           // Need double array because jQuery auto-flattens result.
           if (!self.showingOriginal.is(':checked'))
@@ -388,7 +391,9 @@ function Stici_HistHiLite(container_id, params) {
           .y(function(d) {
             return height - (normalCurveY(d) / yScale);
           });
-      var normSvg = d3.select(self.normalOverlayDiv.get(0)).append('svg');
+      var normSvg = d3.select(self.normalOverlayDiv.get(0))
+                      .append('svg')
+                      .attr('height', '100%');
       if (null === self.restrictedCounts ||
           self.showingOriginal.is(':checked') ||
           !self.showingRestricted.is(':checked')) {
@@ -1127,6 +1132,7 @@ function Stici_NormHiLite(container_id, params) {
           return height - (remappedY(d) / yScale);
         });
     d3.select(normalChartDiv.get(0)).append('svg')
+      .attr('height', '100%')
       .append('path')
       .data([d3.range(0, width)])
       .attr('d', curve);
@@ -1143,6 +1149,7 @@ function Stici_NormHiLite(container_id, params) {
         });
     var overlayDat = [0].concat(d3.range(0, width), [width]);
     d3.select(self.overlayDiv.get(0)).append('svg')
+      .attr('height', '100%')
       .append('path')
       .data([overlayDat])
       .attr('d', overlayCurve);
