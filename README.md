@@ -7,9 +7,13 @@ interactive content for UC Berkeley's Stat 2B course. Demos may be found
 Currently the following interactive charts are supported:
 
 1. Histogram
-   Created by invoking `Stici_HistHiLite`.
+   Created by invoking `new Stici_HistHiLite`.
 2. Scatterplot
-   Created by invoking `Stici_Scatterplot`.
+   Created by invoking `new Stici_Scatterplot`.
+3. Statistics Calculator
+   Created by invoking `new statCalc`.
+4. Venn diagram
+   Created by invoking `new Stici_Venn`.
 
 Usage
 =====
