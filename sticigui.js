@@ -4976,7 +4976,9 @@ function Stici_Venn(container_id, params) {
   var self = this;
 
   this.env = jQuery('#' + container_id);
-  var app = jQuery('<div/>',{id:container_id + 'app'}).addClass('stici_venn');
+  var app = jQuery('<div/>',{id:container_id + 'app'})
+              .addClass('stici_venn')
+              .addClass('stici');
   this.env.append(app);
 
   this.container = jQuery('<div/>',{id:container_id + 'container'}).addClass('container');
@@ -5063,8 +5065,12 @@ function Stici_Venn(container_id, params) {
     var sb = jQuery('<div/>',{id:container_id + 'psb' + letter}).addClass('scrollbar');
     var lbl = jQuery('<label/>').attr('for', container_id + 'sb'+letter);
     lbl.html('P(' + letter + ') (%)');
-    var idFunc1 = "$('#" + container_id + "sb" + letter + "').val(this.value)";
-    var idFunc2 = "$('#" + container_id + "sb" + letter + "t').val(this.value)";
+    var idFunc1 = function() {
+      $('#' + container_id + 'sb' + letter).slider('value', this.value);
+    };
+    var idFunc2 = function() {
+      $('#' + container_id + 'sb' + letter + 't').val($(this).slider('value'));
+    };
     var input = jQuery('<input/>', {
       type: 'text',
       id: container_id + 'sb'+letter+'t',
@@ -5072,15 +5078,17 @@ function Stici_Venn(container_id, params) {
       value: size,
       size: 2
     });
-    var input2 = jQuery('<input/>', {
-      type: 'range',
-      id: container_id + 'sb'+letter,
-      onchange: idFunc2,
+    var input2 =
+      jQuery('<span/>')
+        .addClass('slider')
+        .attr('id', container_id + 'sb' + letter)
+        .slider({
+      change: idFunc2,
+      slide: idFunc2,
       min: 1,
       max: 100,
       step: 1,
-      value: size,
-      style: 'width: 92px'
+      value: size
     });
 
     sb.append(lbl);
@@ -5179,15 +5187,15 @@ function Stici_Venn(container_id, params) {
          ab_fill.position().top == b_outline.position().top &&
          ab_fill.width() == b_outline.width() &&
          ab_fill.height() == b_outline.height())) {
-      p_ab = Math.min($('#' + container_id + 'sbA').val(),
-                      $('#' + container_id + 'sbB').val());
-      p_a_or_b = Math.max($('#' + container_id + 'sbA').val(),
-                          $('#' + container_id + 'sbB').val());
+      p_ab = Math.min($('#' + container_id + 'sbA').slider('value'),
+                      $('#' + container_id + 'sbB').slider('value'));
+      p_a_or_b = Math.max($('#' + container_id + 'sbA').slider('value'),
+                          $('#' + container_id + 'sbB').slider('value'));
     }
     if (ab_fill.css('display') == 'none') {
       p_ab = 0;
-      p_a_or_b = parseFloat($('#' + container_id + 'sbA').val()) +
-                 parseFloat($('#' + container_id + 'sbB').val());
+      p_a_or_b = parseFloat($('#' + container_id + 'sbA').slider('value')) +
+                 parseFloat($('#' + container_id + 'sbB').slider('value'));
     }
     ab_text.text('P(AB): ' + p_ab.fix(1) + '%');
     a_or_b_text.text('P(A or B): ' + p_a_or_b.fix(1) + '%');
@@ -5249,13 +5257,13 @@ function Stici_Venn(container_id, params) {
       // height = area / width
       var ratio = s_outline.width() / s_outline.height();
       var s_area = s_outline.width() * s_outline.height();
-      var a_p = $('#' + container_id + 'sbA').val() / 100;
+      var a_p = $('#' + container_id + 'sbA').slider('value') / 100;
       var a_area = s_area * a_p;
       var a_width = Math.sqrt(a_area * ratio);
       var a_height = a_area / a_width;
       a_outline.width(a_width + 'px');
       a_outline.height(a_height + 'px');
-      var b_p = $('#' + container_id + 'sbB').val() / 100;
+      var b_p = $('#' + container_id + 'sbB').slider('value') / 100;
       var b_area = s_area * b_p;
       var b_width = Math.sqrt(b_area * ratio);
       var b_height = b_area / b_width;
@@ -5263,8 +5271,10 @@ function Stici_Venn(container_id, params) {
       b_outline.height(b_height + 'px');
       syncPositions();
     }
-    $('#' + container_id + 'sbA').change(updateSizes);
-    $('#' + container_id + 'sbB').change(updateSizes);
+    $('#' + container_id + 'sbA').on('slidechange', updateSizes);
+    $('#' + container_id + 'sbB').on('slidechange', updateSizes);
+    $('#' + container_id + 'sbA').on('slide', updateSizes);
+    $('#' + container_id + 'sbB').on('slide', updateSizes);
     $('#' + container_id + 'sbAt').change(updateSizes);
     $('#' + container_id + 'sbBt').change(updateSizes);
     updateSizes();
