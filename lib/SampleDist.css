@@ -53,3 +53,7 @@
   width: 75px;
   height: 300px;
 }
+
+#statsText ul {
+  list-style: none;
+}
