@@ -474,6 +474,9 @@
 .stici_venn .box.selected {
  background-color: DodgerBlue;
 }
+.stici_venn input[type="text"] {
+  width: 40px;
+}
 
 .popbox {
   margin:0px auto;
