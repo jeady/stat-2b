@@ -11,18 +11,25 @@
 <link href="../sticigui.css" rel="stylesheet" type="text/css" />
 <title>Sample Distribution</title>
 <style>
-#chart {
+#chartTable {
   width: 650px;
   height: 400px;
-  border: 1px #000 solid;
+}
+#chart {
+  width: 500px;
+  height: 400px;
   margin-left: auto;
   margin-right: auto;
+}
+#topControlTr {
+  height: 40px;
 }
 </style>
 </head>
 
 <body>
-<table align="center">
+<table align="center" id="chartTable">
+  <tr id="topControlTr"><td id="top_controls"></td></tr>
   <tr>
     <td><div id="statsText"></div></td>
     <td>
