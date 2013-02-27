@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script src="http://d3js.org/d3.v2.js"></script>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<script src="../sticigui.js"></script>
+<link href="../sticigui.css" rel="stylesheet" type="text/css" />
+<title>Sample Distribution</title>
+<style>
+#chartTable {
+  width: 650px;
+  height: 400px;
+}
+#chart {
+  width: 500px;
+  height: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+#topControlTr {
+  height: 40px;
+}
+</style>
+</head>
+
+<body>
+<table align="center" id="chartTable">
+  <tr id="topControlTr"><td id="top_controls"></td></tr>
+  <tr>
+    <td><div id="statsText"></div></td>
+    <td>
+<div id="chart">
+</div>
+</td>
+<td><div id="popText"></div></td>
+</tr>
+</table>
+
+<script>
+jQuery(function() {
+  new Stici_SampleDist('chart', {
+    bins: 100,
+  });
+});
+</script>
+
+<p align="center">Sample Distribution</p>
+
+
+<p><font color="#FF0000" size="2">©1997, </font><a
+href="../index.html"><font color="#FF0000" size="2">P.B. Stark</font></a>
+All rights reserved.
+</body>
+</html>
