@@ -14,6 +14,8 @@ Currently the following interactive charts are supported:
    Created by invoking `new statCalc`.
 4. Venn diagram
    Created by invoking `new Stici_Venn`.
+5. Area under the curve (normal and chi-square curves)
+   Created by invoking `new Stici_NormHiLite`
 
 Usage
 =====
