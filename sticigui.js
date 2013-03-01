@@ -163,17 +163,24 @@ function Stici_HistHiLite(container_id, params) {
   this.restrictUpper = null;
   this.restrictedStates = {};
 
+  // Mode.
+  this.dataIsBinomial = false;
+  this.dataIsManual = false;
+  this.dataIsExternal = false;
+
   // This method will be set according to which data source we are using.
   this.reloadData = null;
 
   if (self.options.n !== null || self.options.p !== null) {
     // Binomial data source.
+    self.dataIsBinomial = true;
     self.options.showUnivariateStats = false;
     self.options.listData = false;
     self.options.changeNumBins = false;
     self.reloadData = loadBinomialData;
   } else if (self.options.counts !== null || self.options.ends !== null) {
     // Manually specified data source.
+    self.dataIsManual = true;
     self.dataSource = null;
     if (!params.showNormal)
       self.options.showNormal = false;
@@ -186,6 +193,7 @@ function Stici_HistHiLite(container_id, params) {
     self.reloadData = loadManualData;
   } else if (self.options.data instanceof Array) {
     // External data source.
+    self.dataIsExternal = true;
     self.dataSource = self.options.data[0];
     self.options.binomialBars = false;
     if (self.options.restrict) {
@@ -623,7 +631,7 @@ function Stici_HistHiLite(container_id, params) {
       appendHeaderRow(dataSelectControls);
     }
     function createAreaSelectControls() {
-      var row = jQuery('<div/>');
+      var row = jQuery('<div/>').addClass('areaHiLite');
 
       // Area from input/slider.
       self.areaFromInput = jQuery('<input type="text" />').change(function() {
@@ -668,7 +676,7 @@ function Stici_HistHiLite(container_id, params) {
           redrawChart();
         });
         row.append('Bins: ').append(binsInput);
-      } else {
+      } else if(!self.dataIsBinomial) {
         row.append('Bins: ' + self.options.bins);
       }
       appendFooterRow(row);
@@ -840,7 +848,7 @@ function Stici_HistHiLite(container_id, params) {
         appendFooterRow(row);
     }
     function createBinomialBars() {
-      var row = jQuery('<div/>');
+      var row = jQuery('<div/>').addClass('binomialBars');
 
       var updateNP = function() {
         pInput.val(pSlider.slider('value'));
@@ -893,7 +901,8 @@ function Stici_HistHiLite(container_id, params) {
     var additionalInfoDiv = jQuery('<div/>').addClass('additional_info');
     self.additionalInfo = jQuery('<p/>');
     additionalInfoDiv.append(self.additionalInfo);
-    appendFooterRow(additionalInfoDiv);
+    if (!self.dataIsBinomial || !self.options.binomialBars)
+      appendFooterRow(additionalInfoDiv);
 
     jQuery('.popbox').popbox();
 
@@ -1367,6 +1376,11 @@ function Stici_SampleDist(container_id, params) {
   var UNIFORM = 'Uniform';
   var NORMAL = 'Normal';
 
+  var NO_CURVE = 'none';
+  var NORMAL_CURVE = 'normal';
+  var STUDENT_T_CURVE = 't';
+  var CHI_SQUARED_CURVE = 'chisquared';
+
   if (!params instanceof Object) {
     console.error('Stici_SampleDist params should be an object');
     return;
@@ -1385,14 +1399,17 @@ function Stici_SampleDist(container_id, params) {
     startsWith: null,
     statisticTypes: [['Sample Chi-Squared', CHISQUARE], ['Sample Mean', MEAN], ['Sample t', T], ['Sample Sum', SUM], ['Sample S-Squared', SSQ]],
     statisticType: SUM,
-    withReplacement: false,
+    withReplacement: true,
     sampleSize: 5,
     samplesToTake: 1,
     boxEditable: true,
     toggleVar: true,
     replaceControl: true,
     statLabels: true,
-    binControls: true
+    binControls: true,
+    curveTypes: [['No Curve', NO_CURVE], ['Normal Curve', NORMAL_CURVE], ['Student t Curve', STUDENT_T_CURVE], ['Chi-Squared Curve', CHI_SQUARED_CURVE]],
+    hiLiteLo: null,
+    hiLiteHi: null
   };
 
   this.xMin = 0;
@@ -1407,10 +1424,11 @@ function Stici_SampleDist(container_id, params) {
   this.sampleSsq = [];
   this.sampleT = [];
   this.binEnds = [];
+  this.sampleBinCounts = null;
 
   // Various handles to important jQuery objects.
   //some of these might not be needed????
-  this.restrictedCounts = null;
+  this.overlayDiv = jQuery('<div/>');
   this.replacementCheckbox = null;
   this.statisticSelect = null;
   this.dataSelect = null;
@@ -1418,6 +1436,11 @@ function Stici_SampleDist(container_id, params) {
   this.stashedBoxPopulation = [0,1,2,3,4];
   this.sourceList = [UNIFORM, BOX, NORMAL];
   this.sourceChoices = null;
+  this.areaFromInput = null;
+  this.areaFromSlider = null;
+  this.areaToInput = null;
+  this.areaToSlider = null;
+  this.areaInfoSpan = null;
     // Override options with anything specified by the user.
   jQuery.extend(this.options, params);
 
@@ -1425,9 +1448,28 @@ function Stici_SampleDist(container_id, params) {
   this.container = jQuery('#' + container_id);
 
   this.reloadChart = function() {
+    self.areaFromSlider.slider('option', 'min', self.binEnds.min());
+    self.areaFromSlider.slider('option', 'max', self.binEnds.max());
+    if (self.options.hiLiteLo === null) {
+      self.areaFromSlider.slider('option', 'value', self.binEnds.min());
+      self.areaFromInput.val(self.binEnds.min());
+    } else {
+      self.areaFromSlider.slider('option', 'value', self.options.hiLiteLo);
+      self.areaFromInput.val(self.options.hiLiteLo);
+    }
+    self.areaToSlider.slider('option', 'min', self.binEnds.min());
+    self.areaToSlider.slider('option', 'max', self.binEnds.max());
+    if (self.options.hiLiteHi === null) {
+      self.areaToSlider.slider('option', 'value', self.binEnds.min());
+      self.areaToInput.val(self.binEnds.min());
+    } else {
+      self.areaToSlider.slider('option', 'value', self.options.hiLiteHi);
+      self.areaToInput.val(self.options.hiLiteHi);
+    }
     getPopStats();
     refreshStatsBox();
     redrawChart();
+    refreshSelectedAreaOverlay();
   };
 
 function initData() {
@@ -1725,10 +1767,11 @@ function redrawChart() {
       var sampleChartDiv = normalChartDiv.clone().addClass('sample_chart');
       self.normalOverlayDiv = jQuery('<div/>').addClass('chart_box');
       self.chartDiv.append(normalChartDiv);
-      self.chartDiv.append(self.overlayDiv);
       self.chartDiv.append(self.normalOverlayDiv);
       self.chartDiv.append(sampleChartDiv);
+      self.chartDiv.append(self.overlayDiv);
       // Background calculations.
+      //maybe this should happen in selector callback?
       var sampleData;
       if (self.options.statisticType == MEAN) {
         sampleData = self.sampleMean;
@@ -1774,12 +1817,11 @@ function redrawChart() {
               !isNaN(restrictedNormalCurveY(i)))
             yScale = restrictedNormalCurveY(i);
         }
-        yScale = Math.max(self.restrictedCounts.max(), yScale);
+        //yScale = Math.max(self.restrictedCounts.max(), yScale);
       }
       yScale /= (height - 1);
       //end copied chunk
 
-      //first draw the histogram with the population bars
       function appendPopulationSvg(div) {
         var popBinCounts = histMakeCounts(self.binEnds, self.options.population);
         if (self.options.population.length !== 0) {
@@ -1801,10 +1843,10 @@ function redrawChart() {
       }
     }
     function appendSamplesSvg(div) {
-      var sampleBinCounts = histMakeCounts(self.binEnds, sampleData);
       if (sampleData.length !== 0) {
+        self.sampleBinCounts = histMakeCounts(self.binEnds, sampleData);
         var svg = d3.select(div.get(0)).append('svg').selectAll('div');
-        svg.data(sampleBinCounts)
+        svg.data(self.sampleBinCounts)
           .enter()
           .append('rect')
           .attr('y', function(d) { return height - d / yScale; })
@@ -1820,8 +1862,10 @@ function redrawChart() {
           .attr('class', 'sample');
       }
     }
-
+      appendSamplesSvg(self.overlayDiv);
       appendSamplesSvg(sampleChartDiv);
+
+      self.overlayDiv.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
       appendPopulationSvg(normalChartDiv);
 
       var axisSvg = d3.select(normalChartDiv.get(0))
@@ -1834,6 +1878,26 @@ function redrawChart() {
       axisSvg.append('g').call(axis);
     }
 
+    function refreshSelectedAreaOverlay() {
+      var lower = parseFloat(self.areaFromSlider.slider('value'));
+      var upper = parseFloat(self.areaToSlider.slider('value'));
+      var scale = self.chartDiv.width() /
+        (self.binEnds.max() - self.binEnds.min());
+      var left = (lower - self.binEnds.min()) * scale;
+      var right = (upper - self.binEnds.min()) * scale;
+      self.overlayDiv.css('clip',
+                          'rect(0px,' +
+                                right + 'px,' +
+                                self.chartDiv.height() + 'px,' +
+                                left + 'px)');
+      var p = 0;
+      if (self.sampleBinCounts !== null) {
+        p = histHiLitArea(lower, upper, self.binEnds, self.sampleBinCounts);
+      }
+      p *= 100;
+      var text = 'Selected area: ' + p.fix(2) + '%';
+      self.areaInfoSpan.text(text);
+    }
 
     function initControls() {
       var statsBox = jQuery('div#statsText');
@@ -2023,7 +2087,7 @@ function redrawChart() {
             self.showPopulationButton
                 .text(self.showPopulationButton.text().replace('Hide', 'Show'));
           self.options.showPopulation = !self.options.showPopulation;
-          //refreshSelectedAreaOverlay();
+          refreshSelectedAreaOverlay();
         });
         self.areaInfoDiv.css('bottom', bottomOffset + 'px');
         bottom.css('height', bottomOffset + 'px');
@@ -2031,11 +2095,64 @@ function redrawChart() {
         self.chartDiv.css('margin-top', (topOffset) + 'px');
       }
 
+      function createAreaSelectControls() {
+        var row = jQuery('<div/>');
+
+        // Area from input/slider.
+        self.areaFromInput = jQuery('<input type="text" />').change(function() {
+          self.areaFromSlider.slider('value', self.areaFromInput.val());
+        });
+        var updateAreaFromInput = function() {
+          self.areaFromInput.val(self.areaFromSlider.slider('value'));
+          refreshSelectedAreaOverlay();
+        };
+        self.areaFromSlider = jQuery('<span/>').addClass('slider').slider({
+          change: updateAreaFromInput,
+          slide: updateAreaFromInput,
+          step: 0.001
+        });
+        row.append('Area from: ').append(self.areaFromInput)
+                                  .append(self.areaFromSlider);
+
+        // Area to input/slider.
+        self.areaToInput = jQuery('<input type="text" />').change(function() {
+          self.areaToSlider.slider('value', self.areaToInput.val());
+        });
+        var updateAreaToInput = function() {
+          self.areaToInput.val(self.areaToSlider.slider('value'));
+          refreshSelectedAreaOverlay();
+        };
+        self.areaToSlider = jQuery('<span/>').addClass('slider').slider({
+          change: updateAreaToInput,
+          slide: updateAreaToInput,
+          step: 0.001
+        });
+        row.append(' to: ').append(self.areaToInput).append(self.areaToSlider);
+
+        appendFooterRow(row);
+      }
+      function createCurveSelectControls() {
+        var curveSelect = jQuery('<select/>').change(function(e) {
+          e.preventDefault();
+          console.log("this is not implemented yet");
+        });
+        jQuery.each(self.options.curveTypes, function(i, curveChoice) {
+          curveSelect.append(jQuery('<option/>')
+            .attr('value', curveChoice[1])
+            .text(curveChoice[0]));
+        });
+        return curveSelect;
+      }
+
         var row = jQuery('<div/>');
         createSelectDataSourceControls();
         createPopulationButton();
-        if (self.options.showPopulationButton)
+        self.areaInfoSpan = jQuery('<span/>');
+        if (self.options.showPopulationButton) {
+          row.append(self.areaInfoSpan);
+          row.append(createCurveSelectControls());
           row.append(self.showPopulationButton);
+        }
 
         function drawPopulationArea(div) {
           createPopulationTextArea();
@@ -2056,9 +2173,11 @@ function redrawChart() {
           sampleFooterRow.append(" Bins: ");
           sampleFooterRow.append(createBinsInput());
         }
-        if (row.children().length > 0)
+        if (row.children().length > 0) {
           appendFooterRow(row);
+          createAreaSelectControls();
           appendFooterRow(sampleFooterRow);
+        }
         self.areaInfoDiv.css('bottom', bottomOffset + 'px');
         bottom.css('height', bottomOffset + 'px');
         self.chartDiv.css('margin-bottom', (bottomOffset + 15) + 'px');
@@ -2076,7 +2195,6 @@ function redrawChart() {
   } else {
     self.sourceChoices = self.sourceList;
   }
-
 
   initControls();
   initData();

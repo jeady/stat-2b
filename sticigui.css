@@ -161,6 +161,10 @@
   text-align: center;
   font-size: 10pt;
 }
+.stici>.bottom_controls .binomialBars,
+.stici>.bottom_controls .areaHiLite {
+  text-align: center;
+}
 .stici>.bottom_controls .popbox {
   margin: 0 0 0 0;
   text-align: inherit;
@@ -258,6 +262,10 @@
   fill: green;
   stroke: black;
   stroke-width: 1;
+}
+
+.stici_sampledist .chart_box .overlay rect {
+  fill: #f8ff53;
 }
 
 .stici>.area_info {
