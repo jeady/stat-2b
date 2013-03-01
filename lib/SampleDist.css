@@ -43,6 +43,10 @@
   stroke-width: 1;
 }
 
+.stici_sampledist .chart_box .overlay rect {
+  fill: #f8ff53;
+}
+
 .stici>.area_info {
   width: 100%;
   height: 15px;
