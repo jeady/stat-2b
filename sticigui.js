@@ -644,7 +644,7 @@ function Stici_HistHiLite(container_id, params) {
       self.areaFromSlider = jQuery('<span/>').addClass('slider').slider({
         change: updateAreaFromInput,
         slide: updateAreaFromInput,
-        step: 0.001
+        step: 0.5
       });
       row.append('Area from: ').append(self.areaFromInput)
                                 .append(self.areaFromSlider);
@@ -660,7 +660,7 @@ function Stici_HistHiLite(container_id, params) {
       self.areaToSlider = jQuery('<span/>').addClass('slider').slider({
         change: updateAreaToInput,
         slide: updateAreaToInput,
-        step: 0.001
+        step: 0.5
       });
       row.append(' to: ').append(self.areaToInput).append(self.areaToSlider);
 
