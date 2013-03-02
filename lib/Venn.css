@@ -24,6 +24,7 @@
   display: block;
   font-size: 14px;
   margin: 0 auto;
+  height: 60px;
 }
 
 .stici_venn .text {
@@ -66,6 +67,9 @@
 
 .stici_venn .box.selected {
  background-color: DodgerBlue;
+}
+.stici_venn .box.hilite {
+ background-color: GreenYellow;
 }
 .stici_venn input[type="text"] {
   width: 40px;
