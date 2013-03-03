@@ -1420,7 +1420,8 @@ function Stici_SampleDist(container_id, params) {
     binControls: true,
     curveTypes: [['No Curve', NO_CURVE], ['Normal Curve', NORMAL_CURVE], ['Student t Curve', STUDENT_T_CURVE], ['Chi-Squared Curve', CHI_SQUARED_CURVE]],
     hiLiteLo: null,
-    hiLiteHi: null
+    hiLiteHi: null,
+    showCurve: false
   };
 
   this.xMin = 0;
@@ -1436,6 +1437,9 @@ function Stici_SampleDist(container_id, params) {
   this.sampleT = [];
   this.binEnds = [];
   this.sampleBinCounts = null;
+  this.mu = 0;
+  this.sd = 0;
+  this.curveYFunction = function(d) { return d; };
 
   // Various handles to important jQuery objects.
   //some of these might not be needed????
@@ -1487,6 +1491,34 @@ function initData() {
   getPopStats();
   setLims();
   setPopulation();
+  setupNormalCurveData();
+}
+
+function setupNormalCurveData() {
+  if (self.options.statisticType == MEAN) {
+    self.mu = self.popMean;
+    self.sd = self.popSd;
+  } else if (self.options.statisticType == SUM) {
+    self.mu = self.popMean * self.options.sampleSize;
+    self.sd = self.popSd;
+  } else if (self.options.statisticType == SSQ) {
+    if (self.options.withReplacement) {
+      self.mu = self.popSd*self.popSd;
+    } else {
+      self.mu = (self.mu)*(self.options.population.length)/(self.options.population.length - 1);
+    }
+    self.sd = Math.sqrt(2.0/(self.options.sampleSize-1))*self.popSd*self.popSd;
+  } else if (self.options.statisticType == CHISQUARE) {
+    self.mu = self.options.population.length - 1;
+    self.sd = Math.sqrt(2.0*(self.options.population.length - 1.0));
+  } else if (self.options.statisticType == T) {
+    self.mu = 0;
+    if (self.options.sampleSize > 2) {
+      self.sd = self.options.sampleSize/(self.options.sampleSize-2);
+    } else {
+      self.sd = NaN;
+    }
+  }
 }
 
 function setPopTextLabel() {
@@ -1770,17 +1802,40 @@ function drawSample() {
 }
 }
 
+var normalCurveY = function(d) {
+  var x =
+    self.binEnds[0] +
+    d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width() - 1);
+  var y = normPdf(self.mu, self.sd, x);
+  return y;
+};
+var chisquaredCurveCSQY = function (d) {
+  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var y = 0;
+  return y;
+};
+var chisquaredCurveSSQY = function(d) {
+  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var y = 0;
+  return y;
+};
+var studentTCurveY = function(d) {
+  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var y = 0;
+  return y;
+};
+
 function redrawChart() {
       setLims();
       var normalChartDiv = jQuery('<div/>').addClass('chart_box');
       self.chartDiv.children().remove();
       self.overlayDiv = normalChartDiv.clone().addClass('overlay');
       var sampleChartDiv = normalChartDiv.clone().addClass('sample_chart');
-      self.normalOverlayDiv = jQuery('<div/>').addClass('chart_box');
+      self.curveOverlayDiv = jQuery('<div/>').addClass('chart_box');
       self.chartDiv.append(normalChartDiv);
-      self.chartDiv.append(self.normalOverlayDiv);
       self.chartDiv.append(sampleChartDiv);
       self.chartDiv.append(self.overlayDiv);
+      self.chartDiv.append(self.curveOverlayDiv);
       // Background calculations.
       //maybe this should happen in selector callback?
       var sampleData;
@@ -1799,37 +1854,16 @@ function redrawChart() {
       var height = self.overlayDiv.height();
       var graphWidth = self.binEnds.max() - self.binEnds.min();
       //this chunk is copied from histhilite, to do with setting up y scale
-      var normalCurveY = function(d) {
-        var x =
-          self.binEnds[0] +
-          d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (width - 1);
-        var y = normPdf(self.mu, self.sd, x);
-        return y;
-      };
+
       var yScale = null;
+      self.curveYFunction = normalCurveY;
       // TODO(jmeady): Include height in yScale.
       for (i = 0; i < width; i++) {
-        if ((yScale === null || normalCurveY(i) > yScale) &&
+        if ((yScale === null || self.curveYFunction(i) > yScale) &&
             !isNaN(normalCurveY(i)))
           yScale = normalCurveY(i);
       }
       yScale = Math.max(currentBinCounts.max(), yScale);
-      var restrictedNormalCurveY = null;
-      if (null !== self.restrictedCounts) {
-        restrictedNormalCurveY = function(d) {
-          var x =
-            self.binEnds[0] +
-            d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (width - 1);
-          var y = normPdf(self.restrictedMu, self.restrictedSd, x);
-          return y;
-        };
-        for (i = 0; i < width; i++) {
-          if ((yScale === null || restrictedNormalCurveY(i) > yScale) &&
-              !isNaN(restrictedNormalCurveY(i)))
-            yScale = restrictedNormalCurveY(i);
-        }
-        //yScale = Math.max(self.restrictedCounts.max(), yScale);
-      }
       yScale /= (height - 1);
       //end copied chunk
 
@@ -1887,6 +1921,26 @@ function redrawChart() {
                               .range([0, width]);
       var axis = d3.svg.axis().scale(axisScale).orient('bottom');
       axisSvg.append('g').call(axis);
+
+      function drawNormalCurve() {
+        var normalCurve =
+          d3.svg.line()
+            .x(function(d) {return d;})
+            .y(function(d) {
+              return height - (normalCurveY(d) / yScale);
+            });
+        var normSvg = d3.select(self.curveOverlayDiv.get(0))
+                        .append('svg')
+                        .attr('height', '100%');
+        var normPath = normSvg.append('path');
+        normPath.attr('class', 'nrestricted');
+        normPath.data([d3.range(0, width)])
+          .attr('d', normalCurve);
+      }
+      drawNormalCurve();
+      if (!self.options.showCurve) {
+        self.curveOverlayDiv.hide();
+      }
     }
 
     function refreshSelectedAreaOverlay() {
@@ -2145,7 +2199,44 @@ function redrawChart() {
       function createCurveSelectControls() {
         var curveSelect = jQuery('<select/>').change(function(e) {
           e.preventDefault();
-          console.log("this is not implemented yet");
+          if (jQuery(this).val() == NO_CURVE) {
+            self.options.showCurve = false;
+            self.curveOverlayDiv.hide();
+          } else {
+            self.options.showCurve = true;
+            if (jQuery(this).val() == NORMAL_CURVE) {
+              initData();
+              self.curveYFunction = normalCurveY;
+              if (isNaN(self.mu) || isNaN(self.sd)) {
+                self.options.showCurve = false;
+                jQuery(this).val(NO_CURVE);
+              } else {
+                self.reloadChart();
+              }
+            } else if (jQuery(this).val() == CHI_SQUARED_CURVE) {
+              if (self.options.statisticType == SSQ) {
+                initData();
+                self.curveYFunction = chisquaredCurveSSQY;
+                self.reloadChart();
+              } else if (self.options.statisticType == CHISQUARE) {
+                initData();
+                self.curveYFunction = chisquaredCurveCSQY;
+                self.reloadChart();
+              } else {
+                self.options.showCurve = false;
+                jQuery(this).val(NO_CURVE);
+              }
+            } else if (jQuery(this).val() == STUDENT_T_CURVE) {
+              if (self.options.statisticType == T) {
+                initData();
+                self.curveYFunction = studentTCurveY;
+                self.reloadChart();
+              } else {
+                self.options.showCurve = false;
+                jQuery(this).val(NO_CURVE);
+              }
+            }
+          }
         });
         jQuery.each(self.options.curveTypes, function(i, curveChoice) {
           curveSelect.append(jQuery('<option/>')
