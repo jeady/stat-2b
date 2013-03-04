@@ -1647,9 +1647,9 @@ function setLims() {
     var maxDev = Math.max(self.popMean - self.popMin, self.popMax - self.popMean);
     self.xMax = 3*maxDev*maxDev/Math.sqrt(self.options.sampleSize);
   } else if (self.options.statisticType == MEAN) {
-    //self.xMin = (self.popMean-4*self.popSd)/Math.sqrt(self.options.sampleSize);
+    self.xMin = (self.popMean-4*self.popSd)/Math.sqrt(self.options.sampleSize);
     //console.log("mean xmin " + self.xMin);
-    self.xMin = -0.1;
+    //self.xMin = -0.1;
     self.xMax = (self.popMax+4*self.popSd)/Math.sqrt(self.options.sampleSize);
   } else if (self.options.statisticType == T) {
     if (self.options.sampleSize > 2) {
@@ -1834,9 +1834,9 @@ function chiHiLitArea() {
   if (self.options.hiLiteHi > self.options.hiLiteLo) {
     if (self.options.statisticType == SSQ) {
       scale = (self.options.sampleSize - 1.0)/(self.popSd*self.popSd);
-      area = chi2Cdf(scale*self.options.hiLiteHi, self.options.sampleSize-1) - chi2Cdf(scale*self.options.hiLiteLo, self.options.sampleSize-1);
+      area = chi2Cdf(self.options.sampleSize-1, scale*self.options.hiLiteHi) - chi2Cdf(self.options.sampleSize-1, scale*self.options.hiLiteLo);
     } else if (self.options.statisticType == CHISQUARE) {
-      area = chi2Cdf(self.options.hiLiteHi, self.options.population - 1) - chi2Cdf(self.options.hiLiteLo, self.options.population - 1);
+      area = chi2Cdf(self.options.population.length - 1, self.options.hiLiteHi) - chi2Cdf(self.options.population.length - 1, self.options.hiLiteLo);
     }
   }
   return area;
@@ -1846,7 +1846,7 @@ function tHiLitArea() {
   area = 0;
   if (self.options.hiLiteHi > self.options.hiLiteLo) {
     if (self.options.statisticType == T) {
-      area = tCdf(self.options.hiLiteHi, self.options.sampleSize-1) - tCdf(self.options.hiLiteLo, self.options.sampleSize-1);
+      area = tCdf(self.options.sampleSize-1, self.options.hiLiteHi) - tCdf(self.options.sampleSize-1, self.options.hiLiteLo);
     }
   }
   return area;
@@ -1861,17 +1861,23 @@ var normalCurveY = function(d) {
 };
 var chisquaredCurveCSQY = function (d) {
   var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
-  var y = 0;
+  var y = chi2Pdf(self.options.population.length - 1, x);
   return y;
 };
 var chisquaredCurveSSQY = function(d) {
+  popVar = self.popSd*self.popSd;
+  if (!self.options.withReplacement) {
+    popVar = popVar*self.population.length/(self.population.length -1);
+  }
+  scale = (self.options.sampleSize - 1)/popVar;
   var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
-  var y = 0;
+  var y = scale*chi2Pdf(self.options.sampleSize-1, x*scale);
   return y;
 };
 var studentTCurveY = function(d) {
   var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
-  var y = 0;
+  //PbsStat.tPdf(xVal[i], sampleSize-1);
+  var y = tPdf(self.options.sampleSize-1, x);
   return y;
 };
 
@@ -2290,7 +2296,7 @@ function redrawChart() {
       function createCurveSelectControls() {
         var curveSelect = jQuery('<select/>').change(function(e) {
           e.preventDefault();
-          if (jQuery(this).val() == CHI_SQUARED_CURVE && (self.options.statisticType != SSQ || self.options.statisticType != CHISQUARE)) {
+          if (jQuery(this).val() == CHI_SQUARED_CURVE && (self.options.statisticType != SSQ && self.options.statisticType != CHISQUARE)) {
             self.options.curveChoice = NO_CURVE;
             jQuery(this).val(NO_CURVE);
           } else if (jQuery(this).val() == STUDENT_T_CURVE && self.options.statisticType != T) {
