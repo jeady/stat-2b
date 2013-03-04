@@ -1,10 +1,16 @@
 module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-css');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
 
   // Project configuration.
   grunt.initConfig({
-    lint: {
-      js: ['grunt.js', 'lib/*.js']
+    jshint: {
+      options: {
+        sub: false,
+      },
+      files: ['grunt.js', 'lib/*.js'],
     },
     csslint: {
       css: 'lib/*.css'
@@ -19,10 +25,16 @@ module.exports = function(grunt) {
         dest: 'sticigui.css'
       }
     },
-    min: {
+    uglify: {
+      options: {
+        mangle: {
+          except: ['jQuery', 'd3']
+        }
+      },
       js: {
-        src: 'sticigui.js',
-        dest: 'sticigui.js'
+        files: {
+          'sticigui.min.js' : ['sticigui.js']
+        }
       }
     },
     cssmin: {
@@ -38,7 +50,7 @@ module.exports = function(grunt) {
   // SVG CSS properties (i.e. https://github.com/nzakas/parser-lib/issues/28 is
   // closed), we should add csslint to the list of tasks to perform.
   // TODO(jmeady): add csslint.
-  grunt.registerTask('default', 'lint concat min cssmin');
-  grunt.registerTask('debug', 'lint concat');
+  grunt.registerTask('default', ['jshint', 'concat', 'uglify', 'cssmin']);
+  grunt.registerTask('debug', ['jshint', 'concat']);
 
 };

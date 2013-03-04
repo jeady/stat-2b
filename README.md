@@ -68,10 +68,13 @@ Internet Explorer support are in development.
 
 Development
 ===========
-This library is compiled using Grunt and the grunt-css plugin.
+This library is compiled using Grunt 4.0 and the grunt-css plugin.
 
-To install grunt: `npm install -g grunt`
-To install grunt-css: `npm install grunt-css@0.3.2`
+To install grunt global files:
+  `npm install -g grunt-cli grunt-init`
+To install grunt project-specific files:
+  `npm install grunt grunt-css grunt-contrib underscore grunt-contrib-concat \
+    grunt-contrib-uglify grunt-contrib-jshint`
 
 To compile sticigui.js, simply run `grunt` from this project's directory. Run
 `grunt debug` if you wish to compile a debug version of the library (without
