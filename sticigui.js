@@ -1669,13 +1669,6 @@ function setLims() {
 
 function refreshStatsBox() {
   if (self.options.statLabels) {
-    // var nPop, fpc, ex;
-    // nPop = self.options.population.length;
-    // fpc = 1.0;
-    // if (!self.options.withReplacement) {
-    //   fpc = Math.sqrt( (nPop - self.options.sampleSize + 0.0)/(nPop-1.0));
-    // }
-
     if (self.options.statisticType == SUM) {
       statExpText = "E(sum): " + Number(self.ex).toFixed(2);
       statSEText = "SE(sum): " + Number(self.se).toFixed(2);
@@ -1894,7 +1887,7 @@ function redrawChart() {
       self.chartDiv.append(self.curveOverlayDiv);
       // Background calculations.
       //maybe this should happen in selector callback?
-      var sampleData;
+      var sampleData = [];
       if (self.options.statisticType == MEAN) {
         sampleData = self.sampleMean;
       } else if (self.options.statisticType == SUM) {
@@ -1906,22 +1899,19 @@ function redrawChart() {
       }
       var allPops = self.options.population.concat(sampleData);
       var currentBinCounts = histMakeCounts(self.binEnds, allPops);
+      var yScale = null;
+      var totalDataLength = self.options.population.length + sampleData.length;
+      var popBinCounts = histMakeCounts(self.binEnds, self.options.population, totalDataLength);
+      yScale = popBinCounts.max();
+      if (sampleData.length !== 0) {
+        var sampleBinCounts = histMakeCounts(self.binEnds, sampleData, totalDataLength);
+        yScale = Math.max(yScale, sampleBinCounts.max());
+      }
       var width = self.overlayDiv.width();
       var height = self.overlayDiv.height();
       var graphWidth = self.binEnds.max() - self.binEnds.min();
-      //this chunk is copied from histhilite, to do with setting up y scale
-
-      var yScale = null;
-      self.curveYFunction = normalCurveY;
-      // TODO(jmeady): Include height in yScale.
-      for (i = 0; i < width; i++) {
-        if ((yScale === null || self.curveYFunction(i) > yScale) &&
-            !isNaN(normalCurveY(i)))
-          yScale = normalCurveY(i);
-      }
-      yScale = Math.max(currentBinCounts.max(), yScale);
       yScale /= (height - 1);
-      //end copied chunk
+
 
       function appendPopulationSvg(div) {
         var popBinCounts = histMakeCounts(self.binEnds, self.options.population);
@@ -4058,7 +4048,10 @@ function percentile(list,p) { // finds the pth percentile of list
     return(sList[ppt-1]);
 }
 
-function histMakeCounts(binEnd, data) {  // makes vector of histogram heights
+function histMakeCounts(binEnd, data, fulllength) {  // makes vector of histogram heights
+        if (!fulllength) {
+            fulllength = data.length;
+        }
         var nBins = binEnd.length - 1;
         var counts = new Array(nBins);
         var i = 0;
@@ -4076,7 +4069,7 @@ function histMakeCounts(binEnd, data) {  // makes vector of histogram heights
            }
         }
         for (i=0; i < nBins; i++) {
-           counts[i] /= data.length*(binEnd[i+1]-binEnd[i]);
+           counts[i] /= fulllength*(binEnd[i+1]-binEnd[i]);
         }
         return(counts);
 }
