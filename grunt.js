@@ -30,6 +30,15 @@ module.exports = function(grunt) {
         src: 'sticigui.css',
         dest: 'sticigui.css'
       }
+    },
+    jshint: {
+      options: {
+        sub: true
+      },
+      globals: {
+        jQuery: true,
+        d3: true
+      }
     }
   });
 
