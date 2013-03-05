@@ -6435,7 +6435,7 @@ function Stici_Venn3(container_id, params) {
      {label: '{}'}]
   ];
 
-  if( this.options.showConditional) {
+  if (this.options.showConditional) {
     self.buttons_arr.push(
       [{label: 'P(A|B)', filled: b_fill, hilite: ab_fill},
        {label: 'P(Ac|B)', filled: ab_fill, hilite: b_fill},
@@ -6703,20 +6703,22 @@ function Stici_Venn3(container_id, params) {
       s_outline.area() - a_outline.area() + abc_fill.area());
     self.buttons['S'].p(s_outline.area());
     self.buttons['{}'].p(0);
-    self.buttons['P(A|B)'].p(
-      ab_fill.area() / b_outline.area() * s_outline.area());
-    self.buttons['P(Ac|B)'].p(
-      s_outline.area() - ab_fill.area() / b_outline.area() * s_outline.area());
-    self.buttons['P(B|A)'].p(
-      ab_fill.area() / a_outline.area() * s_outline.area());
-    self.buttons['P(A|BC)'].p(
-      abc_fill.area() / bc_fill.area() * s_outline.area());
-    self.buttons['P(Ac|BC)'].p(
-      s_outline.area() - abc_fill.area() / bc_fill.area() * s_outline.area());
-    self.buttons['P(A|(B or C))'].p(
-      s_outline.area() *
-      (ab_fill.area() + ac_fill.area() - abc_fill.area()) /
-      (b_outline.area() + c_outline.area() - bc_fill.area()));
+    if (this.options.showConditional) {
+      self.buttons['P(A|B)'].p(
+        ab_fill.area() / b_outline.area() * s_outline.area());
+      self.buttons['P(Ac|B)'].p(
+        s_outline.area() - ab_fill.area() / b_outline.area() * s_outline.area());
+      self.buttons['P(B|A)'].p(
+        ab_fill.area() / a_outline.area() * s_outline.area());
+      self.buttons['P(A|BC)'].p(
+        abc_fill.area() / bc_fill.area() * s_outline.area());
+      self.buttons['P(Ac|BC)'].p(
+        s_outline.area() - abc_fill.area() / bc_fill.area() * s_outline.area());
+      self.buttons['P(A|(B or C))'].p(
+        s_outline.area() *
+        (ab_fill.area() + ac_fill.area() - abc_fill.area()) /
+        (b_outline.area() + c_outline.area() - bc_fill.area()));
+    }
   }
 
   // Updates the sizes of the boxes according to their sliders.
