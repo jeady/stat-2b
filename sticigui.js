@@ -1420,7 +1420,9 @@ function Stici_SampleDist(container_id, params) {
     binControls: true,
     curveTypes: [['No Curve', NO_CURVE], ['Normal Curve', NORMAL_CURVE], ['Student t Curve', STUDENT_T_CURVE], ['Chi-Squared Curve', CHI_SQUARED_CURVE]],
     hiLiteLo: null,
-    hiLiteHi: null
+    hiLiteHi: null,
+    showCurve: true,
+    curveChoice: NO_CURVE
   };
 
   this.xMin = 0;
@@ -1436,6 +1438,11 @@ function Stici_SampleDist(container_id, params) {
   this.sampleT = [];
   this.binEnds = [];
   this.sampleBinCounts = null;
+  this.mu = 0;
+  this.sd = 0;
+  this.se = 0;
+  this.ex = 0;
+  this.curveYFunction = function(d) { return d; };
 
   // Various handles to important jQuery objects.
   //some of these might not be needed????
@@ -1452,6 +1459,7 @@ function Stici_SampleDist(container_id, params) {
   this.areaToInput = null;
   this.areaToSlider = null;
   this.areaInfoSpan = null;
+  this.curveInfoSpan = null;
     // Override options with anything specified by the user.
   jQuery.extend(this.options, params);
 
@@ -1487,6 +1495,34 @@ function initData() {
   getPopStats();
   setLims();
   setPopulation();
+  setupNormalCurveData();
+}
+
+function setupNormalCurveData() {
+  if (self.options.statisticType == MEAN) {
+    self.mu = self.popMean;
+    self.sd = self.popSd;
+  } else if (self.options.statisticType == SUM) {
+    self.mu = self.popMean * self.options.sampleSize;
+    self.sd = self.popSd;
+  } else if (self.options.statisticType == SSQ) {
+    if (self.options.withReplacement) {
+      self.mu = self.popSd*self.popSd;
+    } else {
+      self.mu = (self.mu)*(self.options.population.length)/(self.options.population.length - 1);
+    }
+    self.sd = Math.sqrt(2.0/(self.options.sampleSize-1))*self.popSd*self.popSd;
+  } else if (self.options.statisticType == CHISQUARE) {
+    self.mu = self.options.population.length - 1;
+    self.sd = Math.sqrt(2.0*(self.options.population.length - 1.0));
+  } else if (self.options.statisticType == T) {
+    self.mu = 0;
+    if (self.options.sampleSize > 2) {
+      self.sd = self.options.sampleSize/(self.options.sampleSize-2);
+    } else {
+      self.sd = NaN;
+    }
+  }
 }
 
 function setPopTextLabel() {
@@ -1501,6 +1537,11 @@ function setPopTextLabel() {
 }
 
 function getPopStats() {
+  nPop = self.options.population.length;
+  fpc = 1.0;
+  if (!self.options.withReplacement) {
+    fpc = Math.sqrt( (nPop - self.options.sampleSize + 0.0)/(nPop-1.0));
+  }
   if (self.options.populationType == BOX) {
     pop = self.options.population;
   } else if (self.options.populationType == NORMAL) {
@@ -1521,6 +1562,31 @@ function getPopStats() {
   } else if (self.options.populationType == UNIFORM) {
     self.popMean = 0.5;
     self.popSd = Math.sqrt(1.0/12.0);
+  }
+
+  if (self.options.statisticType == SUM) {
+    self.ex = self.options.sampleSize * self.popMean;
+    self.se = fpc*self.popSd*Math.sqrt(self.options.sampleSize);
+  } else if (self.options.statisticType == MEAN) {
+    self.ex = self.popMean;
+    self.se = fpc*(self.popSd)*Math.sqrt(self.options.sampleSize);
+  } else if (self.options.statisticType == T) {
+    self.ex = self.popMean;
+    if (self.options.sampleSize > 2) {
+      self.se = Math.sqrt((self.options.sampleSize + 0.0)/(self.options.sampleSize - 2.0));
+    } else {
+      self.se = NaN;
+    }
+  } else if (self.options.statisticType == SSQ) {
+    if (self.options.withReplacement) {
+      self.ex = (self.popSd)*(self.popSd);
+    } else {
+      self.ex = (self.popSd)*(self.popSd)*nPop/nPop-1;
+    }
+    self.se = Math.sqrt(2.0/(self.options.sampleSize-1.0))*(self.popSd)*(self.popSd);
+  } else if (self.options.statisticType == CHISQUARE) {
+    self.ex = nPop;
+    self.se = Math.sqrt(2.0*(nPop-1.0));
   }
 }
 
@@ -1581,9 +1647,9 @@ function setLims() {
     var maxDev = Math.max(self.popMean - self.popMin, self.popMax - self.popMean);
     self.xMax = 3*maxDev*maxDev/Math.sqrt(self.options.sampleSize);
   } else if (self.options.statisticType == MEAN) {
-    //self.xMin = (self.popMean-4*self.popSd)/Math.sqrt(self.options.sampleSize);
+    self.xMin = (self.popMean-4*self.popSd)/Math.sqrt(self.options.sampleSize);
     //console.log("mean xmin " + self.xMin);
-    self.xMin = -0.1;
+    //self.xMin = -0.1;
     self.xMax = (self.popMax+4*self.popSd)/Math.sqrt(self.options.sampleSize);
   } else if (self.options.statisticType == T) {
     if (self.options.sampleSize > 2) {
@@ -1603,53 +1669,28 @@ function setLims() {
 
 function refreshStatsBox() {
   if (self.options.statLabels) {
-    var nPop, fpc, ex;
-    nPop = self.options.population.length;
-    fpc = 1.0;
-    if (!self.options.withReplacement) {
-      fpc = Math.sqrt( (nPop - self.options.sampleSize + 0.0)/(nPop-1.0));
-    }
-
     if (self.options.statisticType == SUM) {
-      ex = self.options.sampleSize * self.popMean;
-      statExpText = "E(sum): " + Number(ex).toFixed(2);
-      se = fpc*self.popSd*Math.sqrt(self.options.sampleSize);
-      statSEText = "SE(sum): " + Number(se).toFixed(2);
+      statExpText = "E(sum): " + Number(self.ex).toFixed(2);
+      statSEText = "SE(sum): " + Number(self.se).toFixed(2);
       statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleMean)).toFixed(4);
       statSampleSDText = "SD(values) = " + Number(sd(self.sampleMean)).toFixed(4);
     } else if (self.options.statisticType == MEAN) {
-      ex = self.popMean;
-      statExpText = "E(mean): " + Number(ex).toFixed(2);
-      se = fpc*(self.popSd)*Math.sqrt(self.options.sampleSize);
-      statSEText = "SE(mean): " + Number(se).toFixed(2);
+      statExpText = "E(mean): " + Number(self.ex).toFixed(2);
+      statSEText = "SE(mean): " + Number(self.se).toFixed(2);
       statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleMean)).toFixed(4);
       statSampleSDText = "SD(values) = " + Number(sd(self.sampleMean)).toFixed(4);
     } else if (self.options.statisticType == T) {
-      ex = self.popMean;
-      statExpText = "E(t): " + Number(ex).toFixed(2);
-      if (self.options.sampleSize > 2) {
-        se = Math.sqrt((self.options.sampleSize + 0.0)/(self.options.sampleSize - 2.0));
-      } else {
-        se = NaN;
-      }
-      statSEText = "SE(t): " + Number(se).toFixed(2);
+      statExpText = "E(t): " + Number(self.ex).toFixed(2);
+      statSEText = "SE(t): " + Number(self.se).toFixed(2);
       statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleT)).toFixed(4);
       statSampleSDText = "SD(values) = " + Number(sd(self.sampleT)).toFixed(4);
     } else if (self.options.statisticType == SSQ) {
-      if (self.options.withReplacement) {
-        ex = (self.popSd)*(self.popSd);
-      } else {
-        ex = (self.popSd)*(self.popSd)*nPop/nPop-1;
-      }
-      se = Math.sqrt(2.0/(self.options.sampleSize-1.0))*(self.popSd)*(self.popSd);
-      statExpText = "E(S-squared): " + Number(ex).toFixed(2);
+      statExpText = "E(S-squared): " + Number(self.ex).toFixed(2);
       statSEText = "df: " +  (self.options.sampleSize-1);
       statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleSsq)).toFixed(4);
       statSampleSDText = "SD(values) = " + Number(sd(self.sampleSsq)).toFixed(4);
     } else if (self.options.statisticType == CHISQUARE) {
-      ex = nPop;
-      statExpText = "df: " + Number(ex).toFixed(2);
-      se = Math.sqrt(2.0*(nPop-1.0));
+      statExpText = "df: " + Number(self.ex).toFixed(2);
       statSEText = "     ";
       statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleSsq)).toFixed(4);
       statSampleSDText = "SD(values) = " + Number(sd(self.sampleSsq)).toFixed(4);
@@ -1692,83 +1733,146 @@ function resetSamples() {
 
 function drawSample() {
   for (var j=0; j < self.options.samplesToTake; j++) {
-  var samples = [], indices = [];
-  var i, xb = 0, ssq = 0, tStat = 0;
-  if (self.options.statisticType == CHISQUARE) {
-    if (self.options.populationType != BOX) {
-      console.log("can't do that");
-    } else {
-      var cum = [], count = [];
-      for (i=0; i < self.options.population.length; i++) {
-        cum[i] = self.options.population[i];
-        count[i] = 0;
-      }
-      cum[0] = self.options.population[0];
-      for (i = 1; i < self.options.population.length; i++ ) {
-        cum[i] += cum[i-1];
-      }
-      for (i=0; i < self.options.sampleSize; i++) {
-        tmp = Math.random();
-        if (tmp <= cum[0]) {
-          count[0]++;
+    var samples = [], indices = [];
+    var i, xb = 0, ssq = 0, tStat = 0;
+    if (self.options.statisticType == CHISQUARE) {
+      if (self.options.populationType != BOX) {
+        console.log("can't do that");
+      } else {
+        var cum = [], count = [];
+        for (i=0; i < self.options.population.length; i++) {
+          cum[i] = self.options.population[i];
+          count[i] = 0;
         }
-        for (k=0; k < count.length; k++) {
-          if (tmp > cum[k-1] && tmp <= cum[k]) {
-            count[k]++;
+        cum[0] = self.options.population[0];
+        for (i = 1; i < self.options.population.length; i++ ) {
+          cum[i] += cum[i-1];
+        }
+        for (i=0; i < self.options.sampleSize; i++) {
+          tmp = Math.random();
+          if (tmp <= cum[0]) {
+            count[0]++;
+          }
+          for (k=0; k < count.length; k++) {
+            if (tmp > cum[k-1] && tmp <= cum[k]) {
+              count[k]++;
+            }
           }
         }
+        ssq = 0.0;
+        for (i=0; i < self.options.population.length; i++) {
+          tmp = self.options.sampleSize*(self.options.population[i]);
+          ssq += (count[i] - tmp)*(count[i] - tmp)/tmp;
+        }
+        self.sampleSsq[self.samplesSoFar++] = ssq;
       }
-      ssq = 0.0;
-      for (i=0; i < self.options.population.length; i++) {
-        tmp = self.options.sampleSize*(self.options.population[i]);
-        ssq += (count[i] - tmp)*(count[i] - tmp)/tmp;
-      }
-      self.sampleSsq[self.samplesSoFar++] = ssq;
-
-    }
-  } else {
-  if (self.options.populationType == BOX) {
-    if (self.options.withReplacement) {
-      indices = listOfRandInts(self.options.sampleSize, 0, self.options.population.length - 1);
     } else {
-      indices = listOfDistinctRandInts(self.options.sampleSize, 0, self.options.population.length - 1);
-    }
+      if (self.options.populationType == BOX) {
+        if (self.options.withReplacement) {
+          indices = listOfRandInts(self.options.sampleSize, 0, self.options.population.length - 1);
+        } else {
+          indices = listOfDistinctRandInts(self.options.sampleSize, 0, self.options.population.length - 1);
+        }
 
-    for (i = 0; i < self.options.sampleSize; i++) {
-      samples[i] = self.options.population[ indices[i] ];
-      xb += samples[i];
-    }
-  } else if (self.options.populationType == UNIFORM) {
-    for (i = 0; i < self.options.sampleSize; i++) {
-      samples[i] = Math.random();
-      xb += samples[i];
-    }
-  } else if (self.options.populationType == NORMAL) {
-    for (i = 0; i < self.options.sampleSize; i++) {
-      samples[i] = rNorm();
-      xb += samples[i];
-    }
-  }
-  xb /= self.options.sampleSize;
-  for (i = 0; i < self.options.sampleSize; i++) {
-    ssq += (samples[i] - xb) * (samples[i] - xb);
-  }
-  if (self.options.sampleSize > 1) {
-    ssq /= (self.options.sampleSize - 1);
-    self.sampleSsq[self.samplesSoFar] = ssq;
-    tStat = xb/(Math.sqrt(ssq)/Math.sqrt(self.options.sampleSize));
-    self.sampleT[self.samplesSoFar] = tStat;
-  } else {
-    self.sampleSsq[self.samplesSoFar] = 0;
-    self.sampleT[self.samplesSoFar] = 0;
-  }
+        for (i = 0; i < self.options.sampleSize; i++) {
+          samples[i] = self.options.population[ indices[i] ];
+          xb += samples[i];
+        }
+      } else if (self.options.populationType == UNIFORM) {
+        for (i = 0; i < self.options.sampleSize; i++) {
+          samples[i] = Math.random();
+          xb += samples[i];
+        }
+      } else if (self.options.populationType == NORMAL) {
+        for (i = 0; i < self.options.sampleSize; i++) {
+          samples[i] = rNorm();
+          xb += samples[i];
+        }
+      }
+      xb /= self.options.sampleSize;
+      for (i = 0; i < self.options.sampleSize; i++) {
+        ssq += (samples[i] - xb) * (samples[i] - xb);
+      }
+      if (self.options.sampleSize > 1) {
+        ssq /= (self.options.sampleSize - 1);
+        self.sampleSsq[self.samplesSoFar] = ssq;
+        tStat = xb/(Math.sqrt(ssq)/Math.sqrt(self.options.sampleSize));
+        self.sampleT[self.samplesSoFar] = tStat;
+      } else {
+        self.sampleSsq[self.samplesSoFar] = 0;
+        self.sampleT[self.samplesSoFar] = 0;
+      }
 
-  self.sampleMean[self.samplesSoFar] = xb;
-  self.sampleSum[self.samplesSoFar] = xb * self.options.sampleSize;
-  self.samplesSoFar++;
+      self.sampleMean[self.samplesSoFar] = xb;
+      self.sampleSum[self.samplesSoFar] = xb * self.options.sampleSize;
+      self.samplesSoFar++;
+    }
+  }
 }
+
+function normalHiLitArea() {
+  area = 0;
+  fpc = 1;
+  if (!self.options.withReplacement) {
+    fpc = Math.sqrt((self.options.population.length - self.options.sampleSize)/(self.options.population - 1));
+  }
+  if (self.options.hiLiteHi > self.options.hiLiteLo) {
+    area = normCdf((self.options.hiLiteHi - self.ex)/(fpc*self.se)) - normCdf((self.options.hiLiteLo - self.ex)/(fpc*self.se));
+  }
+  return area;
 }
+
+function chiHiLitArea() {
+  area = 0;
+  if (self.options.hiLiteHi > self.options.hiLiteLo) {
+    if (self.options.statisticType == SSQ) {
+      scale = (self.options.sampleSize - 1.0)/(self.popSd*self.popSd);
+      area = chi2Cdf(self.options.sampleSize-1, scale*self.options.hiLiteHi) - chi2Cdf(self.options.sampleSize-1, scale*self.options.hiLiteLo);
+    } else if (self.options.statisticType == CHISQUARE) {
+      area = chi2Cdf(self.options.population.length - 1, self.options.hiLiteHi) - chi2Cdf(self.options.population.length - 1, self.options.hiLiteLo);
+    }
+  }
+  return area;
 }
+
+function tHiLitArea() {
+  area = 0;
+  if (self.options.hiLiteHi > self.options.hiLiteLo) {
+    if (self.options.statisticType == T) {
+      area = tCdf(self.options.sampleSize-1, self.options.hiLiteHi) - tCdf(self.options.sampleSize-1, self.options.hiLiteLo);
+    }
+  }
+  return area;
+}
+
+var normalCurveY = function(d) {
+  var x =
+    self.binEnds[0] +
+    d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width() - 1);
+  var y = normPdf(self.mu, self.sd, x);
+  return y;
+};
+var chisquaredCurveCSQY = function (d) {
+  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var y = chi2Pdf(self.options.population.length - 1, x);
+  return y;
+};
+var chisquaredCurveSSQY = function(d) {
+  popVar = self.popSd*self.popSd;
+  if (!self.options.withReplacement) {
+    popVar = popVar*self.population.length/(self.population.length -1);
+  }
+  scale = (self.options.sampleSize - 1)/popVar;
+  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var y = scale*chi2Pdf(self.options.sampleSize-1, x*scale);
+  return y;
+};
+var studentTCurveY = function(d) {
+  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  //PbsStat.tPdf(xVal[i], sampleSize-1);
+  var y = tPdf(self.options.sampleSize-1, x);
+  return y;
+};
 
 function redrawChart() {
       setLims();
@@ -1776,14 +1880,14 @@ function redrawChart() {
       self.chartDiv.children().remove();
       self.overlayDiv = normalChartDiv.clone().addClass('overlay');
       var sampleChartDiv = normalChartDiv.clone().addClass('sample_chart');
-      self.normalOverlayDiv = jQuery('<div/>').addClass('chart_box');
+      self.curveOverlayDiv = jQuery('<div/>').addClass('chart_box');
       self.chartDiv.append(normalChartDiv);
-      self.chartDiv.append(self.normalOverlayDiv);
       self.chartDiv.append(sampleChartDiv);
       self.chartDiv.append(self.overlayDiv);
+      self.chartDiv.append(self.curveOverlayDiv);
       // Background calculations.
       //maybe this should happen in selector callback?
-      var sampleData;
+      var sampleData = [];
       if (self.options.statisticType == MEAN) {
         sampleData = self.sampleMean;
       } else if (self.options.statisticType == SUM) {
@@ -1795,43 +1899,19 @@ function redrawChart() {
       }
       var allPops = self.options.population.concat(sampleData);
       var currentBinCounts = histMakeCounts(self.binEnds, allPops);
+      var yScale = null;
+      var totalDataLength = self.options.population.length + sampleData.length;
+      var popBinCounts = histMakeCounts(self.binEnds, self.options.population, totalDataLength);
+      yScale = popBinCounts.max();
+      if (sampleData.length !== 0) {
+        var sampleBinCounts = histMakeCounts(self.binEnds, sampleData, totalDataLength);
+        yScale = Math.max(yScale, sampleBinCounts.max());
+      }
       var width = self.overlayDiv.width();
       var height = self.overlayDiv.height();
       var graphWidth = self.binEnds.max() - self.binEnds.min();
-      //this chunk is copied from histhilite, to do with setting up y scale
-      var normalCurveY = function(d) {
-        var x =
-          self.binEnds[0] +
-          d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (width - 1);
-        var y = normPdf(self.mu, self.sd, x);
-        return y;
-      };
-      var yScale = null;
-      // TODO(jmeady): Include height in yScale.
-      for (i = 0; i < width; i++) {
-        if ((yScale === null || normalCurveY(i) > yScale) &&
-            !isNaN(normalCurveY(i)))
-          yScale = normalCurveY(i);
-      }
-      yScale = Math.max(currentBinCounts.max(), yScale);
-      var restrictedNormalCurveY = null;
-      if (null !== self.restrictedCounts) {
-        restrictedNormalCurveY = function(d) {
-          var x =
-            self.binEnds[0] +
-            d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (width - 1);
-          var y = normPdf(self.restrictedMu, self.restrictedSd, x);
-          return y;
-        };
-        for (i = 0; i < width; i++) {
-          if ((yScale === null || restrictedNormalCurveY(i) > yScale) &&
-              !isNaN(restrictedNormalCurveY(i)))
-            yScale = restrictedNormalCurveY(i);
-        }
-        //yScale = Math.max(self.restrictedCounts.max(), yScale);
-      }
       yScale /= (height - 1);
-      //end copied chunk
+
 
       function appendPopulationSvg(div) {
         var popBinCounts = histMakeCounts(self.binEnds, self.options.population);
@@ -1887,15 +1967,51 @@ function redrawChart() {
                               .range([0, width]);
       var axis = d3.svg.axis().scale(axisScale).orient('bottom');
       axisSvg.append('g').call(axis);
+
+      function drawCurve() {
+        if (self.options.curveChoice == NO_CURVE) {
+          return;
+        } else if (self.options.curveChoice == NORMAL_CURVE) {
+          curveYFunction = normalCurveY;
+        } else if (self.options.curveChoice == CHI_SQUARED_CURVE) {
+          if (self.options.statisticType == SSQ) {
+            curveYFunction = chisquaredCurveSSQY;
+          } else if (self.options.statisticType == CHISQUARE) {
+            curveYFunction = chisquaredCurveCSQY;
+          }
+        } else if (self.options.curveChoice == STUDENT_T_CURVE) {
+          curveYFunction = studentTCurveY;
+        }
+        var normalCurve =
+          d3.svg.line()
+            .x(function(d) {return d;})
+            .y(function(d) {
+              return height - (curveYFunction(d) / yScale);
+            });
+        var normSvg = d3.select(self.curveOverlayDiv.get(0))
+                        .append('svg')
+                        .attr('height', '100%');
+        var normPath = normSvg.append('path');
+        normPath.attr('class', 'nrestricted');
+        normPath.data([d3.range(0, width)])
+          .attr('d', normalCurve);
+      }
+      drawCurve();
+      if (!self.options.showCurve) {
+        self.curveOverlayDiv.hide();
+      }
+      if (!self.options.showPopulation || self.options.statisticType == CHISQUARE) {
+        jQuery('.population').toggle();
+      }
     }
 
     function refreshSelectedAreaOverlay() {
-      var lower = parseFloat(self.areaFromSlider.slider('value'));
-      var upper = parseFloat(self.areaToSlider.slider('value'));
+      self.options.hiLiteLo = parseFloat(self.areaFromSlider.slider('value'));
+      self.options.hiLiteHi = parseFloat(self.areaToSlider.slider('value'));
       var scale = self.chartDiv.width() /
         (self.binEnds.max() - self.binEnds.min());
-      var left = (lower - self.binEnds.min()) * scale;
-      var right = (upper - self.binEnds.min()) * scale;
+      var left = (self.options.hiLiteLo - self.binEnds.min()) * scale;
+      var right = (self.options.hiLiteHi - self.binEnds.min()) * scale;
       self.overlayDiv.css('clip',
                           'rect(0px,' +
                                 right + 'px,' +
@@ -1903,11 +2019,25 @@ function redrawChart() {
                                 left + 'px)');
       var p = 0;
       if (self.sampleBinCounts !== null) {
-        p = histHiLitArea(lower, upper, self.binEnds, self.sampleBinCounts);
+        p = histHiLitArea(self.options.hiLiteLo, self.options.hiLiteHi, self.binEnds, self.sampleBinCounts);
       }
       p *= 100;
       var text = 'Selected area: ' + p.fix(2) + '%';
       self.areaInfoSpan.text(text);
+      curveText = "";
+      if (self.options.curveChoice == NO_CURVE) {
+        curveText = "";
+      } else if (self.options.curveChoice == NORMAL_CURVE) {
+        p = normalHiLitArea() * 100;
+        curveText = " Normal approx: " + p.fix(2) + '%';
+      } else if (self.options.curveChoice == STUDENT_T_CURVE) {
+        p = tHiLitArea() * 100;
+        curveText = " Student t approx: " + p.fix(2) + '%';
+      } else if (self.options.curveChoice == CHI_SQUARED_CURVE) {
+        p = chiHiLitArea() * 100;
+        curveText = " Chi-squared approx: " + p.fix(2) + '%';
+      }
+      self.curveInfoSpan.text(curveText);
     }
 
     function initControls() {
@@ -1989,6 +2119,7 @@ function redrawChart() {
               pop = vMult(1/vSum(pop), pop);
               pop = pop.map(function(i) { return parseFloat(Number(i).toFixed(5)); }); //clean up js floating point errors
               self.options.population = pop;
+
             } else {
               if (self.options.populationType == BOX && prevStatisticType == CHISQUARE) {
                 self.options.population = self.stashedBoxPopulation;
@@ -2018,12 +2149,20 @@ function redrawChart() {
           if (jQuery(this).val() == NORMAL) {
             self.options.populationType = NORMAL;
             self.options.boxContents = "Normal";
+            if (self.options.statisticType == CHISQUARE) {
+              self.options.statisticType = MEAN;
+              self.statisticSelect.val(MEAN);
+            }
           } else if (jQuery(this).val() == BOX) {
             self.options.populationType = BOX;
             self.options.boxContents = self.stashedBoxPopulation.join('\n');
           } else if (jQuery(this).val() == UNIFORM) {
             self.options.populationType = UNIFORM;
             self.options.boxContents = "Uniform";
+            if (self.options.statisticType == CHISQUARE) {
+              self.options.statisticType = MEAN;
+              self.statisticSelect.val(MEAN);
+            }
           }
           drawPopulationArea(jQuery('div#popText'));
           initData();
@@ -2076,6 +2215,7 @@ function redrawChart() {
           e.preventDefault();
           if (self.options.populationType == BOX) {
             self.options.population = getBoxPopulation();
+            resetSamples();
             initData();
             self.reloadChart();
           }
@@ -2090,15 +2230,17 @@ function redrawChart() {
           self.showPopulationButton.text('Show Population Histogram');
         self.showPopulationButton.click(function(e) {
           e.preventDefault();
-          jQuery('.population').toggle();
-          if (!self.options.showPopulation)
-            self.showPopulationButton
-                .text(self.showPopulationButton.text().replace('Show', 'Hide'));
-          else
-            self.showPopulationButton
-                .text(self.showPopulationButton.text().replace('Hide', 'Show'));
-          self.options.showPopulation = !self.options.showPopulation;
-          refreshSelectedAreaOverlay();
+          if (self.options.statisticType != CHISQUARE) {
+            jQuery('.population').toggle();
+            if (!self.options.showPopulation)
+              self.showPopulationButton
+                  .text(self.showPopulationButton.text().replace('Show', 'Hide'));
+            else
+              self.showPopulationButton
+                  .text(self.showPopulationButton.text().replace('Hide', 'Show'));
+            self.options.showPopulation = !self.options.showPopulation;
+            refreshSelectedAreaOverlay();
+          }
         });
         self.areaInfoDiv.css('bottom', bottomOffset + 'px');
         bottom.css('height', bottomOffset + 'px');
@@ -2145,13 +2287,23 @@ function redrawChart() {
       function createCurveSelectControls() {
         var curveSelect = jQuery('<select/>').change(function(e) {
           e.preventDefault();
-          console.log("this is not implemented yet");
+          if (jQuery(this).val() == CHI_SQUARED_CURVE && (self.options.statisticType != SSQ && self.options.statisticType != CHISQUARE)) {
+            self.options.curveChoice = NO_CURVE;
+            jQuery(this).val(NO_CURVE);
+          } else if (jQuery(this).val() == STUDENT_T_CURVE && self.options.statisticType != T) {
+            self.options.curveChoice = NO_CURVE;
+            jQuery(this).val(NO_CURVE);
+          } else {
+            self.options.curveChoice = jQuery(this).val();
+          }
+          self.reloadChart();
         });
         jQuery.each(self.options.curveTypes, function(i, curveChoice) {
           curveSelect.append(jQuery('<option/>')
             .attr('value', curveChoice[1])
             .text(curveChoice[0]));
         });
+        curveSelect.val(self.options.curveChoice);
         return curveSelect;
       }
 
@@ -2159,8 +2311,10 @@ function redrawChart() {
         createSelectDataSourceControls();
         createPopulationButton();
         self.areaInfoSpan = jQuery('<span/>');
+        self.curveInfoSpan = jQuery('<span/>');
         if (self.options.showPopulationButton) {
           row.append(self.areaInfoSpan);
+          row.append(self.curveInfoSpan);
           row.append(createCurveSelectControls());
           row.append(self.showPopulationButton);
         }
@@ -2210,9 +2364,7 @@ function redrawChart() {
   initControls();
   initData();
   this.reloadChart();
-  if (!self.options.showPopulation) {
-    jQuery('.population').toggle();
-  }
+
 }
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/ScatterPlot.htm
@@ -3897,7 +4049,10 @@ function percentile(list,p) { // finds the pth percentile of list
     return(sList[ppt-1]);
 }
 
-function histMakeCounts(binEnd, data) {  // makes vector of histogram heights
+function histMakeCounts(binEnd, data, fulllength) {  // makes vector of histogram heights
+        if (!fulllength) {
+            fulllength = data.length;
+        }
         var nBins = binEnd.length - 1;
         var counts = new Array(nBins);
         var i = 0;
@@ -3915,7 +4070,7 @@ function histMakeCounts(binEnd, data) {  // makes vector of histogram heights
            }
         }
         for (i=0; i < nBins; i++) {
-           counts[i] /= data.length*(binEnd[i+1]-binEnd[i]);
+           counts[i] /= fulllength*(binEnd[i+1]-binEnd[i]);
         }
         return(counts);
 }
@@ -5943,6 +6098,8 @@ function Stici_Venn(container_id, params) {
     $.each(button_row, function(i, button) {
       button.label = button.label.replace('c', '<sup>c</sup>');
       button.label = button.label.replace('|', '&nbsp;|&nbsp;');
+      button.label = button.label.replace(' or ', '&nbsp;∪&nbsp;');
+
       var button_div = jQuery('<div/>').addClass('button');
       row.append(button_div);
       var inp = jQuery('<input/>',{type:'radio',name:'buttons'});
@@ -6193,6 +6350,13 @@ function Stici_Venn(container_id, params) {
 
 // Javascript implementation of venn diagram for sticigui. No params are
 // currently available.
+//
+// container_id: the CSS ID of the container to create the venn diagram (and
+//               controls) in.
+// params: A javascript object with various parameters to customize the chart.
+//  // Whether or not to render the conditional probability radio buttons.
+//  - showConditional: false
+
 function Stici_Venn3(container_id, params) {
   var self = this;
 
@@ -6203,20 +6367,28 @@ function Stici_Venn3(container_id, params) {
               .addClass('stici');
   this.env.append(app);
 
+
+  // Configuration option defaults.
+  this.options = {
+    showConditional: false
+  };
+
+  // Override options with anything specified by the user.
+  jQuery.extend(this.options, params);
+
   this.container = jQuery('<div/>',{id:container_id + 'container'}).addClass('container');
-  var buttons = jQuery('<div/>',{id:container_id + 'buttons'}).addClass('buttons');
+  var buttons_div = jQuery('<div/>',{id:container_id + 'buttons'}).addClass('buttons');
   var scrollbars = jQuery('<div/>',{id:container_id + 'scrollbars'}).addClass('scrollbars');
 
   app.append(self.container);
-  app.append(buttons);
+  app.append(buttons_div);
   app.append(scrollbars);
 
-  this.container.css('width',(this.env.width() - buttons.width()) + 'px');
+  this.container.css('width',(this.env.width() - buttons_div.width()) + 'px');
   this.container.css('height', (this.env.height() - scrollbars.height()) + 'px');
 
   var s_outline, a_outline, b_outline, c_outline;
   var a_fill, b_fill, c_fill, ab_fill, ac_fill, bc_fill, abc_fill;
-  var ab_text, a_or_b_text;
 
   // Create all of the html objects so we can get handles to them and all. Then
   // create the controls.
@@ -6230,7 +6402,7 @@ function Stici_Venn3(container_id, params) {
   // Is represented as
   // [[A, B, C],
   //  [X, Y, Z]]
-  var button_args = [
+  this.buttons_arr = [
     [{label: 'A', filled: a_fill},
      {label: 'B', filled: b_fill},
      {label: 'C', filled: c_fill},
@@ -6254,22 +6426,51 @@ function Stici_Venn3(container_id, params) {
     [{label: 'AcBC', filled: bc_fill, opaque: abc_fill},
      {label: 'Ac or BC', filled: [bc_fill, s_outline], opaque: a_fill},
      {label: 'S', filled: s_outline},
-     {label: '{}'}],
-
-    [{label: 'P(A|B)', filled: b_fill, hilite: ab_fill},
-     {label: 'P(Ac|B)', filled: ab_fill, hilite: b_fill},
-     {label: 'P(B|A)', filled: a_fill, hilite: ab_fill}],
-
-    [{label: 'P(A|BC)', filled: bc_fill, hilite: abc_fill},
-     {label: 'P(Ac|BC)', filled: abc_fill, hilite: bc_fill},
-     {label: 'P(A|(B or C))', filled: [b_fill, c_fill], hilite: [ab_fill, ac_fill]}]
+     {label: '{}'}]
   ];
-  $.each(button_args, function(i, button_row) {
+
+  if( this.options.showConditional) {
+    self.buttons_arr.push(
+      [{label: 'P(A|B)', filled: b_fill, hilite: ab_fill},
+       {label: 'P(Ac|B)', filled: ab_fill, hilite: b_fill},
+       {label: 'P(B|A)', filled: a_fill, hilite: ab_fill}]);
+
+    self.buttons_arr.push(
+      [{label: 'P(A|BC)', filled: bc_fill, hilite: abc_fill},
+       {label: 'P(Ac|BC)', filled: abc_fill, hilite: bc_fill},
+       {label: 'P(A|(B or C))', filled: [b_fill, c_fill], hilite: [ab_fill, ac_fill]}]);
+  }
+
+  self.buttons = {};
+  self.buttons_arr = $.map(self.buttons_arr, function(button_row) {
     var row = jQuery('<div/>').addClass('button_row');
-    $.each(button_row, function(i, button) {
+    button_row = $.map(button_row, function(button) {
+      button.human_label = button.label;
       button.label = button.label.replace('c', '<sup>c</sup>');
       button.label = button.label.replace('|', '&nbsp;|&nbsp;');
+      button.label = button.label.replace(' or ', '&nbsp;∪&nbsp;');
+
+      if (button.opaque !== undefined) {
+        if (!(button.opaque instanceof Array))
+          button.opaque = [button.opaque];
+      } else {
+        button.opaque = [];
+      }
+      if (button.filled !== undefined) {
+        if (!(button.filled instanceof Array))
+          button.filled = [button.filled];
+      } else {
+        button.filled = [];
+      }
+      if (button.hilite !== undefined) {
+        if (!(button.hilite instanceof Array))
+          button.hilite = [button.hilite];
+      } else {
+        button.hilite = [];
+      }
+
       var button_div = jQuery('<div/>').addClass('button');
+      button.div = button_div;
       row.append(button_div);
       var inp = jQuery('<input/>',{type:'radio',name:'buttons'});
       var label = jQuery('<label/>').click(function() {inp.prop('checked', true);});
@@ -6287,34 +6488,36 @@ function Stici_Venn3(container_id, params) {
         abc_fill.removeClass('selected opaque hilite');
         s_outline.removeClass('selected opaque hilite');
 
-        if (button.opaque !== undefined) {
-          if (!button.opaque instanceof Array)
-            button.opaque = [button.opaque];
-          $.each(button.opaque, function(i, opaque_element) {
-            jQuery(opaque_element).addClass('opaque');
-          });
-        }
-        if (button.filled !== undefined) {
-          if (!button.filled instanceof Array)
-            button.filled = [button.filled];
-          $.each(button.filled, function(i, fill_element) {
-            jQuery(fill_element).addClass('selected');
-          });
-        }
-        if (button.hilite !== undefined) {
-          if (!button.hilite instanceof Array)
-            button.hilite = [button.hilite];
-          $.each(button.hilite, function(i, fill_element) {
-            jQuery(fill_element).addClass('hilite');
-          });
-        }
+        $.each(button.opaque, function(i, opaque_element) {
+          jQuery(opaque_element).addClass('opaque');
+        });
+        $.each(button.filled, function(i, fill_element) {
+          jQuery(fill_element).addClass('selected');
+        });
+        $.each(button.hilite, function(i, fill_element) {
+          jQuery(fill_element).addClass('hilite');
+        });
       });
       label.html(button.label);
+      var prob_span = jQuery('<div/>');
+      label.append(prob_span);
+
+      button.p = function(p) {
+        if (isNaN(p))
+          p = 0;
+        prob_span.text(' (P = ' + (p / s_outline.area() * 100).fix(1) + '%)');
+      };
+
       button_div.append(inp);
       button_div.append(label);
+
+      self.buttons[button.human_label] = button;
+      return button;
     });
-    buttons.append(row);
+    buttons_div.append(row);
+    return button_row;
   });
+
   function createPercentControl(letter, size) {
     var sb = jQuery('<div/>',{id:container_id + 'psb' + letter}).addClass('scrollbar');
     var lbl = jQuery('<label/>').attr('for', container_id + 'sb'+letter);
@@ -6357,13 +6560,40 @@ function Stici_Venn3(container_id, params) {
   createPercentControl('B', 20);
   createPercentControl('C', 10);
 
-  var infoDiv = jQuery('<div/>').addClass('info');
-  ab_text = jQuery('<p/>');
-  a_or_b_text = jQuery('<p/>');
-  infoDiv.append(ab_text).append(a_or_b_text);
-  //scrollbars.append(infoDiv);
-
   updateSizes();
+
+  function createBox() {
+    var box = jQuery('<div/>').addClass('box');
+    box.area = function() {
+      if (box.css('display') == 'none')
+        return 0;
+
+      if (a_outline.isSameBox(box))
+        return $('#' + container_id + 'sbA').slider('value') / 100 *
+          s_outline.area();
+      if (b_outline.isSameBox(box))
+        return $('#' + container_id + 'sbB').slider('value') / 100 *
+          s_outline.area();
+      if (c_outline.isSameBox(box))
+        return $('#' + container_id + 'sbC').slider('value') / 100 *
+          s_outline.area();
+
+      return box.width() * box.height();
+    };
+    box.x = function() {
+      return box.position().left;
+    };
+    box.y = function() {
+      return box.position().top;
+    };
+    box.isSameBox = function(other) {
+      return box.y() == other.y() &&
+             box.x() == other.x() &&
+             box.width() == other.width() &&
+             box.height() == other.height();
+    };
+    return box;
+  }
 
   // Synchronizes fill positions so that the outline is always visible on the A
   // and B boxes, and the intersection area is synchronized.
@@ -6385,6 +6615,10 @@ function Stici_Venn3(container_id, params) {
         outline.css('top', s_outline.position().top + 'px');
     }
     function intersect(a, b, ab) {
+      if (ab === undefined) {
+        ab = createBox();
+      }
+
       var a_x = a.position().left;
       var a_y = a.position().top;
       var a_w = a.width();
@@ -6407,6 +6641,8 @@ function Stici_Venn3(container_id, params) {
         ab.css('width', (x2 - x1) + 'px');
         ab.css('height', (y2 - y1) + 'px');
       }
+
+      return ab;
     }
     bound(a_outline);
     bound(b_outline);
@@ -6434,32 +6670,47 @@ function Stici_Venn3(container_id, params) {
     intersect(a_outline, c_outline, ac_fill);
     intersect(ab_fill, bc_fill, abc_fill);
 
-    // Calculate P(AB) and P(A or B)
-    var s_area = s_outline.width() * s_outline.height();
-    var p_a = a_fill.width() * a_fill.height() / s_area * 100;
-    var p_b = b_fill.width() * b_fill.height() / s_area * 100;
-    var p_ab = ab_fill.width() * ab_fill.height() / s_area * 100;
-    var p_a_or_b = (p_a + p_b - p_ab);
-    if ((ab_fill.position().left == a_outline.position().left &&
-         ab_fill.position().top == a_outline.position().top &&
-         ab_fill.width() == a_outline.width() &&
-         ab_fill.height() == a_outline.height()) ||
-        (ab_fill.position().left == b_outline.position().left &&
-         ab_fill.position().top == b_outline.position().top &&
-         ab_fill.width() == b_outline.width() &&
-         ab_fill.height() == b_outline.height())) {
-      p_ab = Math.min($('#' + container_id + 'sbA').slider('value'),
-                      $('#' + container_id + 'sbB').slider('value'));
-      p_a_or_b = Math.max($('#' + container_id + 'sbA').slider('value'),
-                          $('#' + container_id + 'sbB').slider('value'));
-    }
-    if (ab_fill.css('display') == 'none') {
-      p_ab = 0;
-      p_a_or_b = parseFloat($('#' + container_id + 'sbA').slider('value')) +
-                 parseFloat($('#' + container_id + 'sbB').slider('value'));
-    }
-    ab_text.text('P(AB): ' + p_ab.fix(1) + '%');
-    a_or_b_text.text('P(A or B): ' + p_a_or_b.fix(1) + '%');
+    self.buttons['A'].p(a_outline.area());
+    self.buttons['B'].p(b_outline.area());
+    self.buttons['C'].p(c_outline.area());
+    self.buttons['Ac'].p(s_outline.area() - a_outline.area());
+    self.buttons['Bc'].p(s_outline.area() - b_outline.area());
+    self.buttons['Cc'].p(s_outline.area() - c_outline.area());
+    self.buttons['AB'].p(ab_fill.area());
+    self.buttons['AC'].p(ac_fill.area());
+    self.buttons['BC'].p(bc_fill.area());
+    self.buttons['A or B'].p(
+      a_outline.area() + b_outline.area() - ab_fill.area());
+    self.buttons['A or C'].p(
+      a_outline.area() + c_outline.area() - ac_fill.area());
+    self.buttons['B or C'].p(
+      b_outline.area() + c_outline.area() - bc_fill.area());
+    self.buttons['ABC'].p(abc_fill.area());
+    self.buttons['A or B or C'].p(
+      a_outline.area() + b_outline.area() + c_outline.area() -
+      ab_fill.area() - bc_fill.area() - bc_fill.area() +
+      abc_fill.area());
+    self.buttons['ABc'].p(a_outline.area() - ab_fill.area());
+    self.buttons['AcB'].p(b_outline.area() - ab_fill.area());
+    self.buttons['AcBC'].p(bc_fill.area() - abc_fill.area());
+    self.buttons['Ac or BC'].p(
+      s_outline.area() - a_outline.area() + abc_fill.area());
+    self.buttons['S'].p(s_outline.area());
+    self.buttons['{}'].p(0);
+    self.buttons['P(A|B)'].p(
+      ab_fill.area() / b_outline.area() * s_outline.area());
+    self.buttons['P(Ac|B)'].p(
+      s_outline.area() - ab_fill.area() / b_outline.area() * s_outline.area());
+    self.buttons['P(B|A)'].p(
+      ab_fill.area() / a_outline.area() * s_outline.area());
+    self.buttons['P(A|BC)'].p(
+      abc_fill.area() / bc_fill.area() * s_outline.area());
+    self.buttons['P(Ac|BC)'].p(
+      s_outline.area() - abc_fill.area() / bc_fill.area() * s_outline.area());
+    self.buttons['P(A|(B or C))'].p(
+      s_outline.area() *
+      (ab_fill.area() + ac_fill.area() - abc_fill.area()) /
+      (b_outline.area() + c_outline.area() - bc_fill.area()));
   }
 
   // Updates the sizes of the boxes according to their sliders.
@@ -6499,7 +6750,7 @@ function Stici_Venn3(container_id, params) {
     var scaleFactorX = 0.3;
     var scaleFactorY = 0.3;
 
-    s_outline = jQuery('<div/>').addClass('box').addClass('S');
+    s_outline = createBox().addClass('S');
     s_outline.css('left', '10px');
     s_outline.css('top', '10px');
     s_outline.css('width', (self.container.width() - 20) + 'px');
@@ -6507,34 +6758,34 @@ function Stici_Venn3(container_id, params) {
     s_outline.text('S');
     self.container.append(s_outline);
 
-    a_fill = jQuery('<div/>').addClass('box').addClass('A').addClass('fill');
-    a_outline = jQuery('<div/>').addClass('box').addClass('A').addClass('outline');
+    a_fill = createBox().addClass('A').addClass('fill');
+    a_outline = createBox().addClass('A').addClass('outline');
     a_outline.css('left', (self.container.width() * 0.15) + 'px');
     a_outline.css('top', (self.container.height() * 0.3) + 'px');
     a_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
     a_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
     a_outline.text('A');
 
-    b_fill = jQuery('<div/>').addClass('box').addClass('B').addClass('fill');
-    b_outline = jQuery('<div/>').addClass('box').addClass('B').addClass('outline');
+    b_fill = createBox().addClass('B').addClass('fill');
+    b_outline = createBox().addClass('B').addClass('outline');
     b_outline.css('left', (self.container.width() * 0.5) + 'px');
     b_outline.css('top', (self.container.height() * 0.4) + 'px');
     b_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
     b_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
     b_outline.text('B');
 
-    c_fill = jQuery('<div/>').addClass('box').addClass('C').addClass('fill');
-    c_outline = jQuery('<div/>').addClass('box').addClass('C').addClass('outline');
+    c_fill = createBox().addClass('C').addClass('fill');
+    c_outline = createBox().addClass('C').addClass('outline');
     c_outline.css('left', (self.container.width() * 0.4) + 'px');
     c_outline.css('top', (self.container.height() * 0.2) + 'px');
     c_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
     c_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
     c_outline.text('C');
 
-    ab_fill = jQuery('<div/>').addClass('box').addClass('AB').addClass('fill');
-    ac_fill = jQuery('<div/>').addClass('box').addClass('AC').addClass('fill');
-    bc_fill = jQuery('<div/>').addClass('box').addClass('BC').addClass('fill');
-    abc_fill = jQuery('<div/>').addClass('box').addClass('BC').addClass('fill');
+    ab_fill = createBox().addClass('AB').addClass('fill');
+    ac_fill = createBox().addClass('AC').addClass('fill');
+    bc_fill = createBox().addClass('BC').addClass('fill');
+    abc_fill = createBox().addClass('BC').addClass('fill');
     self.container.append(a_fill);
     self.container.append(b_fill);
     self.container.append(c_fill);
