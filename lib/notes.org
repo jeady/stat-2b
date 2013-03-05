@@ -1,0 +1,3 @@
+* Useful (emacs) regex to isearch for java functions
+\bp.*(.*).*{
+
