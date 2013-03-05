@@ -6098,7 +6098,7 @@ function Stici_Venn(container_id, params) {
     $.each(button_row, function(i, button) {
       button.label = button.label.replace('c', '<sup>c</sup>');
       button.label = button.label.replace('|', '&nbsp;|&nbsp;');
-      button.label = button.label.replace(' or ', '&nbsp;∪&nbsp;');
+      button.label = button.label.replace(' or ', '&nbsp;\u222A&nbsp;');
 
       var button_div = jQuery('<div/>').addClass('button');
       row.append(button_div);
@@ -6448,7 +6448,7 @@ function Stici_Venn3(container_id, params) {
       button.human_label = button.label;
       button.label = button.label.replace('c', '<sup>c</sup>');
       button.label = button.label.replace('|', '&nbsp;|&nbsp;');
-      button.label = button.label.replace(' or ', '&nbsp;∪&nbsp;');
+      button.label = button.label.replace(' or ', '&nbsp;\u222A&nbsp;');
 
       if (button.opaque !== undefined) {
         if (!(button.opaque instanceof Array))
