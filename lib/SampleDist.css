@@ -10,6 +10,16 @@
   border: none;
 }
 
+.stici_sampledist .chart_box svg {
+  vertical-align: top;
+  width: 100%;
+}
+.stici_sampledist path {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 2px;
+}
+
 .stici>.top_controls {
   height: 30px;
   display: table-cell;
