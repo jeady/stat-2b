@@ -22,13 +22,22 @@ module.exports = function(grunt) {
     min: {
       js: {
         src: 'sticigui.js',
-        dest: 'sticigui.js'
+        dest: 'sticigui.min.js'
       }
     },
     cssmin: {
       css: {
         src: 'sticigui.css',
-        dest: 'sticigui.css'
+        dest: 'sticigui.min.css'
+      }
+    },
+    jshint: {
+      options: {
+        sub: true
+      },
+      globals: {
+        jQuery: true,
+        d3: true
       }
     }
   });
@@ -39,6 +48,6 @@ module.exports = function(grunt) {
   // closed), we should add csslint to the list of tasks to perform.
   // TODO(jmeady): add csslint.
   grunt.registerTask('default', 'lint concat min cssmin');
-  grunt.registerTask('debug', 'lint concat');
+  grunt.registerTask('debug', 'default');
 
 };

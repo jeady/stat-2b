@@ -68,9 +68,9 @@ Internet Explorer support are in development.
 
 Development
 ===========
-This library is compiled using Grunt and the grunt-css plugin.
+This library is compiled using Grunt 0.3 and the grunt-css plugin.
 
-To install grunt: `npm install -g grunt`
+To install grunt: `npm install -g grunt@0.3`
 To install grunt-css: `npm install grunt-css@0.3.2`
 
 To compile sticigui.js, simply run `grunt` from this project's directory. Run
