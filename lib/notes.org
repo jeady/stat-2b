@@ -1,0 +1,10 @@
+* Useful (emacs) regexes for isearch & replace for:
+** java functions
+\bp.*(.*).*{
+** java data type -> js var
+\b\(double\|int\)\(\[\]\)*
+** java new array of datatype -> js new Array
+new .+\[\(.+\)\]
+new Array(\1)
+* How do I set the default value for an optional argument in Javascript?
+http://stackoverflow.com/questions/6717109/how-do-i-set-the-default-value-for-an-optional-argument-in-javascript
