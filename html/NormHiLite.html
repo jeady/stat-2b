@@ -12,7 +12,7 @@
 <script src="../sticigui.js"></script>
 <link href="../sticigui.css" rel="stylesheet" type="text/css" />
 <style>
-#chart {
+#chart, #chart2 {
   width: 550px;
   height: 320px;
   margin-left: auto;
@@ -26,6 +26,14 @@
 <script>
 jQuery(function() {
   new Stici_NormHiLite('chart', {
+  });
+});
+</script>
+<a onclick="$('#chart2').toggle()">Show/Hide</a><br />
+<div id="chart2" style="display: none"></div>
+<script>
+jQuery(function() {
+  new Stici_NormHiLite('chart2', {
   });
 });
 </script>
