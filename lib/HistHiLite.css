@@ -72,6 +72,7 @@
 .stici>.bottom_controls .binomialBars,
 .stici>.bottom_controls .areaHiLite {
   text-align: center;
+  padding-top: 5px;
 }
 .stici>.bottom_controls .popbox {
   margin: 0 0 0 0;
@@ -98,4 +99,17 @@
   text-align: right;
 }
 .stici>.bottom_controls .popbox .box p table {
+}
+.stici_histogram .stici_textbar {
+  width: inherit;
+  height: 20px;
+}
+.stici_histogram .stici_textbar>div {
+  display: inline-block;
+  width: inherit;
+}
+.stici_histogram .stici_textbar .stici_textbar_slider {
+  display: inline-block;
+  width: 100px;
+  margin: 0 15px 0 15px;
 }
