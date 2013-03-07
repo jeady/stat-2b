@@ -50,4 +50,5 @@ module.exports = function(grunt) {
   grunt.registerTask('default', 'lint concat min cssmin');
   grunt.registerTask('debug', 'default');
 
+  grunt.registerTask('nolint', 'concat min');
 };
