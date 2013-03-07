@@ -4,18 +4,18 @@ module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
     lint: {
-      js: ['grunt.js', 'lib/*.js']
+      js: ['grunt.js', 'lib/controls/*.js', 'lib/*.js']
     },
     csslint: {
-      css: 'lib/*.css'
+      css: ['lib/*.css', 'lib/controls/*.css']
     },
     concat: {
       js: {
-        src: ['lib/*.js', 'vendor/**/*.js'],
+        src: ['lib/*.js', 'lib/controls/*.js', 'vendor/**/*.js'],
         dest: 'sticigui.js'
       },
       css: {
-        src: ['lib/*.css', 'vendor/**/*.css'],
+        src: ['lib/*.css', 'lib/controls/*.css', 'vendor/**/*.css'],
         dest: 'sticigui.css'
       }
     },
