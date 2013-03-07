@@ -7,45 +7,45 @@
 .stici>.stici_chart {
   background: #fff;
 }
-.stici_histogram .chart_box svg {
+.stici_histhilite .chart_box svg {
   vertical-align: top;
   width: 100%;
 }
-.stici_histogram path {
+.stici_histhilite path {
   stroke: #000000;
   fill: none;
   stroke-width: 2px;
 }
-.stici_histogram .additional_info {
+.stici_histhilite .additional_info {
   text-align: center;
   vertical-align: middle;
   height: 30px;
 }
-.stici_histogram {
+.stici_histhilite {
   font-size: 14px;
 }
-.stici_histogram path.restricted {
+.stici_histhilite path.restricted {
   stroke: #136738;
 }
-.stici_histogram .chart_box rect.restricted {
+.stici_histhilite .chart_box rect.restricted {
   fill: #37DA7E;
 }
-.stici_histogram .chart_box .overlay rect.restricted {
+.stici_histhilite .chart_box .overlay rect.restricted {
   fill: #CA1F7B;
 }
-.stici_histogram path.nrestricted {
+.stici_histhilite path.nrestricted {
   stroke: #0032A8;
 }
-.stici_histogram .chart_box rect {
+.stici_histhilite .chart_box rect {
   fill: #6594ff;
   stroke: black;
   stroke-width: 1;
 }
-.stici_histogram .chart_box .overlay rect {
+.stici_histhilite .chart_box .overlay rect {
   fill: #f8ff53;
 }
-.stici_histogram .axis path,
-.stici_histogram .axis line {
+.stici_histhilite .axis path,
+.stici_histhilite .axis line {
   fill: none;
   stroke: black;
   shape-rendering: crispEdges;
@@ -100,15 +100,15 @@
 }
 .stici>.bottom_controls .popbox .box p table {
 }
-.stici_histogram .stici_textbar {
+.stici_histhilite .stici_textbar {
   width: inherit;
   height: 20px;
 }
-.stici_histogram .stici_textbar>div {
+.stici_histhilite .stici_textbar>div {
   display: inline-block;
   width: inherit;
 }
-.stici_histogram .stici_textbar .stici_textbar_slider {
+.stici_histhilite .stici_textbar .stici_textbar_slider {
   display: inline-block;
   width: 100px;
   margin: 0 15px 0 15px;
