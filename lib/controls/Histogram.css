@@ -55,7 +55,7 @@
   fill: #f8ff53;
 }
 .stici_histogram path.set0 {
-  stroke: #136738;
+  stroke: #0032A8;
 }
 
 /* Set 1 Colors */
@@ -66,5 +66,5 @@
   fill: #CA1F7B;
 }
 .stici_histogram path.set1 {
-  stroke: #0032A8;
+  stroke: #136738;
 }
