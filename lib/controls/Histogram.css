@@ -17,9 +17,13 @@
   top: 0;
 }
 .stici_histogram .chart_box.axis {
-  height: 25px;
+  height: 20px;
   top: initial;
   bottom: 0;
+}
+.stici_histogram .chart_box.axis text {
+  font-family: sans-serif;
+  font-size: 11px;
 }
 
 /* Default rules for rendering objects in the chart. Often overridden by the
