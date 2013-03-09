@@ -51,16 +51,20 @@
  * Rules to align the general sections (top, middle, bottom).
  */
 .stici_sampledist .top_controls {
-  height: 30px;
+  height: 35px;
   display: table-cell;
   vertical-align: middle;
   padding-left: 5px;
 }
 .stici_sampledist div.middle {
   position: absolute;
-  top: 30px;
+  top: 35px;
   width: 100%;
   padding: 0 2px 0 2px;
+}
+.stici_sampledist .bottom_controls {
+  height: auto;
+  text-align: center;
 }
 
 /**
@@ -78,7 +82,7 @@
   margin-left: 2px;
 }
 
-.stici_sampledist textarea.population {
+.stici_sampledist div.population {
   float: right;
   margin: 0 4px 0 0;
   padding: 0 0 0 0;
@@ -88,6 +92,30 @@
 /**
  * Customizations to individual controls.
  */
+.stici_sampledist .population textarea {
+  width: inherit;
+  position: absolute;
+  top: 15px;
+  bottom: 0px;
+}
+.stici_sampledist .population>div {
+  width: inherit;
+  position: absolute;
+  top: 0px;
+}
 .stici_sampledist div.stici_combobox {
   display: inline-block;
+}
+.stici_sampledist .stici_textbar {
+  width: inherit;
+  height: 20px;
+}
+.stici_sampledist .stici_textbar>div {
+  display: inline-block;
+  width: inherit;
+}
+.stici_sampledist .stici_textbar .stici_textbar_slider {
+  display: inline-block;
+  width: 100px;
+  margin: 0 15px 0 15px;
 }
