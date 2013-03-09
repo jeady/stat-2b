@@ -30,7 +30,12 @@
 <script>
 jQuery(function() {
   new Stici_SampleDist('chart', {
-    bins: 100
+    variables: "all",
+    startWith: "sum",
+    boxContents: "0,1,2,3,4",
+    sources: "all",
+    boxHistControl: true,
+    replaceControl: true
   });
 });
 </script>
