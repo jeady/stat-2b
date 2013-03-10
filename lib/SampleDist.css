@@ -127,6 +127,3 @@
 .stici_sampledist .stici_histogram .chart_box.overlay rect.set0 {
   display: none;
 }
-.stici_sampledist .middle svg {
-  left: 0px;
-}
