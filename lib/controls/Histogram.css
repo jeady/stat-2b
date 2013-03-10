@@ -48,6 +48,12 @@
   stroke: black;
   shape-rendering: crispEdges;
 }
+.stici_histogram .axis svg g:first-of-type>text {
+  text-anchor: start;
+}
+.stici_histogram .axis svg g:last-of-type>text {
+  text-anchor: end;
+}
 
 /* Set 0 Colors */
 .stici_histogram .chart_box rect.set0 {
