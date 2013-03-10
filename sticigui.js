@@ -1814,7 +1814,7 @@ function Stici_SampleDist(container_id, params) {
               count[i] = 0.0;
             }
             for (i=0; i < sampleSize; i++) {
-              tmp = Math.random();
+              tmp = rand.next();
               if (tmp <= cum[0]) {
                 count[0]++;
               }
@@ -1856,7 +1856,7 @@ function Stici_SampleDist(container_id, params) {
             }
           } else if (sourceChoice.selected() == "Uniform") {
             for (i = 0; i < sampleSize; i++) {
-              theSample[i] = Math.random();
+              theSample[i] = rand.next();
               xb += theSample[i];
             }
           }
@@ -8125,7 +8125,9 @@ function SticiHistogram(params) {
             return -Infinity;
 
           return jQuery.grep(
-            jQuery.map(range(bounds.x_lo, bounds.x_hi), c),
+            jQuery.map(range(0, self.width()), function(i) {
+              return c((i / self.width()) * (bounds.x_hi - bounds.x_lo) + bounds.x_lo);
+            }),
             isNaN,
             true).max();
         }).max();
