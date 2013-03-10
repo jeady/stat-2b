@@ -327,6 +327,9 @@
 .stici_sampledist .stici_histogram .chart_box.overlay rect.set0 {
   display: none;
 }
+.stici_sampledist .middle svg {
+  left: 0px;
+}
 
 .stici>.bottom_controls button.selected, .stici>.bottom_controls button:active {
   top: 1px;
