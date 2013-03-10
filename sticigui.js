@@ -1539,7 +1539,7 @@ function Stici_SampleDist(container_id, params) {
       setLims();                                  // set plot limits
       // make the histogram of the population
       setBins();                                    // set the class intervals; make the counts
-      setBars(xMin,xMin);                           // set the hilight scrollbar scales
+      setBars(lo.val(),hi.val());                           // set the hilight scrollbar scales
       // reset the labels
       if (varChoice.selected() == "Sample Chi-Squared") {
         popMeanLabel.text("Categories: " + pop.length);
@@ -1563,7 +1563,7 @@ function Stici_SampleDist(container_id, params) {
         showPlot();                             // refresh the histogram
       } else if (sampleSizeBar.is(e.target)) {     // clear history, reset sample size, redisplay histogram
         sampleSize = parseInt(sampleSizeBar.val(), 10);
-        setBars(xMin, xMin);
+        setBars(lo.val(), hi.val());
         samplesSoFar = 0;
         setSamLabel();
         setLims();
@@ -4032,7 +4032,8 @@ function histMakeBins(nBins, data) { // makes equispaced histogram bins that spa
 
 function listToHist(list, binEnd, nBins, lim) {
     // lim is an optional paramater, defaulting to list.length if not set
-    lim = lim || list.length;
+    if (lim === undefined)
+      lim = list.length;
     c = new Array(nBins);
     var i;
     for (i = 0; i < nBins; i++) {
