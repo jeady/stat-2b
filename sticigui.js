@@ -1401,7 +1401,7 @@ function Stici_SampleDist(container_id, params) {
           populationButton = SticiToggleButton({
             trueLabel: 'No Population Histogram',
             falseLabel: 'Population Histogram',
-            value: options.showPopulation
+            value: true
           });
 
           row.append(areaLabel,
