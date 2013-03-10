@@ -1285,15 +1285,9 @@ function Stici_SampleDist(container_id, params) {
       middle.append(createStatsBox(), hist, createPopulationBox());
 
       // Compose the bottom piece.
-      if (showBoxHist) {
-        bottom.append(createSampleRow(),
-                      createAreaSelectRow(),
-                      createInfoRow());
-      } else {
-        createSampleRow();
-        createAreaSelectRow();
-        createInfoRow();
-      }
+      bottom.append(createSampleRow(),
+                    createAreaSelectRow(),
+                    createInfoRow());
 
       // Make sure everything is sized correctly.
       middle.height(container.height() - top.height() - bottom.height());
@@ -1424,7 +1418,7 @@ function Stici_SampleDist(container_id, params) {
         populationButton = SticiToggleButton({
           trueLabel: 'No Population Histogram',
           falseLabel: 'Population Histogram',
-          value: true
+          value: showBoxHist
         });
 
         if (options.showCurve) {
@@ -1439,13 +1433,11 @@ function Stici_SampleDist(container_id, params) {
           }
         }
 
-        if (showBoxHist) {
-          row.append(areaLabel);
-          if (options.curveControls)
-            row.append(curveAreaLabel, curveChoice);
-          if (options.boxHistControl)
-            row.append(populationButton);
-        }
+        row.append(areaLabel);
+        if (options.curveControls)
+          row.append(curveAreaLabel, curveChoice);
+        if (options.boxHistControl)
+          row.append(populationButton);
         return row;
       }
         function createAreaSelectRow() {
