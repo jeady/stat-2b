@@ -7087,8 +7087,10 @@ function SticiHistogram(params) {
 
     if (isNaN(bounds.width) ||
         !isFinite(bounds.width) ||
+        bounds.width === 0 ||
         isNaN(bounds.height) ||
-        !isFinite(bounds.height)) {
+        !isFinite(bounds.height) ||
+        bounds.height === 0) {
       console.warn("Histogram not rendering invalid data.");
       return;
     }
