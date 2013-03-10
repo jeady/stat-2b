@@ -1515,8 +1515,8 @@ function Stici_SampleDist(container_id, params) {
         } else {
             popMeanLabel.text("Ave(Box): " + popMean.fix(3));
             popSdLabel.text("SD(Box): " + popSd.fix(3));
-            statSampleMeanLabel.text("Mean(values) undefined");
-            statSampleSDLabel.text("SD(values) undefined");
+            statSampleMeanLabel.text("Mean(values): undefined");
+            statSampleSDLabel.text("SD(values): undefined");
         }
         setCurve();
         setCurveLabel();
@@ -1712,28 +1712,28 @@ function Stici_SampleDist(container_id, params) {
       if (varChoice.selected() == "Sample Mean") {
         countSample = listToHist(sampleMean, binEnd, nBins, samplesSoFar);
         statSampleMeanLabel.text(
-          "Mean(values) = " + mean(sampleMean, samplesSoFar).fix(nDigs));
+          "Mean(values): " + mean(sampleMean, samplesSoFar).fix(nDigs));
         statSampleSDLabel.text(
-          "SD(values) = " + sd(sampleMean, samplesSoFar).fix(nDigs));
+          "SD(values): " + sd(sampleMean, samplesSoFar).fix(nDigs));
       } else if (varChoice.selected() == "Sample Sum") {
         countSample = listToHist(scalVMult(sampleSize, sampleMean), binEnd, nBins, samplesSoFar);
         statSampleMeanLabel.text(
-          "Mean(values) = " + (sampleSize * mean(sampleMean, samplesSoFar)).fix(nDigs));
+          "Mean(values): " + (sampleSize * mean(sampleMean, samplesSoFar)).fix(nDigs));
         statSampleSDLabel.text(
-          "SD(values) = " + (sampleSize * sd(sampleMean, samplesSoFar)).fix(nDigs));
+          "SD(values): " + (sampleSize * sd(sampleMean, samplesSoFar)).fix(nDigs));
       } else if (varChoice.selected() == "Sample t") {
         countSample = listToHist(sampleT, binEnd, nBins, samplesSoFar);
         statSampleMeanLabel.text(
-          "Mean(values) = " + mean(sampleT, samplesSoFar).fix(nDigs));
+          "Mean(values): " + mean(sampleT, samplesSoFar).fix(nDigs));
         statSampleSDLabel.text(
-          "SD(values) = " + sd(sampleT, samplesSoFar).fix(nDigs));
+          "SD(values): " + sd(sampleT, samplesSoFar).fix(nDigs));
       } else if (varChoice.selected() == "Sample S-Squared" ||
                  varChoice.selected() == "Sample Chi-Squared") {
         countSample = listToHist(sampleSSq, binEnd, nBins, samplesSoFar);
         statSampleMeanLabel.text(
-          "Mean(values) = " + mean(sampleSSq, samplesSoFar).fix(nDigs));
+          "Mean(values): " + mean(sampleSSq, samplesSoFar).fix(nDigs));
         statSampleSDLabel.text(
-          "SD(values) = " + sd(sampleSSq, samplesSoFar).fix(nDigs));
+          "SD(values): " + sd(sampleSSq, samplesSoFar).fix(nDigs));
       }
       setAreas();
       showPlot();
