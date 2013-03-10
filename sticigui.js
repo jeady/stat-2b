@@ -1268,28 +1268,6 @@ function Stici_SampleDist(container_id, params) {
     var popMean = 0;                    // the population mean
     var popSd = 0;                      // the population SD
 
-
-    // These are class variables from the original java that probably have not
-    // yet been incorporated.
-    /*
-    private boolean showCurve = false;      // show normal, t, or chi-square approximation toggle
-    private int nVars = 5;                  // number of random variable choices
-    private int nCurves = 4;                // number of approximating curve choices
-    private Hashtable varHash = new Hashtable(nVars);
-    private int nSources = 3;
-    private Hashtable sourceHash = new Hashtable(nSources);
-    private boolean replaceControl = false;    // add controls for sampling w/ w/o replacement
-    private boolean statLabels = true;         // show summary statistics of sample statistic values?
-    private boolean binControls = true;        // add the bin controls?
-    private boolean curveControls = true;      // add normal or chi-square curve button and label?
-    private boolean boxEditable = true;        // are the contents of the box editable?
-    private boolean toggleVar = true;          // add Choice to toggle among variables?
-    private boolean showBoxHist = true;        // show histogram of the numbers in the box?
-    private boolean boxHistControl = true;     // show button to turn box histogram on and off?
-    private boolean normalFillButton = false;  // add button to fill box w/ normal sample?
-
-    */
-
     function init() {
       var o = jQuery('<div/>').addClass('stici stici_sampledist');
       container.append(o);
@@ -1307,10 +1285,15 @@ function Stici_SampleDist(container_id, params) {
       middle.append(createStatsBox(), hist, createPopulationBox());
 
       // Compose the bottom piece.
-      if (showBoxHist)
+      if (showBoxHist) {
         bottom.append(createSampleRow(),
                       createAreaSelectRow(),
                       createInfoRow());
+      } else {
+        createSampleRow();
+        createAreaSelectRow();
+        createInfoRow();
+      }
 
       // Make sure everything is sized correctly.
       middle.height(container.height() - top.height() - bottom.height());
@@ -1335,23 +1318,43 @@ function Stici_SampleDist(container_id, params) {
       // Top.
       function createSelectDataSourceControls() {
         var dataSelectControls = jQuery('<div/>');
+
+        if (options.variables != "all") {
+          var oldRVar = rVar;
+          rVar = {};
+          jQuery.each(oldRVar, function(k, v) {
+            if (options.variables.indexOf(k) >= 0 ||
+                options.variables.indexOf(v) >= 0)
+              rVar[k] = v;
+          });
+        }
         varChoice = new SticiComboBox({
           label: "Distribution of: ",
           options: rVar,
-          selected: options.startWith
+          value: options.startWith
         });
         currVar = varChoice.selected();
+
+        if (options.sources != "all") {
+          var oldRSource = rSource;
+          rSource = {};
+          jQuery.each(oldRSource, function(k, v) {
+            if (options.sources.indexOf(k) >= 0 ||
+                options.sources.indexOf(v) >= 0)
+              rSource[k] = v;
+          });
+        }
         sourceChoice = new SticiComboBox({
           label: "Sample from: ",
           options: rSource,
           selected: "Box"
         });
-        dataSelectControls.append(varChoice, sourceChoice);
-        if (options.replaceControl) {
-          replaceCheck = jQuery('<input type="checkbox"/>');
-          replaceCheck.attr('checked', options.replace);
+        if (options.toggleVar)
+          dataSelectControls.append(varChoice);
+        dataSelectControls.append(sourceChoice);
+        replaceCheck = jQuery('<input type="checkbox"/>');
+        if (options.replaceControl)
           dataSelectControls.append(replaceCheck, ' with replacement');
-        }
         takeSampleButton = jQuery('<button id="takeSample"/>').text('Take Sample');
         dataSelectControls.append(takeSampleButton);
         return dataSelectControls;
@@ -1376,9 +1379,9 @@ function Stici_SampleDist(container_id, params) {
                         popSdLabel,
                         statExpLabel,
                         statSELabel);
+        statSampleMeanLabel = jQuery('<p/>');
+        statSampleSDLabel = jQuery('<p/>');
         if (options.statLabels) {
-          statSampleMeanLabel = jQuery('<p/>');
-          statSampleSDLabel = jQuery('<p/>');
           stats.append(statSampleMeanLabel,
                           statSampleSDLabel);
         }
@@ -1389,138 +1392,164 @@ function Stici_SampleDist(container_id, params) {
       }
       // Bottom.
       function createSampleRow() {
-        if (showBoxHist) {
-          var row = jQuery('<div/>');
-
-          areaLabel = jQuery('<span/>');
-          curveAreaLabel = jQuery('<span/>');
-          curveChoice = new SticiComboBox({
-            label: '',
-            options: curveLabel
-          });
-          populationButton = SticiToggleButton({
-            trueLabel: 'No Population Histogram',
-            falseLabel: 'Population Histogram',
-            value: true
-          });
-
-          row.append(areaLabel,
-                     curveAreaLabel,
-                     curveChoice,
-                     populationButton);
-          return row;
-        }
-        return null;
-      }
-      function createAreaSelectRow() {
-        var row = jQuery('<div/>').addClass('areaHiLite');
-        lo = new SticiTextBar({
-          step: 0.001,
-          value: 0,
-          label: 'Area from: '
-        });
-        hi = new SticiTextBar({
-          step: 0.001,
-          value: 0,
-          label: ' to: '
-        });
-        row.append(lo, hi);
-        return row;
-      }
-      function createInfoRow() {
         var row = jQuery('<div/>');
 
-        sampleSizeBar = jQuery('<input type="text"/>').val(sampleSize);
-        samplesToTakeBar = jQuery('<input type="text"/>').val(samplesToTake);
-        row.append("Sample Size: ",
-                   sampleSizeBar,
-                   " Take ",
-                   samplesToTakeBar,
-                   " samples. ");
-        if (options.binControls) {
-          binBar = jQuery('<input type="text" id="bins" />').val(options.bins);
-          row.append(" Bins: ", binBar);
+        areaLabel = jQuery('<span/>');
+        curveAreaLabel = jQuery('<span/>');
+        if (options.curves != "all") {
+          var oldLabels = curveLabel;
+          curveLabel = {};
+          jQuery.each(oldLabels, function(k, v) {
+            if (options.curves.indexOf(k) >= 0 ||
+                options.curves.indexOf(v) >= 0)
+              curveLabel[k] = v;
+          });
+        }
+        curveChoice = new SticiComboBox({
+          label: '',
+          options: curveLabel
+        });
+        populationButton = SticiToggleButton({
+          trueLabel: 'No Population Histogram',
+          falseLabel: 'Population Histogram',
+          value: true
+        });
+
+        if (options.showCurve) {
+          if (varChoice.selected() == "Sample Mean" ||
+              varChoice.selected() == "Sample Sum") {
+            curveChoice.selected("Normal Curve");
+          } else if (varChoice.selected() == "Sample S-Squared" ||
+                     varChoice.selected() == "Sample Chi-Squared") {
+            curveChoice.selected("Chi-Squared Curve");
+          } else if (varChoice == "Sample t") {
+            curveChoice.selected("Student t curve");
+          }
+        }
+
+        if (showBoxHist) {
+          row.append(areaLabel);
+          if (options.curveControls)
+            row.append(curveAreaLabel, curveChoice);
+          if (options.boxHistControl)
+            row.append(populationButton);
         }
         return row;
       }
+        function createAreaSelectRow() {
+          var row = jQuery('<div/>').addClass('areaHiLite');
+          lo = new SticiTextBar({
+            step: 0.001,
+            value: hiLiteLo,
+            min: -10000,
+            max:  10000,
+            label: 'Area from: '
+          });
+          hi = new SticiTextBar({
+            step: 0.001,
+            value: hiLiteHi,
+            min: -10000,
+            max:  10000,
+            label: ' to: '
+          });
+          row.append(lo, hi);
+          return row;
+        }
+        function createInfoRow() {
+          var row = jQuery('<div/>');
+
+          sampleSizeBar = jQuery('<input type="text"/>').val(sampleSize);
+          samplesToTakeBar = jQuery('<input type="text"/>').val(samplesToTake);
+          row.append("Sample Size: ",
+                     sampleSizeBar,
+                     " Take ",
+                     samplesToTakeBar,
+                     " samples. ");
+                     binBar = jQuery('<input type="text" id="bins" />').val(options.bins);
+                     if (options.binControls) {
+                       row.append(" Bins: ", binBar);
+                     }
+                     return row;
+        }
 
 
-      // The UI has been set up. Now initialize the data.
-      if (options.sources === null ||
-          options.sources.toLowerCase().indexOf("box") >= 0 ||
-            options.sources.toLowerCase().indexOf("all") >= 0) {
-        if (varChoice.selected() == "Sample Chi-Squared")
-          boxLabel.text("Category Probabilities");
+        // The UI has been set up. Now initialize the data.
+        if (options.sources === null ||
+            options.sources.toLowerCase().indexOf("box") >= 0 ||
+              options.sources.toLowerCase().indexOf("all") >= 0) {
+          if (varChoice.selected() == "Sample Chi-Squared")
+            boxLabel.text("Category Probabilities");
         else
           boxLabel.text("Population");
+        }
+        var bc = "";
+        if (options.boxContents !== null) {
+          bc = options.boxContents;
+        } else if (sourceChoice.selected() == "Normal") {
+          bc = "Normal";
+        } else if (sourceChoice.selected() == "Uniform") {
+          bc = "Uniform";
+        } else {
+          bc = "0 1 2 3 4";
+        }
+        setBox(bc, true);
+        var vmx = vMinMax(pop);
+        xMin = vmx[0];
+        xMax = vmx[1];
+        initPop();
+        setCurve();                                   // set the approximating curve
+        setBins();                                    // make the histogram counts
+        setBars(options.hiLiteLo, options.hiLiteHi);
+        replaceCheck.attr('checked', options.replace);
+        adjustSampleSize();
+        showPlot();                                   // refresh the histogram
       }
-      var bc = "";
-      if (options.boxContents !== null) {
-        bc = options.boxContents;
-      } else if (sourceChoice.selected() == "Normal") {
-        bc = "Normal";
-      } else if (sourceChoice.selected() == "Uniform") {
-        bc = "Uniform";
-      } else {
-        bc = "0 1 2 3 4";
-      }
-      setBox(bc, true);
-      var vmx = vMinMax(pop);
-      xMin = vmx[0];
-      xMax = vmx[1];
-      initPop();
-      setCurve();                                   // set the approximating curve
-      setBins();                                    // make the histogram counts
-      setBars(hiLiteLo, hiLiteHi);
-      adjustSampleSize();
-      showPlot();                                   // refresh the histogram
-    }
 
     // compute population statistics
     function initPop() {
-        if (sourceChoice.selected() == "Box") {
-            popMean = 0;
-            popSd = 0;
-            if (pop.length === 0) {
-                console.log("Error in SampleDist.initPop(): Population is empty!\n");
-                for (var i= 0; i < nBins; i++) {
-                    countPop[i] = 0;
-                }
-                // TODO(jmeady): Do we need to clear anything out here?
-                return;
-            }
-            popMean = mean(pop);
-            popSd = sd(pop);
-// FIX ME! need to handle probabilities here.
-        } else if (sourceChoice.selected() == "Normal") {
-            popMean = 0;
-            popSd = 1;
-            replaceCheck.attr('checked', true);
-        } else if (sourceChoice.selected() == "Uniform") {
-            popMean = 0.5;
-            popSd = Math.sqrt(1.0/12.0);
-            replaceCheck.attr('checked', true);
+      if (sourceChoice.selected() == "Box") {
+        popMean = 0;
+        popSd = 0;
+        if (pop.length === 0) {
+          console.log("Error in SampleDist.initPop(): Population is empty!\n");
+          for (var i= 0; i < nBins; i++) {
+            countPop[i] = 0;
+          }
+          // TODO(jmeady): Do we need to clear anything out here?
+          return;
         }
-        popMin = pop.min();
-        popMax = pop.max();
-        setLims();                                  // set plot limits
-// make the histogram of the population
-        setBins();                                    // set the class intervals; make the counts
-        setBars(xMin,xMin);                           // set the hilight scrollbar scales
-// reset the labels
-        if (varChoice.selected() == "Sample Chi-Squared") {
-            popMeanLabel.text("Categories: " + pop.length);
-            popSdLabel.text("E(Chi-Squared): " + (pop.length-1));
-            replaceCheck.attr('checked', true);
-        } else {
-            popMeanLabel.text("Ave(Box): " + popMean.fix(3));
-            popSdLabel.text("SD(Box): " + popSd.fix(3));
-            statSampleMeanLabel.text("Mean(values): undefined");
-            statSampleSDLabel.text("SD(values): undefined");
-        }
-        setCurve();
-        setCurveLabel();
-        setAreas();
+        popMean = mean(pop);
+        popSd = sd(pop);
+        // FIX ME! need to handle probabilities here.
+      } else if (sourceChoice.selected() == "Normal") {
+        popMean = 0;
+        popSd = 1;
+        replaceCheck.attr('checked', true);
+      } else if (sourceChoice.selected() == "Uniform") {
+        popMean = 0.5;
+        popSd = Math.sqrt(1.0/12.0);
+        replaceCheck.attr('checked', true);
+      }
+      popMin = pop.min();
+      popMax = pop.max();
+      setLims();                                  // set plot limits
+      // make the histogram of the population
+      setBins();                                    // set the class intervals; make the counts
+      setBars(xMin,xMin);                           // set the hilight scrollbar scales
+      // reset the labels
+      if (varChoice.selected() == "Sample Chi-Squared") {
+        popMeanLabel.text("Categories: " + pop.length);
+        popSdLabel.text("E(Chi-Squared): " + (pop.length-1));
+        replaceCheck.attr('checked', true);
+      } else {
+        popMeanLabel.text("Ave(Box): " + popMean.fix(3));
+        popSdLabel.text("SD(Box): " + popSd.fix(3));
+        statSampleMeanLabel.text("Mean(values): undefined");
+        statSampleSDLabel.text("SD(values): undefined");
+      }
+      setCurve();
+      setCurveLabel();
+      setAreas();
     }
 
     function handleEvent(e) {
@@ -1593,6 +1622,16 @@ function Stici_SampleDist(container_id, params) {
       } else {
         console.log("Handling unknown event for " + e.target);
       }
+      setBox(bc, true);
+      var vmx = vMinMax(pop);
+      xMin = vmx[0];
+      xMax = vmx[1];
+      initPop();
+      setCurve();                                   // set the approximating curve
+      setBins();                                    // make the histogram counts
+      setBars(hiLiteLo, hiLiteHi);
+      adjustSampleSize();
+      showPlot();                                   // refresh the histogram
     }
 
     function replaceOK(rep) {
@@ -1667,10 +1706,12 @@ function Stici_SampleDist(container_id, params) {
       if (updateBox === undefined)
         updateBox = false;
 
+      newBox = newBox.replace(/^[,\n\t\r ]+|[,\n\t\r ]+$/g, '');
+
       if (newBox.toLowerCase() == "normal") {
         replaceCheck.attr('checked', true);
         pop = [-4, 4];
-        box.text("Normal");
+        box.val("Normal");
         sourceChoice.selected("Normal");
         if (varChoice.selected() == "Sample Chi-Squared") {
           console.log("Warning in SampleDist.setBox(): normal incompatible " +
@@ -1680,7 +1721,7 @@ function Stici_SampleDist(container_id, params) {
       } else if (newBox.toLowerCase() == "uniform") {
         replaceCheck.attr('checked', true);
         pop = [0, 1];
-        box.text("Uniform");
+        box.val("Uniform");
         sourceChoice.selected("Uniform");
         if (varChoice.selected() == "Sample Chi-Squared") {
           console.log("Warning in SampleDist.setBox(): uniform incompatible " +
@@ -1688,7 +1729,7 @@ function Stici_SampleDist(container_id, params) {
           varChoice.select("Sample Mean");
         }
       } else {
-        pop = newBox.split(/[\n\t\r ,]+/);
+        pop = newBox.split(/[,\n\t\r ]+/);
         pop = jQuery.map(pop, function(v) {return parseFloat(v);});
         if (varChoice.selected() == "Sample Chi-Squared") {
           pop = jQuery.grep(pop, function(v) {
@@ -1698,7 +1739,7 @@ function Stici_SampleDist(container_id, params) {
           updateBox = true;
         }
         if (updateBox) {
-          box.text(jQuery.map(pop, function(v) {return v.fix(nDigs);}).join(",\r"));
+          box.val(jQuery.map(pop, function(v) {return v.fix(nDigs);}).join("\r"));
         }
         sourceChoice.selected("Box");
       }
@@ -2161,1001 +2202,6 @@ function Stici_SampleDist(container_id, params) {
     }// ends chiHiLitArea
 
     init();
-}
-
-//js rewrite of http://statistics.berkeley.edu/~stark/Java/Html/SampleDist.htm
-
-function Stici_OldSampleDist(container_id, params) {
-  var self = this;
-
-  var SUM = 'sum';
-  var MEAN = 'mean';
-  var T = 't';
-  var CHISQUARE = 'chisquared';
-  var SSQ = 'ssq';
-
-  var BOX = 'Box';
-  var UNIFORM = 'Uniform';
-  var NORMAL = 'Normal';
-
-  var NO_CURVE = 'none';
-  var NORMAL_CURVE = 'normal';
-  var STUDENT_T_CURVE = 't';
-  var CHI_SQUARED_CURVE = 'chisquared';
-
-  if (!params instanceof Object) {
-    console.error('Stici_SampleDist params should be an object');
-    return;
-  }
-//configuration option defaults
-  this.options = {
-    bins: 10,
-    population: [0,1,2,3,4],
-    boxContents: [0,1,2,3,4].join('\n'),
-    showBoxHist: true,
-    showPopulation: true,
-    populationType: BOX,
-    dataSets: [UNIFORM, BOX, NORMAL],
-    sources: "all",
-    variables: "all",
-    startsWith: null,
-    statisticTypes: [['Sample Chi-Squared', CHISQUARE], ['Sample Mean', MEAN], ['Sample t', T], ['Sample Sum', SUM], ['Sample S-Squared', SSQ]],
-    statisticType: SUM,
-    withReplacement: true,
-    sampleSize: 5,
-    samplesToTake: 1,
-    boxEditable: true,
-    toggleVar: true,
-    replaceControl: true,
-    statLabels: true,
-    binControls: true,
-    curveTypes: [['No Curve', NO_CURVE], ['Normal Curve', NORMAL_CURVE], ['Student t Curve', STUDENT_T_CURVE], ['Chi-Squared Curve', CHI_SQUARED_CURVE]],
-    hiLiteLo: null,
-    hiLiteHi: null,
-    showCurve: true,
-    curveChoice: NO_CURVE
-  };
-
-  this.xMin = 0;
-  this.xMax = 10;
-  this.popMin = null;
-  this.popMax = null;
-  this.popMean = null;
-  this.popSd = null;
-  this.samplesSoFar = 0;
-  this.sampleMean = [];
-  this.sampleSum = [];
-  this.sampleSsq = [];
-  this.sampleT = [];
-  this.binEnd = [];
-  this.sampleBinCounts = null;
-  this.mu = 0;
-  this.sd = 0;
-  this.se = 0;
-  this.ex = 0;
-  this.curveYFunction = function(d) { return d; };
-
-  // Various handles to important jQuery objects.
-  //some of these might not be needed????
-  this.overlayDiv = jQuery('<div/>');
-  this.replacementCheckbox = null;
-  this.statisticSelect = null;
-  this.dataSelect = null;
-  this.popTextLabel = "Population";
-  this.stashedBoxPopulation = [0,1,2,3,4];
-  this.sourceList = [UNIFORM, BOX, NORMAL];
-  this.sourceChoices = null;
-  this.areaFromInput = null;
-  this.areaFromSlider = null;
-  this.areaToInput = null;
-  this.areaToSlider = null;
-  this.areaInfoSpan = null;
-  this.curveInfoSpan = null;
-    // Override options with anything specified by the user.
-  jQuery.extend(this.options, params);
-
-  // jQuery object containing the entire chart.
-  this.container = jQuery('#' + container_id);
-
-  this.reloadChart = function() {
-    self.areaFromSlider.slider('option', 'min', self.binEnd.min());
-    self.areaFromSlider.slider('option', 'max', self.binEnd.max());
-    if (self.options.hiLiteLo === null) {
-      self.areaFromSlider.slider('option', 'value', self.binEnd.min());
-      self.areaFromInput.val(self.binEnd.min());
-    } else {
-      self.areaFromSlider.slider('option', 'value', self.options.hiLiteLo);
-      self.areaFromInput.val(self.options.hiLiteLo);
-    }
-    self.areaToSlider.slider('option', 'min', self.binEnd.min());
-    self.areaToSlider.slider('option', 'max', self.binEnd.max());
-    if (self.options.hiLiteHi === null) {
-      self.areaToSlider.slider('option', 'value', self.binEnd.min());
-      self.areaToInput.val(self.binEnd.min());
-    } else {
-      self.areaToSlider.slider('option', 'value', self.options.hiLiteHi);
-      self.areaToInput.val(self.options.hiLiteHi);
-    }
-    getPopStats();
-    refreshStatsBox();
-    redrawChart();
-    refreshSelectedAreaOverlay();
-  };
-
-function initData() {
-  getPopStats();
-  setLims();
-  setPopulation();
-  setupNormalCurveData();
-}
-
-function setupNormalCurveData() {
-  if (self.options.statisticType == MEAN) {
-    self.mu = self.popMean;
-    self.sd = self.popSd;
-  } else if (self.options.statisticType == SUM) {
-    self.mu = self.popMean * self.options.sampleSize;
-    self.sd = self.popSd;
-  } else if (self.options.statisticType == SSQ) {
-    if (self.options.withReplacement) {
-      self.mu = self.popSd*self.popSd;
-    } else {
-      self.mu = (self.mu)*(self.options.population.length)/(self.options.population.length - 1);
-    }
-    self.sd = Math.sqrt(2.0/(self.options.sampleSize-1))*self.popSd*self.popSd;
-  } else if (self.options.statisticType == CHISQUARE) {
-    self.mu = self.options.population.length - 1;
-    self.sd = Math.sqrt(2.0*(self.options.population.length - 1.0));
-  } else if (self.options.statisticType == T) {
-    self.mu = 0;
-    if (self.options.sampleSize > 2) {
-      self.sd = self.options.sampleSize/(self.options.sampleSize-2);
-    } else {
-      self.sd = NaN;
-    }
-  }
-}
-
-function setPopTextLabel() {
-  if (self.options.statisticType == CHISQUARE) {
-    self.popTextLabel = "Category Probabilities";
-  } else {
-    self.popTextLabel = "Population";
-  }
-  if (self.options.populationType == BOX) {
-    self.options.boxContents = self.options.population.join('\n');
-  }
-}
-
-function getPopStats() {
-  nPop = self.options.population.length;
-  fpc = 1.0;
-  if (!self.options.withReplacement) {
-    fpc = Math.sqrt( (nPop - self.options.sampleSize + 0.0)/(nPop-1.0));
-  }
-  if (self.options.populationType == BOX) {
-    pop = self.options.population;
-  } else if (self.options.populationType == NORMAL) {
-    pop = [-4, 4];
-  } else if (self.options.populationType == UNIFORM) {
-    pop = [0,1];
-  }
-  self.popMin = pop.min();
-  self.popMax = pop.max();
-  nPop = self.options.population.length;
-
-  if (self.options.populationType == BOX) {
-    self.popMean = mean(self.options.population);
-    self.popSd = sd(self.options.population);
-  } else if (self.options.populationType == NORMAL) {
-    self.popMean = 0;
-    self.popSd = 1;
-  } else if (self.options.populationType == UNIFORM) {
-    self.popMean = 0.5;
-    self.popSd = Math.sqrt(1.0/12.0);
-  }
-
-  if (self.options.statisticType == SUM) {
-    self.ex = self.options.sampleSize * self.popMean;
-    self.se = fpc*self.popSd*Math.sqrt(self.options.sampleSize);
-  } else if (self.options.statisticType == MEAN) {
-    self.ex = self.popMean;
-    self.se = fpc*(self.popSd)*Math.sqrt(self.options.sampleSize);
-  } else if (self.options.statisticType == T) {
-    self.ex = self.popMean;
-    if (self.options.sampleSize > 2) {
-      self.se = Math.sqrt((self.options.sampleSize + 0.0)/(self.options.sampleSize - 2.0));
-    } else {
-      self.se = NaN;
-    }
-  } else if (self.options.statisticType == SSQ) {
-    if (self.options.withReplacement) {
-      self.ex = (self.popSd)*(self.popSd);
-    } else {
-      self.ex = (self.popSd)*(self.popSd)*nPop/nPop-1;
-    }
-    self.se = Math.sqrt(2.0/(self.options.sampleSize-1.0))*(self.popSd)*(self.popSd);
-  } else if (self.options.statisticType == CHISQUARE) {
-    self.ex = nPop;
-    self.se = Math.sqrt(2.0*(nPop-1.0));
-  }
-}
-
-function getUniformPopulation() {
-  var population = [];
-  for(var i=0; i < self.options.bins; i++) {
-    midPt = (self.binEnd[i]+self.binEnd[i+1])/2;
-    if (midPt >= 0 && midPt <= 1) {
-      population.push(midPt);
-    }
-  }
-  return population;
-}
-
-function getNormalPopulation() {
-  var normalPopulation = [];
-  for(var i=0; i < self.options.bins; i++) {
-
-    count = (normCdf(self.binEnd[i+1]) - normCdf(self.binEnd[i]))/(self.binEnd[i+1] - self.binEnd[i]);
-    count = Math.round(count * 100);
-    while (count > 0) {
-      normalPopulation.push(self.binEnd[i]);
-      count--;
-    }
-  }
-  return normalPopulation;
-}
-
-function getBoxPopulation() {
-  return jQuery("#population").val().split('\n')
-            .map(function(i) { return parseFloat(i, 10); })
-            .filter(function(i) { return !isNaN(i); });
-}
-
-function setPopulation() {
-  var population = [];
-  if (self.options.populationType == BOX) {
-    population = getBoxPopulation();
-  } else if (self.options.populationType == UNIFORM) {
-    population = getUniformPopulation();
-  } else if (self.options.populationType == NORMAL) {
-    population = getNormalPopulation();
-  }
-  self.options.population = population;
-}
-
-function setLims() {
-  getPopStats();
-
-  if (self.options.statisticType == SUM) {
-    self.xMin = self.options.sampleSize * self.popMin;
-    self.xMax = self.options.sampleSize * self.popMax;
-  } else if (self.options.statisticType == CHISQUARE) {
-    self.xMin = 0;
-    self.xMax = 10*Math.sqrt(self.options.population.length - 1); //5 SD
-  } else if (self.options.statisticType == SSQ) {
-    self.xMin = 0.0;
-    var maxDev = Math.max(self.popMean - self.popMin, self.popMax - self.popMean);
-    self.xMax = 3*maxDev*maxDev/Math.sqrt(self.options.sampleSize);
-  } else if (self.options.statisticType == MEAN) {
-    self.xMin = (self.popMean-4*self.popSd)/Math.sqrt(self.options.sampleSize);
-    //console.log("mean xmin " + self.xMin);
-    //self.xMin = -0.1;
-    self.xMax = (self.popMax+4*self.popSd)/Math.sqrt(self.options.sampleSize);
-  } else if (self.options.statisticType == T) {
-    if (self.options.sampleSize > 2) {
-      self.xMin = -3*Math.sqrt((self.options.sampleSize+0.0)/(self.options.sampleSize - 2.0));
-      self.xMax = 3*Math.sqrt((self.options.sampleSize+0.0)/(self.options.sampleSize - 2.0));
-    } else {
-      self.xMin = -5;
-      self.xMax = 5;
-    }
-  }
-  if (self.showBoxHist) {
-    self.xMin = Math.min(self.popMin, self.xMin);
-    self.xMax = Math.max(self.popMax, self.xMax);
-  }
-  self.binEnd = histMakeBins(self.options.bins, [self.xMin, self.xMax]);
-}
-
-function refreshStatsBox() {
-  if (self.options.statLabels) {
-    if (self.options.statisticType == SUM) {
-      statExpText = "E(sum): " + Number(self.ex).toFixed(2);
-      statSEText = "SE(sum): " + Number(self.se).toFixed(2);
-      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleMean)).toFixed(4);
-      statSampleSDText = "SD(values): " + Number(sd(self.sampleMean)).toFixed(4);
-    } else if (self.options.statisticType == MEAN) {
-      statExpText = "E(mean): " + Number(self.ex).toFixed(2);
-      statSEText = "SE(mean): " + Number(self.se).toFixed(2);
-      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleMean)).toFixed(4);
-      statSampleSDText = "SD(values): " + Number(sd(self.sampleMean)).toFixed(4);
-    } else if (self.options.statisticType == T) {
-      statExpText = "E(t): " + Number(self.ex).toFixed(2);
-      statSEText = "SE(t): " + Number(self.se).toFixed(2);
-      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleT)).toFixed(4);
-      statSampleSDText = "SD(values): " + Number(sd(self.sampleT)).toFixed(4);
-    } else if (self.options.statisticType == SSQ) {
-      statExpText = "E(S-squared): " + Number(self.ex).toFixed(2);
-      statSEText = "df: " +  (self.options.sampleSize-1);
-      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleSsq)).toFixed(4);
-      statSampleSDText = "SD(values): " + Number(sd(self.sampleSsq)).toFixed(4);
-    } else if (self.options.statisticType == CHISQUARE) {
-      statExpText = "df: " + Number(self.ex).toFixed(2);
-      statSEText = "     ";
-      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleSsq)).toFixed(4);
-      statSampleSDText = "SD(values): " + Number(sd(self.sampleSsq)).toFixed(4);
-    }
-
-    if (self.samplesSoFar === 0) {
-      statSampleMeanText = "Mean(values): NaN";
-      statSampleSDText = "SD(values): NaN";
-    }
-
-    if (self.options.statisticType == CHISQUARE) {
-      //note this only works for box
-      popMeanText = "Categories: " + self.options.population.length;
-      popSdText = "E(Chi-Squared): " + (self.options.population.length - 1);
-    } else {
-      popMeanText = "Ave(Box): " + Number(self.popMean).toFixed(2);
-      popSdText = "Sd(Box): " + Number(self.popSd).toFixed(2);
-    }
-
-    samplesSoFarText = "Samples: " + self.samplesSoFar;
-
-    var statsTextLines = [popMeanText, popSdText, statExpText, statSEText, statSampleMeanText, statSampleSDText, samplesSoFarText];
-
-    self.statsBox.children().remove();
-    var list = jQuery('<ul/>');
-    statsTextLines.map(function(l) { list.append(jQuery('<li/>').text(l)); });
-    self.statsBox.append(list);
-  }
-}
-
-function resetSamples() {
-  self.samplesSoFar = 0;
-  self.sampleMean = [];
-  self.sampleSum = [];
-  self.sampleSsq = [];
-  self.sampleT = [];
-  refreshStatsBox();
-  redrawChart();
-}
-
-function drawSample() {
-  for (var j=0; j < self.options.samplesToTake; j++) {
-    var samples = [], indices = [];
-    var i, xb = 0, ssq = 0, tStat = 0;
-    if (self.options.statisticType == CHISQUARE) {
-      if (self.options.populationType != BOX) {
-        console.log("can't do that");
-      } else {
-        var cum = [], count = [];
-        for (i=0; i < self.options.population.length; i++) {
-          cum[i] = self.options.population[i];
-          count[i] = 0;
-        }
-        cum[0] = self.options.population[0];
-        for (i = 1; i < self.options.population.length; i++ ) {
-          cum[i] += cum[i-1];
-        }
-        for (i=0; i < self.options.sampleSize; i++) {
-          tmp = Math.random();
-          if (tmp <= cum[0]) {
-            count[0]++;
-          }
-          for (k=0; k < count.length; k++) {
-            if (tmp > cum[k-1] && tmp <= cum[k]) {
-              count[k]++;
-            }
-          }
-        }
-        ssq = 0.0;
-        for (i=0; i < self.options.population.length; i++) {
-          tmp = self.options.sampleSize*(self.options.population[i]);
-          ssq += (count[i] - tmp)*(count[i] - tmp)/tmp;
-        }
-        self.sampleSsq[self.samplesSoFar++] = ssq;
-      }
-    } else {
-      if (self.options.populationType == BOX) {
-        if (self.options.withReplacement) {
-          indices = listOfRandInts(self.options.sampleSize, 0, self.options.population.length - 1);
-        } else {
-          indices = listOfDistinctRandInts(self.options.sampleSize, 0, self.options.population.length - 1);
-        }
-
-        for (i = 0; i < self.options.sampleSize; i++) {
-          samples[i] = self.options.population[ indices[i] ];
-          xb += samples[i];
-        }
-      } else if (self.options.populationType == UNIFORM) {
-        for (i = 0; i < self.options.sampleSize; i++) {
-          samples[i] = Math.random();
-          xb += samples[i];
-        }
-      } else if (self.options.populationType == NORMAL) {
-        for (i = 0; i < self.options.sampleSize; i++) {
-          samples[i] = rNorm();
-          xb += samples[i];
-        }
-      }
-      xb /= self.options.sampleSize;
-      for (i = 0; i < self.options.sampleSize; i++) {
-        ssq += (samples[i] - xb) * (samples[i] - xb);
-      }
-      if (self.options.sampleSize > 1) {
-        ssq /= (self.options.sampleSize - 1);
-        self.sampleSsq[self.samplesSoFar] = ssq;
-        tStat = xb/(Math.sqrt(ssq)/Math.sqrt(self.options.sampleSize));
-        self.sampleT[self.samplesSoFar] = tStat;
-      } else {
-        self.sampleSsq[self.samplesSoFar] = 0;
-        self.sampleT[self.samplesSoFar] = 0;
-      }
-
-      self.sampleMean[self.samplesSoFar] = xb;
-      self.sampleSum[self.samplesSoFar] = xb * self.options.sampleSize;
-      self.samplesSoFar++;
-    }
-  }
-}
-
-function normalHiLitArea() {
-  area = 0;
-  fpc = 1;
-  if (!self.options.withReplacement) {
-    fpc = Math.sqrt((self.options.population.length - self.options.sampleSize)/(self.options.population - 1));
-  }
-  if (self.options.hiLiteHi > self.options.hiLiteLo) {
-    area = normCdf((self.options.hiLiteHi - self.ex)/(fpc*self.se)) - normCdf((self.options.hiLiteLo - self.ex)/(fpc*self.se));
-  }
-  return area;
-}
-
-function chiHiLitArea() {
-  area = 0;
-  if (self.options.hiLiteHi > self.options.hiLiteLo) {
-    if (self.options.statisticType == SSQ) {
-      scale = (self.options.sampleSize - 1.0)/(self.popSd*self.popSd);
-      area = chi2Cdf(self.options.sampleSize-1, scale*self.options.hiLiteHi) - chi2Cdf(self.options.sampleSize-1, scale*self.options.hiLiteLo);
-    } else if (self.options.statisticType == CHISQUARE) {
-      area = chi2Cdf(self.options.population.length - 1, self.options.hiLiteHi) - chi2Cdf(self.options.population.length - 1, self.options.hiLiteLo);
-    }
-  }
-  return area;
-}
-
-function tHiLitArea() {
-  area = 0;
-  if (self.options.hiLiteHi > self.options.hiLiteLo) {
-    if (self.options.statisticType == T) {
-      area = tCdf(self.options.sampleSize-1, self.options.hiLiteHi) - tCdf(self.options.sampleSize-1, self.options.hiLiteLo);
-    }
-  }
-  return area;
-}
-
-var normalCurveY = function(d) {
-  var x =
-    self.binEnd[0] +
-    d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width() - 1);
-  var y = normPdf(self.mu, self.sd, x);
-  return y;
-};
-var chisquaredCurveCSQY = function (d) {
-  var x = self.binEnd[0] + d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width()-1);
-  var y = chi2Pdf(self.options.population.length - 1, x);
-  return y;
-};
-var chisquaredCurveSSQY = function(d) {
-  popVar = self.popSd*self.popSd;
-  if (!self.options.withReplacement) {
-    popVar = popVar*self.population.length/(self.population.length -1);
-  }
-  scale = (self.options.sampleSize - 1)/popVar;
-  var x = self.binEnd[0] + d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width()-1);
-  var y = scale*chi2Pdf(self.options.sampleSize-1, x*scale);
-  return y;
-};
-var studentTCurveY = function(d) {
-  var x = self.binEnd[0] + d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width()-1);
-  //PbsStat.tPdf(xVal[i], sampleSize-1);
-  var y = tPdf(self.options.sampleSize-1, x);
-  return y;
-};
-
-function redrawChart() {
-      setLims();
-      var normalChartDiv = jQuery('<div/>').addClass('chart_box');
-      self.chartDiv.children().remove();
-      self.overlayDiv = normalChartDiv.clone().addClass('overlay');
-      var sampleChartDiv = normalChartDiv.clone().addClass('sample_chart');
-      self.curveOverlayDiv = jQuery('<div/>').addClass('chart_box');
-      self.chartDiv.append(normalChartDiv);
-      self.chartDiv.append(sampleChartDiv);
-      self.chartDiv.append(self.overlayDiv);
-      self.chartDiv.append(self.curveOverlayDiv);
-      // Background calculations.
-      //maybe this should happen in selector callback?
-      var sampleData = [];
-      if (self.options.statisticType == MEAN) {
-        sampleData = self.sampleMean;
-      } else if (self.options.statisticType == SUM) {
-        sampleData = self.sampleSum;
-      } else if (self.options.statisticType == SSQ || self.options.statisticType == CHISQUARE) {
-        sampleData = self.sampleSsq;
-      } else if (self.options.statisticType == T) {
-        sampleData = self.sampleT;
-      }
-      var allPops = self.options.population.concat(sampleData);
-      var currentBinCounts = histMakeCounts(self.binEnd, allPops);
-      var yScale = null;
-      var totalDataLength = self.options.population.length + sampleData.length;
-      var popBinCounts = histMakeCounts(self.binEnd, self.options.population, totalDataLength);
-      yScale = popBinCounts.max();
-      if (sampleData.length !== 0) {
-        var sampleBinCounts = histMakeCounts(self.binEnd, sampleData, totalDataLength);
-        yScale = Math.max(yScale, sampleBinCounts.max());
-      }
-      var width = self.overlayDiv.width();
-      var height = self.overlayDiv.height();
-      var graphWidth = self.binEnd.max() - self.binEnd.min();
-      yScale /= (height - 1);
-
-
-      function appendPopulationSvg(div) {
-        var popBinCounts = histMakeCounts(self.binEnd, self.options.population);
-        if (self.options.population.length !== 0) {
-        var svg = d3.select(div.get(0)).append('svg').selectAll('div');
-        svg.data(popBinCounts)
-          .enter()
-          .append('rect')
-          .attr('y', function(d) { return height - d / yScale; })
-          .attr('height', function(d) { return d / yScale; })
-          .attr('x', function(d, i) {
-            return (width * (self.binEnd[i] - self.binEnd.min()) /
-                    graphWidth);
-          })
-          .attr('width', function(d, i) {
-            return width * (self.binEnd[i + 1] - self.binEnd[i]) /
-              graphWidth;
-          })
-          .attr('class', 'population');
-      }
-    }
-    function appendSamplesSvg(div) {
-      if (sampleData.length !== 0) {
-        self.sampleBinCounts = histMakeCounts(self.binEnd, sampleData);
-        var svg = d3.select(div.get(0)).append('svg').selectAll('div');
-        svg.data(self.sampleBinCounts)
-          .enter()
-          .append('rect')
-          .attr('y', function(d) { return height - d / yScale; })
-          .attr('height', function(d) { return d / yScale; })
-          .attr('x', function(d, i) {
-            return (width * (self.binEnd[i] - self.binEnd.min()) /
-                    graphWidth);
-          })
-          .attr('width', function(d, i) {
-            return width * (self.binEnd[i + 1] - self.binEnd[i]) /
-                  graphWidth;
-          })
-          .attr('class', 'sample');
-      }
-    }
-      appendSamplesSvg(self.overlayDiv);
-      appendSamplesSvg(sampleChartDiv);
-
-      self.overlayDiv.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
-      appendPopulationSvg(normalChartDiv);
-
-      var axisSvg = d3.select(normalChartDiv.get(0))
-                  .append('svg')
-                  .attr('class', 'axis');
-      var axisScale = d3.scale.linear()
-                              .domain([self.binEnd.min(), self.binEnd.max()])
-                              .range([0, width]);
-      var axis = d3.svg.axis().scale(axisScale).orient('bottom');
-      axisSvg.append('g').call(axis);
-
-      function drawCurve() {
-        if (self.options.curveChoice == NO_CURVE) {
-          return;
-        } else if (self.options.curveChoice == NORMAL_CURVE) {
-          curveYFunction = normalCurveY;
-        } else if (self.options.curveChoice == CHI_SQUARED_CURVE) {
-          if (self.options.statisticType == SSQ) {
-            curveYFunction = chisquaredCurveSSQY;
-          } else if (self.options.statisticType == CHISQUARE) {
-            curveYFunction = chisquaredCurveCSQY;
-          }
-        } else if (self.options.curveChoice == STUDENT_T_CURVE) {
-          curveYFunction = studentTCurveY;
-        }
-        var normalCurve =
-          d3.svg.line()
-            .x(function(d) {return d;})
-            .y(function(d) {
-              return height - (curveYFunction(d) / yScale);
-            });
-        var normSvg = d3.select(self.curveOverlayDiv.get(0))
-                        .append('svg')
-                        .attr('height', '100%');
-        var normPath = normSvg.append('path');
-        normPath.attr('class', 'nrestricted');
-        normPath.data([d3.range(0, width)])
-          .attr('d', normalCurve);
-      }
-      drawCurve();
-      if (!self.options.showCurve) {
-        self.curveOverlayDiv.hide();
-      }
-      if (!self.options.showPopulation || self.options.statisticType == CHISQUARE) {
-        jQuery('.population').toggle();
-      }
-    }
-
-    function refreshSelectedAreaOverlay() {
-      self.options.hiLiteLo = parseFloat(self.areaFromSlider.slider('value'));
-      self.options.hiLiteHi = parseFloat(self.areaToSlider.slider('value'));
-      var scale = self.chartDiv.width() /
-        (self.binEnd.max() - self.binEnd.min());
-      var left = (self.options.hiLiteLo - self.binEnd.min()) * scale;
-      var right = (self.options.hiLiteHi - self.binEnd.min()) * scale;
-      self.overlayDiv.css('clip',
-                          'rect(0px,' +
-                                right + 'px,' +
-                                self.chartDiv.height() + 'px,' +
-                                left + 'px)');
-      var p = 0;
-      if (self.sampleBinCounts !== null) {
-        p = histHiLitArea(self.options.hiLiteLo, self.options.hiLiteHi, self.binEnd, self.sampleBinCounts);
-      }
-      p *= 100;
-      var text = 'Selected area: ' + p.fix(2) + '%';
-      self.areaInfoSpan.text(text);
-      curveText = "";
-      if (self.options.curveChoice == NO_CURVE) {
-        curveText = "";
-      } else if (self.options.curveChoice == NORMAL_CURVE) {
-        p = normalHiLitArea() * 100;
-        curveText = " Normal approx: " + p.fix(2) + '%';
-      } else if (self.options.curveChoice == STUDENT_T_CURVE) {
-        p = tHiLitArea() * 100;
-        curveText = " Student t approx: " + p.fix(2) + '%';
-      } else if (self.options.curveChoice == CHI_SQUARED_CURVE) {
-        p = chiHiLitArea() * 100;
-        curveText = " Chi-squared approx: " + p.fix(2) + '%';
-      }
-      self.curveInfoSpan.text(curveText);
-    }
-
-    function initControls() {
-      var statsBox = jQuery('div#statsText');
-      self.statsBox = statsBox;
-      refreshStatsBox();
-      var o = jQuery('<div/>').addClass('stici').addClass('stici_sampledist');
-      self.container.append(o);
-      self.chartDiv = jQuery('<div/>')
-                        .addClass('stici_chart')
-                        .addClass('chart_box');
-      o.append(self.chartDiv);
-      self.areaInfoDiv = jQuery('<div/>')
-                           .addClass('area_info');
-      o.append(self.areaInfoDiv);
-      var bottom = jQuery('<div/>').addClass('bottom_controls');
-      o.append(bottom);
-      var rowHeight = 30;  // px
-      var topOffset = 0;
-      var bottomOffset = 0;
-      function appendFooterRow(o) {
-        bottom.append(o);
-        bottomOffset += rowHeight;
-      }
-
-      function createSampleSizeInput() {
-        var sampleSizeInput = jQuery('<input type="text" id="sampleSize" />').val(self.options.sampleSize)
-          .change(function(e) {
-            e.preventDefault();
-            self.options.sampleSize = jQuery(this).val();
-            resetSamples();
-            redrawChart();
-          });
-        return sampleSizeInput;
-      }
-
-      function createSamplesToTakeInput() {
-        var samplesToTakeInput = jQuery('<input type="text" id="samplesToTake" />').val(self.options.samplesToTake)
-          .change(function(e) {
-            e.preventDefault();
-            self.options.samplesToTake = jQuery(this).val();
-            resetSamples();
-            redrawChart();
-          });
-        return samplesToTakeInput;
-      }
-
-      function createBinsInput() {
-        var binsInput = jQuery('<input type="text" id="bins" />').val(self.options.bins)
-          .change(function(e) {
-            e.preventDefault();
-            self.options.bins = parseInt(jQuery(this).val(), 10);
-            if (self.options.populationType == NORMAL) {
-              self.options.population = getNormalPopulation();
-            } else if (self.options.populationType == UNIFORM) {
-              self.options.population = getUniformPopulation();
-            }
-            resetSamples();
-          });
-        return binsInput;
-      }
-
-      function createSelectDataSourceControls() {
-        var dataSelectControls = jQuery('<div/>');
-        if (self.options.toggleVar) {
-          self.statisticSelect = jQuery('<select/>').change(function(e) {
-            prevStatisticType = self.options.statisticType;
-            e.preventDefault();
-            if (jQuery(this).val() == CHISQUARE && (self.options.populationType == UNIFORM || self.options.populationType == NORMAL)) {
-              self.options.statisticType = MEAN;
-              jQuery(this).val(MEAN);
-            } else {
-              self.options.statisticType = jQuery(this).val();
-            }
-            if (self.options.statisticType == CHISQUARE) {
-              self.stashedBoxPopulation = self.options.population;
-              pop = self.options.population;
-              pop = pop.filter(function(i) { if (i !== 0 && !isNaN(i)) { return i; }});
-              pop = vMult(1/vSum(pop), pop);
-              pop = pop.map(function(i) { return parseFloat(Number(i).toFixed(5)); }); //clean up js floating point errors
-              self.options.population = pop;
-
-            } else {
-              if (self.options.populationType == BOX && prevStatisticType == CHISQUARE) {
-                self.options.population = self.stashedBoxPopulation;
-              }
-            }
-            setPopTextLabel();
-            drawPopulationArea(jQuery('div#popText'));
-            initData();
-            self.reloadChart();
-          });
-          jQuery.each(self.options.statisticTypes, function(i, stat) {
-            self.statisticSelect.append(jQuery('<option/>')
-                            .attr('value', stat[1])
-                            .text(stat[0]));
-          });
-          self.statisticSelect.val(self.options.statisticType);
-        } else {
-          self.statisticSelect = "Sample Mean&nbsp;&nbsp;";
-        }
-
-        dataSelectControls.append('Distribution of: ').append(self.statisticSelect);
-        self.dataSelect = jQuery('<select/>').change(function(e) {
-          e.preventDefault(e);
-          if (self.options.populationType == BOX) {
-            self.stashedBoxPopulation = self.options.population;
-          }
-          if (jQuery(this).val() == NORMAL) {
-            self.options.populationType = NORMAL;
-            self.options.boxContents = "Normal";
-            if (self.options.statisticType == CHISQUARE) {
-              self.options.statisticType = MEAN;
-              self.statisticSelect.val(MEAN);
-            }
-          } else if (jQuery(this).val() == BOX) {
-            self.options.populationType = BOX;
-            self.options.boxContents = self.stashedBoxPopulation.join('\n');
-          } else if (jQuery(this).val() == UNIFORM) {
-            self.options.populationType = UNIFORM;
-            self.options.boxContents = "Uniform";
-            if (self.options.statisticType == CHISQUARE) {
-              self.options.statisticType = MEAN;
-              self.statisticSelect.val(MEAN);
-            }
-          }
-          drawPopulationArea(jQuery('div#popText'));
-          initData();
-          resetSamples();
-          self.reloadChart();
-        });
-        jQuery.each(self.sourceChoices, function(i, dataSet) {
-          self.dataSelect.append(jQuery('<option/>')
-                         .attr('value', dataSet)
-                         .text(dataSet));
-        });
-        if (jQuery.inArray(BOX, self.sourceChoices) != -1) {
-          defaultVal = BOX;
-        } else {
-          defaultVal = self.sourceChoices[0];
-        }
-        self.dataSelect.val(defaultVal);
-        dataSelectControls.append('Sample from: ').append(self.dataSelect);
-        if (self.options.replaceControl) {
-          self.replacementCheckbox = jQuery('<input type="checkbox" id="withReplacement" />').change(function(e) {
-            e.preventDefault();
-            self.options.withReplacement = !self.options.withReplacement;
-            initData();
-            resetSamples();
-            self.reloadChart();
-          });
-          if (self.options.withReplacement) {
-            self.replacementCheckbox.attr('checked', true);
-          }
-          dataSelectControls.append(self.replacementCheckbox).append(' with replacement');
-        }
-        self.takeSampleButton = jQuery('<button id="takeSample"/>')
-        .addClass('open')
-        .text('Take Sample').click(function(e) {
-          e.preventDefault();
-          drawSample();
-          self.reloadChart();
-        });
-        dataSelectControls.append(self.takeSampleButton);
-        jQuery('#top_controls').append(dataSelectControls);
-      }
-
-      function createPopulationTextArea() {
-        self.populationTextArea = jQuery('<textarea id="population">' + self.options.boxContents + '</textarea>')
-          .addClass('populationControls');
-        if (!self.options.boxEditable) {
-          self.populationTextArea.attr("readonly", "readonly");
-        }
-        self.populationTextArea.change(function(e) {
-          e.preventDefault();
-          if (self.options.populationType == BOX) {
-            self.options.population = getBoxPopulation();
-            resetSamples();
-            initData();
-            self.reloadChart();
-          }
-        });
-      }
-      function createPopulationButton() {
-        self.showBoxHist = jQuery('<button/>')
-                             .addClass('open');
-        if (self.options.showPopulation) {
-          self.showBoxHist.text('No Population Histogram');
-        } else {
-          self.showBoxHist.text('Population Histogram');
-        }
-        self.showBoxHist.click(function(e) {
-          e.preventDefault();
-          if (self.options.statisticType != CHISQUARE) {
-            jQuery('.population').toggle();
-            if (!self.options.showPopulation) {
-              self.showBoxHist.text('No Population Histogram');
-            } else {
-              self.showBoxHist.text('Population Histogram');
-            }
-            self.options.showPopulation = !self.options.showPopulation;
-            refreshSelectedAreaOverlay();
-          }
-        });
-        self.areaInfoDiv.css('bottom', bottomOffset + 'px');
-        bottom.css('height', bottomOffset + 'px');
-        self.chartDiv.css('margin-bottom', (bottomOffset + 15) + 'px');
-        self.chartDiv.css('margin-top', (topOffset) + 'px');
-      }
-
-      function createAreaSelectControls() {
-        var row = jQuery('<div/>');
-
-        // Area from input/slider.
-        self.areaFromInput = jQuery('<input type="text" />').change(function() {
-          self.areaFromSlider.slider('value', self.areaFromInput.val());
-        });
-        var updateAreaFromInput = function() {
-          self.areaFromInput.val(self.areaFromSlider.slider('value'));
-          refreshSelectedAreaOverlay();
-        };
-        self.areaFromSlider = jQuery('<span/>').addClass('slider').slider({
-          change: updateAreaFromInput,
-          slide: updateAreaFromInput,
-          step: 0.001
-        });
-        row.append('Area from: ').append(self.areaFromInput)
-                                  .append(self.areaFromSlider);
-
-        // Area to input/slider.
-        self.areaToInput = jQuery('<input type="text" />').change(function() {
-          self.areaToSlider.slider('value', self.areaToInput.val());
-        });
-        var updateAreaToInput = function() {
-          self.areaToInput.val(self.areaToSlider.slider('value'));
-          refreshSelectedAreaOverlay();
-        };
-        self.areaToSlider = jQuery('<span/>').addClass('slider').slider({
-          change: updateAreaToInput,
-          slide: updateAreaToInput,
-          step: 0.001
-        });
-        row.append(' to: ').append(self.areaToInput).append(self.areaToSlider);
-
-        appendFooterRow(row);
-      }
-      function createCurveSelectControls() {
-        var curveSelect = jQuery('<select/>').change(function(e) {
-          e.preventDefault();
-          if (jQuery(this).val() == CHI_SQUARED_CURVE && (self.options.statisticType != SSQ && self.options.statisticType != CHISQUARE)) {
-            self.options.curveChoice = NO_CURVE;
-            jQuery(this).val(NO_CURVE);
-          } else if (jQuery(this).val() == STUDENT_T_CURVE && self.options.statisticType != T) {
-            self.options.curveChoice = NO_CURVE;
-            jQuery(this).val(NO_CURVE);
-          } else {
-            self.options.curveChoice = jQuery(this).val();
-          }
-          self.reloadChart();
-        });
-        jQuery.each(self.options.curveTypes, function(i, curveChoice) {
-          curveSelect.append(jQuery('<option/>')
-            .attr('value', curveChoice[1])
-            .text(curveChoice[0]));
-        });
-        curveSelect.val(self.options.curveChoice);
-        return curveSelect;
-      }
-
-        var row = jQuery('<div/>');
-        createSelectDataSourceControls();
-        createPopulationButton();
-        self.areaInfoSpan = jQuery('<span/>');
-        self.curveInfoSpan = jQuery('<span/>');
-        if (self.options.showBoxHist) {
-          row.append(self.areaInfoSpan);
-          row.append(self.curveInfoSpan);
-          row.append(createCurveSelectControls());
-          row.append(self.showBoxHist);
-        }
-
-        function drawPopulationArea(div) {
-          createPopulationTextArea();
-          div.html("");
-          div.append(self.populationTextArea);
-          div.append(self.popTextLabel);
-        }
-
-        drawPopulationArea(jQuery('div#popText'));
-
-        var sampleFooterRow = jQuery('<div/>');
-        sampleFooterRow.append("Sample Size: ");
-        sampleFooterRow.append(createSampleSizeInput());
-        sampleFooterRow.append(" Take ");
-        sampleFooterRow.append(createSamplesToTakeInput());
-        sampleFooterRow.append("samples. ");
-        if (self.options.binControls) {
-          sampleFooterRow.append(" Bins: ");
-          sampleFooterRow.append(createBinsInput());
-        }
-        if (row.children().length > 0) {
-          appendFooterRow(row);
-          createAreaSelectControls();
-          appendFooterRow(sampleFooterRow);
-        }
-        self.areaInfoDiv.css('bottom', bottomOffset + 'px');
-        bottom.css('height', bottomOffset + 'px');
-        self.chartDiv.css('margin-bottom', (bottomOffset + 15) + 'px');
-        self.chartDiv.css('margin-top', (topOffset) + 'px');
-
-    }
-
-  var sources = self.options.sources.split('\n\t');
-  if (sources.length > 0) {
-    if (jQuery.inArray('all', sources) != -1) {
-      self.sourceChoices = self.sourceList;
-    } else {
-      self.sourceChoices = sources.filter(function(s) { if(jQuery.inArray(s,self.sourceList) != -1) { return s; }});
-    }
-  } else {
-    self.sourceChoices = self.sourceList;
-  }
-
-  initControls();
-  initData();
-  this.reloadChart();
-
 }
 
 // Javascript rewrite of
@@ -8017,11 +7063,23 @@ function SticiHistogram(params) {
     var axis = jQuery('<div/>').addClass('chart_box axis');
     self.append(chart, overlay, curves, axis);
 
+    // Hide the overlay. This clip will be controlled to highlight sections.
+    overlay.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
+
+
     // Basic chart parameters.
     var width = self.width();
     var height = self.height() - axis.height();
     var bounds = calculateBounds();
     var yScale = bounds.y_hi / (height - 1);
+
+    if (isNaN(bounds.width) ||
+        !isFinite(bounds.width) ||
+        isNaN(bounds.height) ||
+        !isFinite(bounds.height)) {
+      console.warn("Histogram not rendering invalid data.");
+      return;
+    }
 
     // Draw the bins. Iterate once for each set of binCounts, but draw them so
     // that the tallest bins regardless of binCounts set get rendered first,
@@ -8035,7 +7093,12 @@ function SticiHistogram(params) {
         .enter()
         .append('rect')
         .attr('y', function(d) { return height - d[i][0] / yScale; })
-        .attr('height', function(d) { return d[i][0] / yScale; })
+        .attr('height', function(d) {
+          var height = d[i][0] / yScale;
+          if (height < 0.0001)
+            height = 0;
+          return height;
+        })
         .attr('x', function(d, i) {
           return (width * (options.binEnds[i] - bounds.x_lo) / bounds.width);
         })
@@ -8050,9 +7113,6 @@ function SticiHistogram(params) {
 
     // Create the hilite overlay.
     overlay.append(chart.children().clone().detach());
-
-    // Hide the overlay. This clip will be controlled to highlight sections.
-    overlay.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
 
     // Draw the curves.
     if (options.showCurves) {
