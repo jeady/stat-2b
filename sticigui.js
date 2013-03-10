@@ -7070,12 +7070,22 @@ function SticiHistogram(params) {
     // Hide the overlay. This clip will be controlled to highlight sections.
     overlay.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
 
-
     // Basic chart parameters.
     var width = self.width();
     var height = self.height() - axis.height();
     var bounds = calculateBounds();
     var yScale = bounds.y_hi / (height - 1);
+
+    // Draw the axis
+    if (!isNaN(bounds.width) && isFinite(bounds.width) && bounds.width > 0) {
+      var scale =
+        d3.scale.linear()
+          .domain([bounds.x_lo, bounds.x_hi])
+          .range([0, width]);
+      d3.select(axis.get(0))
+        .append('svg')
+        .append('g').call(d3.svg.axis().scale(scale).orient('bottom'));
+    }
 
     if (isNaN(bounds.width) ||
         !isFinite(bounds.width) ||
@@ -7146,15 +7156,6 @@ function SticiHistogram(params) {
           .attr('d', line);
       });
     }
-
-    // Draw the axis
-    var scale =
-      d3.scale.linear()
-        .domain([bounds.x_lo, bounds.x_hi])
-        .range([0, width]);
-    d3.select(axis.get(0))
-      .append('svg')
-      .append('g').call(d3.svg.axis().scale(scale).orient('bottom'));
 
     // Reset the highlight position.
     self.hilite();
