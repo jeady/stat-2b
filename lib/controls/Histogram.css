@@ -15,10 +15,11 @@
   width: 100%;
   position: absolute;
   top: 0;
+  height: 100%;
 }
 .stici_histogram .chart_box.axis {
   height: 20px;
-  top: initial;
+  top: auto;
   bottom: 0;
 }
 .stici_histogram .chart_box.axis text {
