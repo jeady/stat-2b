@@ -1500,11 +1500,11 @@ function Stici_SampleDist(container_id, params) {
         var vmx = vMinMax(pop);
         xMin = vmx[0];
         xMax = vmx[1];
+        replaceCheck.attr('checked', options.replace);
         initPop();
         setCurve();                                   // set the approximating curve
         setBins();                                    // make the histogram counts
         setBars(options.hiLiteLo, options.hiLiteHi);
-        replaceCheck.attr('checked', options.replace);
         adjustSampleSize();
         showPlot();                                   // refresh the histogram
       }
