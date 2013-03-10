@@ -1,0 +1,28 @@
+.stici_textbar {
+  width: 105px;
+  height: 50px;
+  display: inline-block;
+}
+.stici_textbar * {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
+.stici_textbar>div {
+  height: 25px;
+  text-align: center;
+}
+.stici_textbar>div>span {
+  padding-right: 10px;
+  display: inline-block;
+}
+.stici_textbar>div>input[type="text"] {
+  width: 40px;
+}
+.stici_textbar>div>.ui-slider {
+  width: 100%;
+  height: 10px;
+}
+.stici_textbar .ui-slider-handle {
+  margin-top: 4px;
+  height: 10px;
+}

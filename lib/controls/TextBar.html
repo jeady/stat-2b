@@ -1,0 +1,26 @@
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="TextBar.js"></script>
+<link rel="stylesheet" type="text/css" href="TextBar.css" />
+<title>SticiGui TextBar Control Demo</title>
+</head>
+<body>
+<script type="text/javascript">
+jQuery(function() {
+  $('body').append(new SticiTextBar({
+    label: 'Insanity',
+    min: 0,
+    max: 10000,
+    step: 1,
+    value: 2000,
+    change: function(e, value) {
+      if (value > 9000)
+        alert('OVER 9000!!!');
+    }}));
+  });
+</script>
+</body>
+</html>

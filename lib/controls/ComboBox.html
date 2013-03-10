@@ -1,0 +1,25 @@
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="ComboBox.js"></script>
+<link rel="stylesheet" type="text/css" href="ComboBox.css" />
+<title>SticiGui ComboBox Control Demo</title>
+</head>
+<body>
+<script type="text/javascript">
+$('body').append(new SticiComboBox({
+  label: 'Choose your favorite pet: ',
+  options: {
+    'cat'          : 'MEOW!',
+    'dogs'         : 'WOOF!',
+    'anything else': 'Fascinating...'
+  },
+  selected: 'anything else',
+  change: function(e, value, label) {
+    alert(value);
+}}));
+</script>
+</body>
+</html>
