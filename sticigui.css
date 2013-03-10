@@ -99,56 +99,21 @@
 .stici>.stici_chart {
   background: #fff;
 }
-.stici_histogram .chart_box svg {
-  vertical-align: top;
-  width: 100%;
-}
-.stici_histogram path {
-  stroke: #000000;
-  fill: none;
-  stroke-width: 2px;
-}
-.stici_histogram .additional_info {
+
+.stici_histhilite .additional_info {
   text-align: center;
   vertical-align: middle;
   height: 30px;
 }
-.stici_histogram {
+.stici_histhilite {
   font-size: 14px;
 }
-.stici_histogram path.restricted {
-  stroke: #136738;
-}
-.stici_histogram .chart_box rect.restricted {
-  fill: #37DA7E;
-}
-.stici_histogram .chart_box .overlay rect.restricted {
-  fill: #CA1F7B;
-}
-.stici_histogram path.nrestricted {
-  stroke: #0032A8;
-}
-.stici_histogram .chart_box rect {
-  fill: #6594ff;
-  stroke: black;
-  stroke-width: 1;
-}
-.stici_histogram .chart_box .overlay rect {
-  fill: #f8ff53;
-}
-.stici_histogram .axis path,
-.stici_histogram .axis line {
-  fill: none;
-  stroke: black;
-  shape-rendering: crispEdges;
-}
-.stici .axis text {
-  font-family: sans-serif;
-  font-size: 11px;
-}
-.stici .axis {
+.stici_histhilite .stici_histogram {
   width: 100%;
-  height: 20px;
+  height: auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
 }
 .stici>.area_info {
   width: 100%;
@@ -164,6 +129,7 @@
 .stici>.bottom_controls .binomialBars,
 .stici>.bottom_controls .areaHiLite {
   text-align: center;
+  padding-top: 5px;
 }
 .stici>.bottom_controls .popbox {
   margin: 0 0 0 0;
@@ -190,6 +156,19 @@
   text-align: right;
 }
 .stici>.bottom_controls .popbox .box p table {
+}
+.stici_histhilite .stici_textbar {
+  width: inherit;
+  height: 20px;
+}
+.stici_histhilite .stici_textbar>div {
+  display: inline-block;
+  width: inherit;
+}
+.stici_histhilite .stici_textbar .stici_textbar_slider {
+  display: inline-block;
+  width: 100px;
+  margin: 0 15px 0 15px;
 }
 
 .stici_normhilite .overlay path {
@@ -219,66 +198,14 @@
   shape-rendering: crispEdges;
 }
 
-#chartTable {
-  border: solid 1px;
-}
-
-#chartTable td {
-  vertical-align: top;
-}
-
-#chart {
-  border: none;
-}
-
-.stici_sampledist .chart_box svg {
-  vertical-align: top;
-  width: 100%;
-}
-.stici_sampledist path {
-  stroke: #000000;
-  fill: none;
-  stroke-width: 2px;
-}
-
-.stici>.top_controls {
-  height: 30px;
-  display: table-cell;
-  vertical-align: middle;
-  padding-left: 5px;
-}
-.stici button.open {
+.stici_sampledist button.open {
   padding: 3px 3px 3px 3px;
 }
 .stici_sampledist {
   font-size: 14px;
 }
-.stici .axis text {
-  font-family: sans-serif;
-  font-size: 11px;
-}
-.stici .axis {
-  width: 100%;
-  height: 20px;
-}
 
-.stici_sampledist .chart_box rect.population {
-  fill: #6594ff;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.stici_sampledist .chart_box rect.sample {
-  fill: green;
-  stroke: black;
-  stroke-width: 1;
-}
-
-.stici_sampledist .chart_box .overlay rect {
-  fill: #f8ff53;
-}
-
-.stici>.area_info {
+.stici_sampledist .area_info {
   width: 100%;
   height: 15px;
   position: absolute;
@@ -290,35 +217,13 @@
   font-size: 10pt;
 }
 
-#popText {
-  width: 80px;
-  height: 400px;
-  font-size: 10pt;
-}
-
-#population {
-  width: 75px;
-  height: 300px;
-}
-
-#statsText {
-  font-size: 14px;
-  width: 120px;
-}
-
-#statsText ul {
+.stici_sampledist .statsText ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-#top_controls {
-  width: 70%;
-  position: absolute;
-  font-size: 14px;
-}
-
-#top_controls button {
+.stici_sampledist .top_controls button {
   cursor: pointer;
   position: relative;
   margin: 5px 3px;
@@ -338,6 +243,89 @@
   -moz-box-shadow: 0 1px 1px #333;
   -webkit-box-shadow: 0 1px 1px #333;
   box-shadow: 0 1px 1px #333;
+}
+
+/*******************/
+
+/**
+ * Rules to align the general sections (top, middle, bottom).
+ */
+.stici_sampledist .top_controls {
+  height: 35px;
+  display: table-cell;
+  vertical-align: middle;
+  padding-left: 5px;
+}
+.stici_sampledist div.middle {
+  position: absolute;
+  top: 35px;
+  width: 100%;
+  padding: 0 2px 0 2px;
+}
+.stici_sampledist .bottom_controls {
+  height: auto;
+  text-align: center;
+}
+
+/**
+ * Rules to align the midle subsections.
+ */
+.stici_sampledist div.middle>* {
+  display: inline-block;
+  height: 100%;
+}
+
+.stici_sampledist .statsText {
+  font-size: 14px;
+  width: 120px;
+  float: left;
+  margin-left: 2px;
+}
+
+.stici_sampledist div.population {
+  float: right;
+  margin: 0 4px 0 0;
+  padding: 0 0 0 0;
+  width: 100px;
+}
+
+/**
+ * Customizations to individual controls.
+ */
+.stici_sampledist .population textarea {
+  width: inherit;
+  position: absolute;
+  top: 30px;
+  bottom: 0px;
+}
+.stici_sampledist .population>div {
+  width: inherit;
+  position: absolute;
+  top: 0px;
+  height: 30px;
+}
+.stici_sampledist .statsText p {
+  margin: 0 0 0 0;
+  padding: 3px 0 3px 0;
+}
+.stici_sampledist div.stici_combobox {
+  display: inline-block;
+}
+.stici_sampledist .stici_textbar {
+  width: inherit;
+  height: 20px;
+}
+.stici_sampledist .stici_textbar>div {
+  display: inline-block;
+  width: inherit;
+}
+.stici_sampledist .stici_textbar .stici_textbar_slider {
+  display: inline-block;
+  width: 100px;
+  margin: 0 15px 0 15px;
+}
+.stici_sampledist .stici_histogram .chart_box.overlay rect.set0 {
+  display: none;
 }
 
 .stici>.bottom_controls button.selected, .stici>.bottom_controls button:active {
@@ -635,6 +623,107 @@
 }
 .stici_venn3 .button {
   width: 100px;
+}
+
+/* CSS Rules for SticiGui Histogram Control. */
+/* Author: James Eady <jeady@berkeley.edu>   */
+
+/* Critical rules necessary for the chart to function. You may change the
+ * stici_histogram width and height but don't touch the other rules in this
+ * section.
+ */
+.stici_histogram {
+  width: 400px;
+  height: 400px;
+  position: relative;
+}
+.stici_histogram .chart_box,
+.stici_histogram .chart_box svg {
+  width: 100%;
+  position: absolute;
+  top: 0;
+  height: 100%;
+}
+.stici_histogram .chart_box.axis {
+  height: 20px;
+  top: auto;
+  bottom: 0;
+}
+.stici_histogram .chart_box.axis text {
+  font-family: sans-serif;
+  font-size: 11px;
+}
+
+/* Default rules for rendering objects in the chart. Often overridden by the
+ * set-specific rules at the bottom of the file.
+ */
+.stici_histogram .chart_box rect {
+  stroke: black;
+  stroke-width: 1;
+}
+.stici_histogram path {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 2px;
+}
+
+/* The axis at the bottom */
+.stici_histogram .axis path,
+.stici_histogram .axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+/* Set 0 Colors */
+.stici_histogram .chart_box rect.set0 {
+  fill: #6594ff;
+}
+.stici_histogram .chart_box.overlay rect.set0 {
+  fill: #f8ff53;
+}
+.stici_histogram path.set0 {
+  stroke: #0032A8;
+}
+
+/* Set 1 Colors */
+.stici_histogram .chart_box rect.set1 {
+  fill: #37DA7E;
+}
+.stici_histogram .chart_box.overlay rect.set1 {
+  fill: #CA1F7B;
+}
+.stici_histogram path.set1 {
+  stroke: #136738;
+}
+
+.stici_textbar {
+  width: 105px;
+  height: 50px;
+  display: inline-block;
+}
+.stici_textbar * {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
+.stici_textbar>div {
+  height: 25px;
+  text-align: center;
+}
+.stici_textbar>div>span {
+  padding-right: 10px;
+  display: inline-block;
+}
+.stici_textbar>div>input[type="text"] {
+  width: 40px;
+}
+.stici_textbar>div>.ui-slider {
+  width: 100%;
+  height: 10px;
+}
+.stici_textbar .ui-slider-handle {
+  margin-top: 4px;
+  height: 10px;
 }
 
 .popbox {

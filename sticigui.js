@@ -33,6 +33,9 @@
 //  // These input methods are all mutually exclusive - if the parameters for a
 //  // particular input method are set, then the parameters for the other input
 //  // methods should not be set.
+//  //
+//  // TODO(jmeady): Rip HistHiLite into separate scriptlets for each of these
+//  //               use cases.
 //
 //  // 1) External JSON-encoded data file
 //
@@ -130,30 +133,26 @@ function Stici_HistHiLite(container_id, params) {
   this.nBins = self.options.bins;
   this.binEnds = null;
   this.binCounts = null;
-  this.restrictedCounts = null;
   this.sd = 0;
   this.mu = 0;
-  this.restrictedSd = 0;
-  this.restrictedMu = 0;
   this.n = self.options.n;
   this.p = self.options.p;
+  this.normalCurve = function(x) {
+    return normPdf(self.mu, self.sd, x);
+  };
 
   // Various handles to important jQuery objects.
   this.urlInput = null;
   this.dataSelect = null;
   this.variableSelect = null;
-  this.chartDiv = null;
-  this.overlayDiv = null;  // Used for the area selection feature.
-  this.normalOverlayDiv = null;
-  this.areaFromInput = null;
-  this.areaFromSlider = null;
-  this.areaToInput = null;
-  this.areaToSlider = null;
+  this.areaFrom = null;
+  this.areaTo = null;
   this.areaInfoDiv = null;
   this.showNormalButton = null;
   this.showingOriginal = null;
   this.showingRestricted = null;
   this.additionalInfo = null;
+  this.histogram = null;
 
   // Restricted variable handles.
   this.restrictedVariable = null;
@@ -162,6 +161,12 @@ function Stici_HistHiLite(container_id, params) {
   this.restrictUpperEnable = null;
   this.restrictUpper = null;
   this.restrictedStates = {};
+  this.restrictedCounts = null;
+  this.restrictedSd = 0;
+  this.restrictedMu = 0;
+  this.restrictedNormal = function(x) {
+    return normPdf(self.restrictedMu, self.restrictedSd, x);
+  };
 
   // Mode.
   this.dataIsBinomial = false;
@@ -232,229 +237,44 @@ function Stici_HistHiLite(container_id, params) {
     return;
   }
 
-  this.showingNormal = self.options.showNormal;
-
   this.reloadChart = function() {
     redrawChart();
 
-    self.areaFromSlider.slider('option', 'min', self.binEnds.min());
-    self.areaFromSlider.slider('option', 'max', self.binEnds.max());
-    self.areaToSlider.slider('option', 'min', self.binEnds.min());
-    self.areaToSlider.slider('option', 'max', self.binEnds.max());
+    self.areaFrom.bounds(self.binEnds.min(), self.binEnds.max());
+    self.areaTo.bounds(self.binEnds.min(), self.binEnds.max());
 
     if (!self.dataIsBinomial) {
       if (self.options.hiLiteLo === null) {
-        self.areaFromSlider.slider('option', 'value', self.binEnds.min());
-        self.areaFromInput.val(self.binEnds.min());
+        self.areaFrom.val(self.binEnds.min());
       } else {
-        self.areaFromSlider.slider('option', 'value', self.options.hiLiteLo);
-        self.areaFromInput.val(self.options.hiLiteLo);
+        self.areaFrom.val(self.options.hiLiteLo);
       }
       if (self.options.hiLiteHi === null) {
-        self.areaToSlider.slider('option', 'value', self.binEnds.min());
-        self.areaToInput.val(self.binEnds.min());
+        self.areaTo.val(self.binEnds.min());
       } else {
-        self.areaToSlider.slider('option', 'value', self.options.hiLiteHi);
-        self.areaToInput.val(self.options.hiLiteHi);
+        self.areaTo.val(self.options.hiLiteHi);
       }
-    }
-
-    if (self.dataIsBinomial) {
-      self.areaToSlider.slider(
-        'value',
-        0.5 + Math.floor(self.areaToSlider.slider('value'))
-      );
-      self.areaFromSlider.slider(
-        'value',
-        0.5 + Math.floor(self.areaFromSlider.slider('value'))
-      );
     }
   };
   function redrawChart() {
-    var i;
-    self.chartDiv.children().remove();
-    var normalChartDiv = jQuery('<div/>').addClass('chart_box');
-    self.overlayDiv = normalChartDiv.clone().addClass('overlay');
-    self.normalOverlayDiv = jQuery('<div/>').addClass('chart_box');
-    self.chartDiv.append(normalChartDiv);
-    self.chartDiv.append(self.overlayDiv);
-    self.chartDiv.append(self.normalOverlayDiv);
-
-    // Background calculations.
-    var width = self.overlayDiv.width();
-    var height = self.overlayDiv.height();
-    var graphWidth = self.binEnds.max() - self.binEnds.min();
-
-    // Calculate the scaling by taking the max of the histogram bar heights
-    // and the y-coordinate of the points on the normal curve.
-    var normalCurveY = function(d) {
-      var x =
-        self.binEnds[0] +
-        d * (self.binEnds[self.nBins] - self.binEnds[0]) / (width - 1);
-      var y = normPdf(self.mu, self.sd, x);
-      return y;
-    };
-    var yScale = null;
-    for (i = 0; i < width; i++) {
-      if ((yScale === null || normalCurveY(i) > yScale) &&
-          !isNaN(normalCurveY(i)))
-        yScale = normalCurveY(i);
-    }
-    yScale = Math.max(self.binCounts.max(), yScale);
-    var restrictedNormalCurveY = null;
-    if (null !== self.restrictedCounts) {
-      restrictedNormalCurveY = function(d) {
-        var x =
-          self.binEnds[0] +
-          d * (self.binEnds[self.nBins] - self.binEnds[0]) / (width - 1);
-        var y = normPdf(self.restrictedMu, self.restrictedSd, x);
-        return y;
-      };
-      for (i = 0; i < width; i++) {
-        if ((yScale === null || restrictedNormalCurveY(i) > yScale) &&
-            !isNaN(restrictedNormalCurveY(i)))
-          yScale = restrictedNormalCurveY(i);
-      }
-      yScale = Math.max(self.restrictedCounts.max(), yScale);
-    }
-    yScale /= (height - 1);
-
-    // Draw the histogram as an SVG. We draw a second copy to use as the
-    // area overlay and use absolute positioning to put them on top of each
-    // other.
-    function appendSvg(div) {
-      if (null === self.restrictedCounts ||
-          !self.showingRestricted.is(':checked')) {
-        return d3.select(div.get(0)).append('svg')
-          .attr('height', '100%')
-          .selectAll('div')
-          .data(self.binCounts)
-          .enter()
-          .append('rect')
-          .attr('y', function(d) { return height - d / yScale; })
-          .attr('height', function(d) { return d / yScale; })
-          .attr('x', function(d, i) {
-            return (width * (self.binEnds[i] - self.binEnds.min()) /
-                    graphWidth);
-          })
-          .attr('width', function(d, i) {
-            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
-              graphWidth;
-          });
+    if (null !== self.restrictedCounts &&
+        self.showingRestricted.is(':checked')) {
+      if (self.showingOriginal.is(':checked')) {
+        self.histogram.set(
+          self.binEnds,
+          [self.binCounts, self.restrictedCounts],
+          [self.normalCurve, self.restrictedNormal]);
       } else {
-        var svg = d3.select(div.get(0))
-                    .append('svg')
-                    .attr('height', '100%')
-                    .selectAll('div');
-        var dat = jQuery.map(self.binCounts, function(o, i) {
-          // Need double array because jQuery auto-flattens result.
-          if (!self.showingOriginal.is(':checked'))
-            return [[null, self.restrictedCounts[i]]];
-          else
-            return [[self.binCounts[i], self.restrictedCounts[i]]];
-        });
-        svg.data(dat)
-          .enter()
-          .append('rect')
-          .attr('y', function(d) { return height - d.max() / yScale; })
-          .attr('height', function(d) { return d.max() / yScale; })
-          .attr('x', function(d, i) {
-            return (width * (self.binEnds[i] - self.binEnds.min()) /
-                    graphWidth);
-          })
-          .attr('width', function(d, i) {
-            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
-              graphWidth;
-          })
-          .attr('class', function(d) {
-            if (d[0] == d[1])
-              return 'restricted';
-            else if (d[1] > d[0])
-              return 'restricted';
-            else
-              return '';
-          });
-        svg.data(dat)
-          .enter()
-          .append('rect')
-          .attr('y', function(d) { return height - d.min() / yScale; })
-          .attr('height', function(d) { return d.min() / yScale; })
-          .attr('x', function(d, i) {
-            return (width * (self.binEnds[i] - self.binEnds.min()) /
-                    graphWidth);
-          })
-          .attr('width', function(d, i) {
-            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
-              graphWidth;
-          })
-          .attr('class', function(d) {
-            if (d[0] == d[1])
-              return '';
-            else if (d[1] < d[0])
-              return 'restricted';
-            else
-              return '';
-          });
-        return svg;
+        self.histogram.set(
+          self.binEnds,
+          [[], self.restrictedCounts],
+          [null, self.restrictedNormal]);
       }
-    }
-    appendSvg(normalChartDiv);
-    appendSvg(self.overlayDiv);
-    self.overlayDiv.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
-
-    // Draw the axis
-    var axisSvg = d3.select(normalChartDiv.get(0))
-                .append('svg')
-                .attr('class', 'axis');
-    var axisScale = d3.scale.linear()
-                            .domain([self.binEnds.min(), self.binEnds.max()])
-                            .range([0, width]);
-    var axis = d3.svg.axis().scale(axisScale).orient('bottom');
-    axisSvg.append('g').call(axis);
-
-    // Draw the normal curve and then hide it. We can show it by toggling
-    // its css.
-    if (self.options.showNormalButton || self.options.showNormal) {
-      var normalCurve =
-        d3.svg.line()
-          .x(function(d) {return d;})
-          .y(function(d) {
-            return height - (normalCurveY(d) / yScale);
-          });
-      var normSvg = d3.select(self.normalOverlayDiv.get(0))
-                      .append('svg')
-                      .attr('height', '100%');
-      if (null === self.restrictedCounts ||
-          self.showingOriginal.is(':checked') ||
-          !self.showingRestricted.is(':checked')) {
-        var normPath = normSvg.append('path');
-        if (null !== self.restrictedCounts)
-          normPath.attr('class', 'nrestricted');
-        normPath.data([d3.range(0, width)])
-          .attr('d', normalCurve);
-      }
-      if (null !== self.restrictedCounts &&
-          self.showingRestricted.is(':checked')) {
-        var restrictedCurve =
-          d3.svg.line()
-            .x(function(d) {return d;})
-            .y(function(d) {
-              return height - (restrictedNormalCurveY(d) / yScale);
-            });
-        normSvg.append('path')
-          .attr('class', 'restricted')
-          .data([d3.range(0, width)])
-          .attr('d', restrictedCurve);
-      }
-
-      if (self.showingNormal) {
-        self.showNormalButton.text('Hide Normal Curve');
-      } else {
-        self.showNormalButton.text('Show Normal Curve');
-        self.normalOverlayDiv.hide();
-      }
+    } else {
+      self.histogram.set(self.binEnds, self.binCounts, self.normalCurve);
     }
 
+    // Do we really need this?
     refreshSelectedAreaOverlay();
   }
 
@@ -544,14 +364,12 @@ function Stici_HistHiLite(container_id, params) {
   function initControls() {
     // Create html for basic structure:
     // top_controls -> stici_chart -> area_info -> botom_controls.
-    var o = jQuery('<div/>').addClass('stici').addClass('stici_histogram');
+    var o = jQuery('<div/>').addClass('stici').addClass('stici_histhilite');
     self.container.append(o);
     var top = jQuery('<div/>').addClass('top_controls');
     o.append(top);
-    self.chartDiv = jQuery('<div/>')
-                      .addClass('stici_chart')
-                      .addClass('chart_box');
-    o.append(self.chartDiv);
+    self.histogram = new SticiHistogram();
+    o.append(self.histogram);
     self.areaInfoDiv = jQuery('<div/>')
                          .addClass('area_info');
     o.append(self.areaInfoDiv);
@@ -646,39 +464,20 @@ function Stici_HistHiLite(container_id, params) {
     }
     function createAreaSelectControls() {
       var row = jQuery('<div/>').addClass('areaHiLite');
-
-      // Area from input/slider.
-      self.areaFromInput = jQuery('<input type="text" />').change(function() {
-        self.areaFromSlider.slider('value', self.areaFromInput.val());
-      });
-      var updateAreaFromInput = function(event, ui) {
-        self.areaFromInput.val(ui.value);
-        refreshSelectedAreaOverlay();
-      };
-      self.areaFromSlider = jQuery('<span/>').addClass('slider').slider({
-        change: updateAreaFromInput,
-        slide: updateAreaFromInput,
+      self.areaFrom = new SticiTextBar({
+        change: refreshSelectedAreaOverlay,
         step: self.dataIsBinomial ? 1.0 : 0.001,
-        value: -0.5
+        value: -0.5,
+        label: 'Area from: '
       });
-      row.append('Area from: ').append(self.areaFromInput)
-                                .append(self.areaFromSlider);
-
-      // Area to input/slider.
-      self.areaToInput = jQuery('<input type="text" />').change(function() {
-        self.areaToSlider.slider('value', self.areaToInput.val());
-      });
-      var updateAreaToInput = function(event, ui) {
-        self.areaToInput.val(ui.value);
-        refreshSelectedAreaOverlay();
-      };
-      self.areaToSlider = jQuery('<span/>').addClass('slider').slider({
-        change: updateAreaToInput,
-        slide: updateAreaToInput,
+      self.areaTo = new SticiTextBar({
+        change: refreshSelectedAreaOverlay,
         step: self.dataIsBinomial ? 1.0 : 0.001,
-        value: -0.5
+        value: -0.5,
+        label: ' to: '
       });
-      row.append(' to: ').append(self.areaToInput).append(self.areaToSlider);
+
+      row.append(self.areaFrom, self.areaTo);
 
       if (self.options.changeNumBins) {
         var binsInput = jQuery('<input type="text" />')
@@ -726,10 +525,13 @@ function Stici_HistHiLite(container_id, params) {
       var clearAll = jQuery('<button/>').text('Clear Restrictions');
       clearAll.click(function(e) {
         e.preventDefault();
+        var dat = jQuery.map(self.dataValues, function(values) {
+          return parseFloat(values[self.restrictedVariable.val()]);
+        });
         self.restrictUpperEnable.prop('checked', false);
-        self.restrictUpper.val(self.binEnds.max());
+        self.restrictUpper.val(dat.max());
         self.restrictLowerEnable.prop('checked', false);
-        self.restrictLower.val(self.binEnds.min());
+        self.restrictLower.val(dat.min());
         updateRestrictedData();
       });
       row.append(' ').append(clearAll);
@@ -840,69 +642,49 @@ function Stici_HistHiLite(container_id, params) {
       if (self.options.showUnivariateStats)
         row.append(statsButton.parent);
 
-      self.showNormalButton = jQuery('<button/>')
-                           .addClass('open');
-      if (self.showingNormal)
-        self.showNormalButton.text('Hide Normal Curve');
-      else
-        self.showNormalButton.text('Show Normal Curve');
-      self.showNormalButton.click(function(e) {
-        e.preventDefault();
-        self.normalOverlayDiv.toggle();
-        if (!self.showingNormal)
-          self.showNormalButton
-              .text(self.showNormalButton.text().replace('Show', 'Hide'));
-        else
-          self.showNormalButton
-              .text(self.showNormalButton.text().replace('Hide', 'Show'));
-        self.showingNormal = !self.showingNormal;
-        refreshSelectedAreaOverlay();
-      });
+      self.showNormalButton = new SticiToggleButton({
+        trueLabel: 'Hide Normal Curve',
+        falseLabel: 'Show Normal Curve',
+        value: self.options.showNormal,
+        change: function(e, show) {
+          self.histogram.showCurves(show);
+      }});
       if (self.options.showNormalButton)
         row.append(self.showNormalButton);
+      else
+        self.showNormalButton.set(false);
+      self.histogram.showCurves(self.options.showNormal);
 
       if (row.children().length > 0)
         appendFooterRow(row);
     }
     function createBinomialBars() {
       var row = jQuery('<div/>').addClass('binomialBars');
-
-      var updateNP = function() {
-        pInput.val(pSlider.slider('value'));
-        nInput.val(nSlider.slider('value'));
-        self.n = parseFloat(nInput.val());
-        self.p = parseFloat(pInput.val());
-        self.reloadData();
-      };
-
-      // n input.
-      var nInput = jQuery('<input type="text" />').change(function() {
-        nSlider.slider('value', nInput.val());
-      }).val(self.n);
-      var nSlider = jQuery('<span/>').addClass('slider').slider({
-        change: updateNP,
-        slide: updateNP,
+      var nSlider = new SticiTextBar({
         step: 1,
         min: 1,
         max: 500,
-        value: self.n
-      });
-      row.append('n: ').append(nInput).append(nSlider);
-
-      // p input
-      var pInput = jQuery('<input type="text" />').change(function() {
-        pSlider.slider('value', pInput.val());
-      }).val(self.p);
-      var pSlider = jQuery('<span/>').addClass('slider').slider({
+        value: self.n,
         change: updateNP,
-        slide: updateNP,
+        label: 'n: '
+      });
+
+      var pSlider = new SticiTextBar({
         step: 0.001,
         min: 0,
         max: 1,
-        value: self.p
+        value: self.p,
+        change: updateNP,
+        label: 'p: '
       });
-      row.append('p: ').append(pInput).append(pSlider);
 
+      function updateNP() {
+        self.n = nSlider.val();
+        self.p = pSlider.val();
+        self.reloadData();
+      }
+
+      row.append(nSlider, pSlider);
       appendFooterRow(row);
     }
 
@@ -927,8 +709,8 @@ function Stici_HistHiLite(container_id, params) {
     self.areaInfoDiv.css('bottom', bottomOffset + 'px');
     top.css('height', topOffset + 'px');
     bottom.css('height', bottomOffset + 'px');
-    self.chartDiv.css('margin-bottom', (bottomOffset + 15) + 'px');
-    self.chartDiv.css('margin-top', (topOffset) + 'px');
+    self.histogram.css('margin-bottom', (bottomOffset + 15) + 'px');
+    self.histogram.css('margin-top', (topOffset) + 'px');
   }
   function updateVariableRestrictionControls() {
     if (!self.options.restrict)
@@ -998,21 +780,15 @@ function Stici_HistHiLite(container_id, params) {
   // Helper function that is called whenever any of the area overlay
   // sliders or inputs are changed.
   function refreshSelectedAreaOverlay() {
-    var lower = parseFloat(self.areaFromInput.val());
-    var upper = parseFloat(self.areaToInput.val());
-    var scale = self.chartDiv.width() /
-      (self.binEnds.max() - self.binEnds.min());
-    var left = (lower - self.binEnds.min()) * scale;
-    var right = (upper - self.binEnds.min()) * scale;
-    self.overlayDiv.css('clip',
-                        'rect(0px,' +
-                              right + 'px,' +
-                              self.chartDiv.height() + 'px,' +
-                              left + 'px)');
+    var lower = self.areaFrom.val();
+    var upper = self.areaTo.val();
+
+    self.histogram.hilite(lower, upper);
+
     var p = histHiLitArea(lower, upper, self.binEnds, self.binCounts);
     p *= 100;
     var text = 'Selected area: ' + p.fix(2) + '%';
-    if (self.showingNormal) {
+    if (self.showNormalButton.toggled()) {
       var m = self.mu;
       var s = self.sd;
       p = Math.max(
@@ -1028,7 +804,7 @@ function Stici_HistHiLite(container_id, params) {
       p = histHiLitArea(lower, upper, self.binEnds, self.restrictedCounts);
       p *= 100;
       text += 'Subset data: ' + p.fix(2) + '%';
-      if (self.showingNormal) {
+      if (self.showNormalButton.toggled()) {
         rm = self.restrictedMu;
         rs = self.restrictedSd;
         p = Math.max(
@@ -1378,9 +1154,1016 @@ function Stici_NormHiLite(container_id, params) {
   this.reloadChart();
 }
 
+function Stici_SampleDist(container_id, params) {
+    var self = this;
+
+    // jQuery object containing the entire chart.
+    var container = jQuery('#' + container_id);
+
+    // These are constants.
+    var maxBins = 100;
+    var nDigs = 4;
+    var maxSamples = 10000;
+    var maxMaxSampleSize = 500;  // max size of each sample
+    var curveLabel = {
+      "No Curve": "none",
+      "Normal Curve": "normal",
+      "Student t Curve": "t",
+      "Chi-Squared Curve": "chi-squared"
+    };
+    var rVar = {  // random variable options and their abbreviations
+      "Sample Sum": "sum",
+      "Sample Mean": "mean",
+      "Sample t": "t",
+      "Sample S-Squared": "s-squared",
+      "Sample Chi-Squared": "chi-squared"
+    };
+    var rSource = {
+      "Normal": "normal",
+      "Uniform": "uniform",
+      "Box": "box"
+    };
+
+    // User-configurable parameters. These are directly lifted from
+    // SampleDist.java. I don't know what the commented ones are yet, nor what
+    // their default values should be. -jeady
+    var options = {
+        binControls: true,
+        bins: maxBins,
+        boxContents: "0,1,2,3,4",
+        boxEditable: true,
+        boxHistControl: false,
+        curveControls: true,
+        curves: "all",
+        hiLiteHi: 0.0,
+        hiLiteLo: 0.0,
+        replace: true,
+        replaceControl: false,
+        sampleSize: 5,
+        samplesToTake: 1,
+        showBoxHist: true,
+        showCurve: false,
+        sources: "all",
+        startWith: "sum",
+        statLabels: true,
+        toggleVar: true,
+        variables: "all"
+    };
+    jQuery.extend(options, params);
+
+    // UI Elements.
+    // Most of these are actually initialized later in init(), but they're
+    // here temporarily to conform with the existing java code.
+    var takeSampleButton = null; // SticiToggleButton, myButton[0] in the Java.
+    var populationButton = null; // SticiToggleButton, myButton[1] in the Java.
+    var sampleSizeBar = null;    // <input/> //size of each sample
+    var samplesToTakeBar = null; // <input/> //number of samples to take
+    var binBar = null;           // <input/> //number of bins in the histogram
+    var lo = null;  // SticiTextBar
+    var hi = null;  // SticiTextBar
+    var box = null;  // textarea                  // holds the population.
+    var popMeanLabel = null;                      // to display the population mean
+    var popSdLabel = null;                        // to display the population SD
+    var statSampleMeanLabel = null;               // to display mean of sample means
+    var statSampleSDLabel = null;                 // sample SD of sample means
+    var statExpLabel = null;                      // theor. Expected value of statistic
+    var statSELabel = null;                       // to display theor. SD of statistic or d.f. of chi-square
+    var samplesSoFarLabel = null;                 // number of samples of current size taken
+    var boxLabel = null;                          // label box as population or category probabilities
+    var areaLabel = null;  // span
+    var curveAreaLabel = null;  // span
+    var hist = new SticiHistogram();
+    var replaceCheck = null;
+    var varChoice = null;  // SticiComboBox       // options for which random variable to sample
+    var curveChoice = null;  // SticiComboBox     // options for which approximating curve to plot
+    var sourceChoice = null;  // SticiComboBox    // options for data source (box, normal, uniform)
+    var stats = null;                             // Contains all of the statistics labels.
+
+    // State variables.
+    var pop = [];                               // elements of the population
+    var sample = [];                            // elements of the current sample
+    var xMin = null;
+    var xMax = null;
+    var samplesSoFar = 0;
+    var sampleMean = [];                        // the history of sample means
+    var sampleSSq = [];                         // history of sample s^2
+    var sampleT = [];                           // history of sample t
+    var sampleSize = options.sampleSize;        // size of current sample
+    var samplesToTake = options.samplesToTake;  // number of samples to take of that size
+    var binEnd = [];                            // bin endpoints
+    var countPop = [];                          // areas of the bins for the pop. histogram
+    var countSample = [];                       // areas of bins for the hist. of sample means
+    var hiLiteLo = options.hiLiteLo;
+    var hiLiteHi = options.hiLiteHi;
+    var showBoxHist = options.showBoxHist;
+    var nBins = options.bins;
+    var minSampleSize;              // minimum sample size (2 for vars that use ssd)
+    var maxSampleSize;              // maximum sample size (population size if sampling w/o replacement)
+    var currVar = null;
+    var lastVar = null;
+    var EX = 0;                         // expected value of the variable plotted
+    var SE = 0;                         // standard error of the variable plotted
+    var popMin = 0;                     // smallest value in pop.
+    var popMax = 0;                     // largest value in pop.
+    var popMean = 0;                    // the population mean
+    var popSd = 0;                      // the population SD
+
+
+    // These are class variables from the original java that probably have not
+    // yet been incorporated.
+    /*
+    private boolean showCurve = false;      // show normal, t, or chi-square approximation toggle
+    private int nVars = 5;                  // number of random variable choices
+    private int nCurves = 4;                // number of approximating curve choices
+    private Hashtable varHash = new Hashtable(nVars);
+    private int nSources = 3;
+    private Hashtable sourceHash = new Hashtable(nSources);
+    private boolean replaceControl = false;    // add controls for sampling w/ w/o replacement
+    private boolean statLabels = true;         // show summary statistics of sample statistic values?
+    private boolean binControls = true;        // add the bin controls?
+    private boolean curveControls = true;      // add normal or chi-square curve button and label?
+    private boolean boxEditable = true;        // are the contents of the box editable?
+    private boolean toggleVar = true;          // add Choice to toggle among variables?
+    private boolean showBoxHist = true;        // show histogram of the numbers in the box?
+    private boolean boxHistControl = true;     // show button to turn box histogram on and off?
+    private boolean normalFillButton = false;  // add button to fill box w/ normal sample?
+
+    */
+
+    function init() {
+      var o = jQuery('<div/>').addClass('stici stici_sampledist');
+      container.append(o);
+
+      // General pieces
+      var top = jQuery('<div/>').addClass('top_controls');
+      var middle = jQuery('<div/>').addClass('middle');
+      var bottom = jQuery('<div/>').addClass('bottom_controls');
+      o.append(top, middle, bottom);
+
+      // Compose the top piece.
+      top.append(createSelectDataSourceControls());
+
+      // Compose the middle pieces.
+      middle.append(createStatsBox(), hist, createPopulationBox());
+
+      // Compose the bottom piece.
+      if (showBoxHist)
+        bottom.append(createSampleRow(),
+                      createAreaSelectRow(),
+                      createInfoRow());
+
+      // Make sure everything is sized correctly.
+      middle.height(container.height() - top.height() - bottom.height());
+      hist.width(middle.width() - stats.width() - box.width() - 20);
+
+      // Set all of the handlers.
+      jQuery.each([populationButton,
+                   sampleSizeBar,
+                   samplesToTakeBar,
+                   binBar,
+                   lo,
+                   hi,
+                   box,
+                   varChoice,
+                   curveChoice,
+                   sourceChoice,
+                   replaceCheck],
+                  function(_, e) {e.change(handleEvent);});
+      takeSampleButton.click(handleEvent);
+
+      // Below this point lie methods used to build the individual pieces.
+      // Top.
+      function createSelectDataSourceControls() {
+        var dataSelectControls = jQuery('<div/>');
+        varChoice = new SticiComboBox({
+          label: "Distribution of: ",
+          options: rVar,
+          selected: options.startWith
+        });
+        currVar = varChoice.selected();
+        sourceChoice = new SticiComboBox({
+          label: "Sample from: ",
+          options: rSource,
+          selected: "Box"
+        });
+        dataSelectControls.append(varChoice, sourceChoice);
+        if (options.replaceControl) {
+          replaceCheck = jQuery('<input type="checkbox"/>');
+          replaceCheck.attr('checked', options.replace);
+          dataSelectControls.append(replaceCheck, ' with replacement');
+        }
+        takeSampleButton = jQuery('<button id="takeSample"/>').text('Take Sample');
+        dataSelectControls.append(takeSampleButton);
+        return dataSelectControls;
+      }
+      // Middle.
+      function createPopulationBox() {
+        var container = jQuery('<div/>').addClass('population');
+        boxLabel = jQuery('<div/>');
+        box = jQuery('<textarea/>');
+        if (!options.boxEditable)
+          box.attr("readonly", "readonly");
+        container.append(boxLabel, box);
+        return container;
+      }
+      function createStatsBox() {
+        stats = jQuery('<div/>').addClass('statsText');
+        popMeanLabel = jQuery('<p/>');
+        popSdLabel = jQuery('<p/>');
+        statExpLabel = jQuery('<p/>');
+        statSELabel = jQuery('<p/>');
+        stats.append(popMeanLabel,
+                        popSdLabel,
+                        statExpLabel,
+                        statSELabel);
+        if (options.statLabels) {
+          statSampleMeanLabel = jQuery('<p/>');
+          statSampleSDLabel = jQuery('<p/>');
+          stats.append(statSampleMeanLabel,
+                          statSampleSDLabel);
+        }
+        samplesSoFarLabel = jQuery('<p/>');
+        stats.append(samplesSoFarLabel);
+
+        return stats;
+      }
+      // Bottom.
+      function createSampleRow() {
+        if (showBoxHist) {
+          var row = jQuery('<div/>');
+
+          areaLabel = jQuery('<span/>');
+          curveAreaLabel = jQuery('<span/>');
+          curveChoice = new SticiComboBox({
+            label: '',
+            options: curveLabel
+          });
+          populationButton = SticiToggleButton({
+            trueLabel: 'No Population Histogram',
+            falseLabel: 'Population Histogram',
+            value: options.showPopulation
+          });
+
+          row.append(areaLabel,
+                     curveAreaLabel,
+                     curveChoice,
+                     populationButton);
+          return row;
+        }
+        return null;
+      }
+      function createAreaSelectRow() {
+        var row = jQuery('<div/>').addClass('areaHiLite');
+        lo = new SticiTextBar({
+          step: 0.001,
+          value: 0,
+          label: 'Area from: '
+        });
+        hi = new SticiTextBar({
+          step: 0.001,
+          value: 0,
+          label: ' to: '
+        });
+        row.append(lo, hi);
+        return row;
+      }
+      function createInfoRow() {
+        var row = jQuery('<div/>');
+
+        sampleSizeBar = jQuery('<input type="text"/>').val(sampleSize);
+        samplesToTakeBar = jQuery('<input type="text"/>').val(samplesToTake);
+        row.append("Sample Size: ",
+                   sampleSizeBar,
+                   " Take ",
+                   samplesToTakeBar,
+                   " samples. ");
+        if (options.binControls) {
+          binBar = jQuery('<input type="text" id="bins" />').val(options.bins);
+          row.append(" Bins: ", binBar);
+        }
+        return row;
+      }
+
+
+      // The UI has been set up. Now initialize the data.
+      if (options.sources === null ||
+          options.sources.toLowerCase().indexOf("box") >= 0 ||
+            options.sources.toLowerCase().indexOf("all") >= 0) {
+        if (varChoice.selected() == "Sample Chi-Squared")
+          boxLabel.text("Category Probabilities");
+        else
+          boxLabel.text("Population");
+      }
+      var bc = "";
+      if (options.boxContents !== null) {
+        bc = options.boxContents;
+      } else if (sourceChoice.selected() == "Normal") {
+        bc = "Normal";
+      } else if (sourceChoice.selected() == "Uniform") {
+        bc = "Uniform";
+      } else {
+        bc = "0 1 2 3 4";
+      }
+      setBox(bc, true);
+      var vmx = vMinMax(pop);
+      xMin = vmx[0];
+      xMax = vmx[1];
+      initPop();
+      setCurve();                                   // set the approximating curve
+      setBins();                                    // make the histogram counts
+      setBars(hiLiteLo, hiLiteHi);
+      adjustSampleSize();
+      showPlot();                                   // refresh the histogram
+    }
+
+    // compute population statistics
+    function initPop() {
+        if (sourceChoice.selected() == "Box") {
+            popMean = 0;
+            popSd = 0;
+            if (pop.length === 0) {
+                console.log("Error in SampleDist.initPop(): Population is empty!\n");
+                for (var i= 0; i < nBins; i++) {
+                    countPop[i] = 0;
+                }
+                // TODO(jmeady): Do we need to clear anything out here?
+                return;
+            }
+            popMean = mean(pop);
+            popSd = sd(pop);
+// FIX ME! need to handle probabilities here.
+        } else if (sourceChoice.selected() == "Normal") {
+            popMean = 0;
+            popSd = 1;
+            replaceCheck.attr('checked', true);
+        } else if (sourceChoice.selected() == "Uniform") {
+            popMean = 0.5;
+            popSd = Math.sqrt(1.0/12.0);
+            replaceCheck.attr('checked', true);
+        }
+        popMin = pop.min();
+        popMax = pop.max();
+        setLims();                                  // set plot limits
+// make the histogram of the population
+        setBins();                                    // set the class intervals; make the counts
+        setBars(xMin,xMin);                           // set the hilight scrollbar scales
+// reset the labels
+        if (varChoice.selected() == "Sample Chi-Squared") {
+            popMeanLabel.text("Categories: " + pop.length);
+            popSdLabel.text("E(Chi-Squared): " + (pop.length-1));
+            replaceCheck.attr('checked', true);
+        } else {
+            popMeanLabel.text("Ave(Box): " + popMean.fix(3));
+            popSdLabel.text("SD(Box): " + popSd.fix(3));
+            statSampleMeanLabel.text("Mean(values) undefined");
+            statSampleSDLabel.text("SD(values) undefined");
+        }
+        setCurve();
+        setCurveLabel();
+        setAreas();
+    }
+
+    function handleEvent(e) {
+      if (binBar.is(e.target)) {                   // update # bins and redraw histogram
+        nBins = parseInt(binBar.val(), 10);
+        setBins();                              // reset the class intervals, make the counts
+        showPlot();                             // refresh the histogram
+      } else if (sampleSizeBar.is(e.target)) {     // clear history, reset sample size, redisplay histogram
+        sampleSize = parseInt(sampleSizeBar.val(), 10);
+        setBars(xMin, xMin);
+        samplesSoFar = 0;
+        setSamLabel();
+        setLims();
+        setCurveLabel();
+        setBins();
+        setCurve();
+        setAreas();
+        showPlot();
+      } else if (samplesToTakeBar.is(e.target)) {
+        samplesToTake = parseInt(samplesToTakeBar.val(), 10);
+      } else if (lo.is(e.target) || hi.is(e.target)) {
+        hiLiteLo = lo.val();
+        hiLiteHi = hi.val();
+        if (hiLiteLo >= hiLiteHi) hiLiteLo = hiLiteHi;
+        setAreas();
+        showPlot();
+      } else if (takeSampleButton.is(e.target)) {
+        var lim = maxSamples - samplesSoFar;            // number remaining samples
+        drawSample(Math.min(samplesToTake, lim));
+        setSamLabel();
+      } else if (sourceChoice.is(e.target)) {
+        if (sourceChoice.selected() == "Box" ) {
+          setBox(box.text());
+        } else {
+          setBox(sourceChoice.selected());
+          replaceCheck.attr('checked', true);
+        }
+      } else if (varChoice.is(e.target)) {
+        lastVar = currVar;
+        currVar = varChoice.selected();
+        newVariable(varChoice.selected());
+        showPlot();
+      } else if (curveChoice.is(e.target)) {
+        setCurve();
+        setAreas();
+        showPlot();
+      } else if (replaceCheck.is(e.target)) {
+        if (replaceOK(replaceCheck.is(':checked'))) {
+          samplesSoFar = 0;
+          setLims();
+          setBins();
+          setSamLabel();
+          setBins();
+          setBars(hiLiteLo, hiLiteHi);
+          setCurveLabel();
+          setCurve();
+          setAreas();
+        } else {
+          replaceCheck.attr('checked', true);
+        }
+      } else if (populationButton.is(e.target)) {
+        showBoxHist = populationButton.val();
+        setLims();
+        setBins();
+        setBars(hiLiteLo, hiLiteHi);
+        setCurve();
+        showPlot();
+      } else {
+        console.log("Handling unknown event for " + e.target);
+      }
+    }
+
+    function replaceOK(rep) {
+      var v = true;
+      if (!rep) {
+        if (sourceChoice.selected() != "Box") {
+          v = false;
+        } else {
+          var s = varChoice.selected();
+          if (!(s == "Sample Sum" ||
+                s == "Sample Mean" ||
+                s == "Sample S-Squared" ||
+                  s == "Sample t"))
+            v = false;
+        }
+      }
+      return v;
+    }
+
+    // test what is to be plotted; adjust variables accordingly
+    function showPlot() {
+      var curves = hist.curves();
+      if (samplesSoFar > 0) {
+        if (showBoxHist)
+          hist.set(binEnd, [countPop, countSample], curves);
+        else
+          hist.set(binEnd, [[], countSample], curves);
+      } else {
+        if (showBoxHist)
+          hist.set(binEnd, [countPop, []], curves);
+        else
+          hist.set(binEnd, [[], countSample], curves);
+      }
+      hist.hilite(hiLiteLo, hiLiteHi);
+    }
+
+    // set things up when the variable is changed
+    function newVariable() {     // set things up when the variable is changed
+      if ((varChoice.selected() == "Sample S-Squared" ||
+           varChoice.selected() == "Sample t") &&
+          (sampleSize == 1) ) {
+            samplesSoFar = 0;
+          }
+          adjustSampleSize();
+          if (lastVar == "Sample Chi-Squared" ||
+              varChoice.selected() == "Sample Chi-Squared") {
+            samplesSoFar = 0;
+          }
+          if (varChoice.selected() == "Sample Chi-Squared") {
+            boxLabel.text("Category Probabilities");
+            setBox(box.text(),true);
+          } else {
+            boxLabel.text("Population");
+          }
+          if (!(varChoice.selected() == "Sample Mean" ||
+                varChoice.selected() == "Sample Sum" ||
+                varChoice.selected() == "Sample S-Squared") ||
+                varChoice.selected() == "Sample t") {
+            replaceCheck.attr('checked', true);
+          }
+          setSamLabel();
+          setLims();
+          setBins();
+          setBars(hiLiteLo, hiLiteHi);
+          setCurveLabel();
+          setCurve();
+          setAreas();
+    } // ends newVariable
+
+    // function population
+    function setBox(newBox, updateBox) {               // parse new population
+      if (updateBox === undefined)
+        updateBox = false;
+
+      if (newBox.toLowerCase() == "normal") {
+        replaceCheck.attr('checked', true);
+        pop = [-4, 4];
+        box.text("Normal");
+        sourceChoice.selected("Normal");
+        if (varChoice.selected() == "Sample Chi-Squared") {
+          console.log("Warning in SampleDist.setBox(): normal incompatible " +
+                             "with Sample Chi-Squared");
+          varChoice.selected("Sample Mean");
+        }
+      } else if (newBox.toLowerCase() == "uniform") {
+        replaceCheck.attr('checked', true);
+        pop = [0, 1];
+        box.text("Uniform");
+        sourceChoice.selected("Uniform");
+        if (varChoice.selected() == "Sample Chi-Squared") {
+          console.log("Warning in SampleDist.setBox(): uniform incompatible " +
+                             "with Sample Chi-Squared");
+          varChoice.select("Sample Mean");
+        }
+      } else {
+        pop = newBox.split(/[\n\t\r ,]+/);
+        pop = jQuery.map(pop, function(v) {return parseFloat(v);});
+        if (varChoice.selected() == "Sample Chi-Squared") {
+          pop = jQuery.grep(pop, function(v) {
+            return (v !== 0 && !isNaN(v));
+          });
+          pop = scalVMult(1.0/vSum(pop), pop);
+          updateBox = true;
+        }
+        if (updateBox) {
+          box.text(jQuery.map(pop, function(v) {return v.fix(nDigs);}).join(",\r"));
+        }
+        sourceChoice.selected("Box");
+      }
+      initPop();
+      samplesSoFar = 0;
+      setSamLabel();
+    }  // ends setBox(String, boolean)
+
+    function setSamLabel() {
+      samplesSoFarLabel.text("Samples: " + samplesSoFar);
+      if (varChoice.selected() == "Sample Mean") {
+        countSample = listToHist(sampleMean, binEnd, nBins, samplesSoFar);
+        statSampleMeanLabel.text(
+          "Mean(values) = " + mean(sampleMean, samplesSoFar).fix(nDigs));
+        statSampleSDLabel.text(
+          "SD(values) = " + sd(sampleMean, samplesSoFar).fix(nDigs));
+      } else if (varChoice.selected() == "Sample Sum") {
+        countSample = listToHist(scalVMult(sampleSize, sampleMean), binEnd, nBins, samplesSoFar);
+        statSampleMeanLabel.text(
+          "Mean(values) = " + (sampleSize * mean(sampleMean, samplesSoFar)).fix(nDigs));
+        statSampleSDLabel.text(
+          "SD(values) = " + (sampleSize * sd(sampleMean, samplesSoFar)).fix(nDigs));
+      } else if (varChoice.selected() == "Sample t") {
+        countSample = listToHist(sampleT, binEnd, nBins, samplesSoFar);
+        statSampleMeanLabel.text(
+          "Mean(values) = " + mean(sampleT, samplesSoFar).fix(nDigs));
+        statSampleSDLabel.text(
+          "SD(values) = " + sd(sampleT, samplesSoFar).fix(nDigs));
+      } else if (varChoice.selected() == "Sample S-Squared" ||
+                 varChoice.selected() == "Sample Chi-Squared") {
+        countSample = listToHist(sampleSSq, binEnd, nBins, samplesSoFar);
+        statSampleMeanLabel.text(
+          "Mean(values) = " + mean(sampleSSq, samplesSoFar).fix(nDigs));
+        statSampleSDLabel.text(
+          "SD(values) = " + sd(sampleSSq, samplesSoFar).fix(nDigs));
+      }
+      setAreas();
+      showPlot();
+    }
+
+    function setAreas() {
+      areaLabel.text(" Selected area: " + hiLitArea().pct());
+      if (curveChoice.selected() == "Normal Curve")
+        curveAreaLabel.text(" Normal approx: " + normHiLitArea().pct());
+      else if (curveChoice.selected() == "Student t Curve")
+        curveAreaLabel.text(" Student t approx: " + tHiLitArea().pct());
+      else if (curveChoice.selected() == "Chi-Squared Curve")
+        curveAreaLabel.text(" Chi-squared approx: " + chiHiLitArea().pct());
+      else
+        curveAreaLabel.text("");
+    } // ends setAreas()
+
+    function setCurveLabel() {
+      var fpc = 1.0;
+      if (!replaceCheck.is(':checked')) {
+        fpc = Math.sqrt( (pop.length - sampleSize + 0.0)/(pop.length-1.0));
+      }
+      if (varChoice.selected() == "Sample Sum") {
+        SE = fpc*popSd*Math.sqrt(sampleSize + 0.0);
+        EX = sampleSize*popMean;
+        statExpLabel.text("E(sum): " + EX.fix(3)  + "  ");
+        statSELabel.text("SE(sum): " + SE.fix(3)  + "  ");
+      } else if (varChoice.selected() == "Sample Mean") {
+        SE = fpc*popSd/Math.sqrt(sampleSize + 0.0);
+        EX = popMean;
+        statExpLabel.text("E(mean): " + EX.fix(4)  + "  ");
+        statSELabel.text("SE(mean): " + SE.fix(4) + "  ");
+      } else if (varChoice.selected() == "Sample t") {
+        if ( sampleSize > 2 ) {
+          SE = Math.sqrt((sampleSize + 0.0)/(sampleSize - 2.0));
+        } else {
+          SE = Double.NaN;
+        }
+        EX = popMean;
+        statExpLabel.text("E(t): " + EX.fix(4)  + "  ");
+        statSELabel.text("SE(t): " + SE.fix(4) + "  ");
+      } else if (varChoice.selected() == "Sample S-Squared") {
+        if (replaceCheck.is(':checked')) {
+          EX = popSd*popSd;
+        } else {
+          EX = popSd*popSd*pop.length/(pop.length-1.0);
+        }
+        SE = Math.sqrt(2.0/(sampleSize-1.0))*popSd*popSd;
+        statExpLabel.text("E(S-squared): " + EX.fix(3)  + "  ");
+        statSELabel.text("df: " +  (sampleSize-1) + "  ");
+      } else if (varChoice.selected() == "Sample Chi-Squared") {
+        EX = pop.length - 1;
+        SE = Math.sqrt(2.0*(pop.length-1.0));
+        popMeanLabel.text("Categories: " + pop.length);
+        popSdLabel.text("E(Chi-Squared): " + (pop.length - 1));
+        statExpLabel.text("df: " + (pop.length - 1) + " ");
+        statSELabel.text("      ");
+      }
+    } // ends setCurveLabel()
+
+    function drawSample(nSams) {
+      var theSample = new Array(sampleSize);
+      var indices = new Array(sampleSize);
+      var xb;
+      var ssq;
+      var tStat;
+      var tmp;
+      var i;
+      for (var j=0; j < nSams; j++) {
+        xb = 0;
+        ssq = 0;
+        tStat = 0;
+        if ( varChoice.selected() == "Sample Chi-Squared")  {
+          if (sourceChoice.selected() == "Box") {
+            var cum = vCumSum(pop);     // cum expecting an Array
+            var count = new Array(pop.length); // count expecting an Array
+            for (i=0; i < pop.length; i++) {
+              count[i] = 0.0;
+            }
+            for (i=0; i < sampleSize; i++) {
+              tmp = Math.random();
+              if (tmp <= cum[0]) {
+                count[0]++;
+              }
+              for (var k=1; k < count.length; k++) {
+                if ( tmp > cum[k-1] && tmp <= cum[k] ) {
+                  count[k]++;
+                }
+              }
+            }
+            ssq = 0.0;
+            for (i=0; i < pop.length; i++) {
+              tmp = sampleSize*pop[i];
+              ssq += (count[i] - tmp)*(count[i] - tmp)/tmp;
+            }
+            sampleSSq[samplesSoFar++] = ssq;                                    // FIX: aculich 2013-03-06
+            if (ssq < xMin || ssq > xMax) {
+              xMin = Math.min(ssq, xMin);
+              xMax = Math.max(ssq, xMax);
+            }
+          } else {
+            console.error("Error in SampleDist.drawSample(): cannot draw from " +
+                          "this distribution with Sample Chi-Square!");
+          }
+        } else {
+          if (sourceChoice.selected() == "Box") {
+            if (replaceCheck.is(':checked')) {
+              indices = listOfRandInts(sampleSize, 0, pop.length-1);
+            } else {
+              indices = listOfDistinctRandInts(sampleSize, 0, pop.length-1);
+            }
+            for (i = 0; i < sampleSize; i++) {
+              theSample[i] = pop[ indices[i] ];
+              xb += theSample[i];
+            }
+          } else if (sourceChoice.selected() == "Normal") {
+            for (i = 0; i < sampleSize; i++) {
+              theSample[i] = rNorm();
+              xb += theSample[i];
+            }
+          } else if (sourceChoice.selected() == "Uniform") {
+            for (i = 0; i < sampleSize; i++) {
+              theSample[i] = Math.random();
+              xb += theSample[i];
+            }
+          }
+          xb /= sampleSize;
+          for (i = 0; i < sampleSize; i++) {
+            ssq += (theSample[i] - xb)*(theSample[i] - xb);
+          }
+          if (sampleSize > 1) {                             // if n>1, log the sample s^2 and t
+            ssq /= (sampleSize-1);
+            sampleSSq[samplesSoFar] = ssq;
+            tStat = xb/(Math.sqrt(ssq)/Math.sqrt(sampleSize));
+            sampleT[samplesSoFar] = tStat;
+          } else {                                          // otherwise, set to 0.
+            sampleSSq[samplesSoFar] = 0;
+            sampleT[samplesSoFar] = 0;
+          }
+          sampleMean[samplesSoFar++] = xb;                  // log the sample mean        // FIX: aculich 2013-03-06
+          if (varChoice.selected() == "Sample Mean") {
+            if (xb < xMin || xb > xMax) {
+              xMin = Math.min(xb, xMin);
+              xMax = Math.max(xb, xMax);
+            }
+          } else if (varChoice.selected() == "Sample t") {
+            if (tStat < xMin || tStat > xMax) {
+              xMin = Math.min(tStat, xMin);
+              xMax = Math.max(tStat, xMax);
+            }
+          } else if ( varChoice.selected() == "Sample Sum") {
+            tmp = xb * sampleSize;
+            if (tmp < xMin || tmp > xMax) {
+              xMin = Math.min(tmp, xMin);
+              xMax = Math.max(tmp, xMax);
+            }
+          } else if (varChoice.selected() == "Sample S-Squared") {
+            if (ssq < xMin || ssq > xMax) {
+              xMin = Math.min(ssq, xMin);
+              xMax = Math.max(ssq, xMax);
+            }
+          }
+        }
+      }
+      setBins();
+      setBars(hiLiteLo, hiLiteHi);
+    }
+
+    // set the TextBars for hilight and sampleSize
+    function setBars(l, h) {
+        hi.set(h, xMin, xMax, Math.pow(10, -1 * nDigs));
+        lo.set(l, xMin, xMax, Math.pow(10, -1 * nDigs));
+        hiLiteLo = l;
+        hiLiteHi = h;
+        adjustSampleSize();
+    }
+
+    function setBins() {
+      binEnd = [];
+      jQuery.each(range(0, nBins + 1), function(i) {
+          binEnd[i] = xMin + i*(xMax - xMin)/nBins;
+      });
+      countPop = new Array(nBins);
+      countSample = new Array(nBins);
+      if (sourceChoice.selected() == "Box" && pop.length > 0) {
+        if (varChoice.selected() == "Sample Chi-Squared") {
+          setCurve();
+        } else {
+          countPop = listToHist(pop, binEnd, nBins);
+          setCurve();
+        }
+      } else if (sourceChoice.selected() == "Normal") {
+        jQuery.each(range(0, nBins), function(i) {
+          countPop[i] = (normCdf(binEnd[i+1]) -
+                         normCdf(binEnd[i]))/(binEnd[i+1] - binEnd[i]);
+        });
+      } else if (sourceChoice.selected() == "Uniform") {
+        var midPt;
+        jQuery.each(range(0, nBins), function(i) {
+          midPt = (binEnd[i]+binEnd[i+1])/2;
+          if (midPt >= 0 && midPt <= 1) {
+            countPop[i] = 1;
+          } else {
+            countPop[i] = 0;
+          }
+        });
+      }
+      if (samplesSoFar > 0 ) {
+        if (varChoice.selected() == "Sample S-Squared" || varChoice.selected() == "Sample Chi-Squared") {
+          countSample = listToHist(sampleSSq, binEnd, nBins, samplesSoFar);
+        } else if (varChoice.selected() == "Sample Mean") {
+          countSample = listToHist(sampleMean, binEnd, nBins, samplesSoFar);
+        } else if (varChoice.selected() == "Sample t") {
+          countSample = listToHist(sampleT, binEnd, nBins, samplesSoFar);
+        } else if (varChoice.selected() == "Sample Sum") {
+          countSample = listToHist(scalVMult(sampleSize, sampleMean), binEnd, nBins, samplesSoFar);
+        }
+      } else {
+        jQuery.each(range(0, nBins), function(i) {
+          countSample[i] = 0;
+        });
+      }
+    }
+
+    function setLims() {
+        if (varChoice.selected() == "Sample Sum") {
+            xMin = sampleSize * popMin; // these are the limits for the histogram
+            xMax = sampleSize * popMax;
+        } else if (varChoice.selected() == "Sample Chi-Squared") {
+            xMin = 0.0;
+            xMax = 10*Math.sqrt(pop.length - 1); // 5 SD
+        } else if (varChoice.selected() == "Sample S-Squared") {
+            xMin = 0.0;
+            var maxDev = Math.max(popMean-popMin, popMax-popMean);
+            xMax = 3*maxDev*maxDev/Math.sqrt(sampleSize);
+        } else if (varChoice.selected() == "Sample Mean") {
+            xMin = popMean-4*popSd/Math.sqrt(sampleSize);
+            xMax = popMax+4*popSd/Math.sqrt(sampleSize);
+        } else if (varChoice.selected() == "Sample t") {
+            if (sampleSize > 2) {
+                xMin = -3*Math.sqrt((sampleSize+0.0)/(sampleSize - 2.0));
+                xMax =  3*Math.sqrt((sampleSize+0.0)/(sampleSize - 2.0));
+            } else {
+                xMin = -5;
+                xMax = 5;
+            }
+        }
+        if (showBoxHist) {
+            xMin = Math.min(popMin, xMin);
+            xMax = Math.max(popMax, xMax);
+        }
+    }
+
+    function setSampleSize(size) {
+        sampleSize = size;
+        adjustSampleSize();
+        showPlot();
+    }
+
+    function adjustSampleSize() {
+        minSampleSize = 1;
+        if (varChoice.selected() == "Sample S-Squared" || varChoice.selected() == "Sample t") {
+            minSampleSize = 2;
+        }
+        if ( !replaceCheck.is(':checked') ) {
+            maxSampleSize = pop.length;
+        } else {
+            maxSampleSize = maxMaxSampleSize;
+        }
+        sampleSize = Math.max(sampleSize,minSampleSize);
+        sampleSize = Math.min(sampleSize,maxSampleSize);
+        //sampleSizeBar.setValues(sampleSize,minSampleSize,maxSampleSize,1);
+        //TODO(jmeady): Allow bounds on this.
+        sampleSizeBar.val(sampleSize);
+    }
+
+    function setCurve() {
+      var sd = 0;                         // sd for normal approx
+      var mu = 0;                         // mean for normal approx
+      hist.curves([null, null]);
+      var fpc = 1.0;
+      var popVar = popSd*popSd;
+      if ( !replaceCheck.is(':checked') ) {
+        popVar = popVar*pop.length/(pop.length-1.0);
+      }
+      if (!replaceCheck.is(':checked')) {
+        fpc = Math.sqrt( (pop.length - sampleSize + 0.0)/(pop.length-1.0));
+      }
+      if (curveChoice.selected() == "No Curve") {
+        hist.hideCurves();
+      } else {
+        hist.showCurves();
+        if (curveChoice.selected() == "Chi-Squared Curve") {
+          if (varChoice.selected() == "Sample S-Squared") {
+            var scale = (sampleSize - 1.0)/(popVar);
+            // change of variables: (n-1)*S^2/sigma^2 ~ Chi^2_{n-1}
+            hist.curves(1, function(x) {
+              return scale*chi2Pdf(sampleSize-1.0, x * scale);
+            });
+          } else if (varChoice.selected() == "Sample Chi-Squared") {
+            hist.curves(1, function(x) {
+              return chi2Pdf(pop.length-1.0, x);
+            });
+          } else {
+            console.warn("Warning in SampleDist.setCurve(): Chi-squared " +
+                         "approximation to " +
+                         varChoice.selected() + " Not Supported!");
+            curveChoice.select("No Curve");
+            hist.hideCurves();
+            return(false);
+          }
+        } else if (curveChoice.selected() == "Normal Curve") {
+          if (varChoice.selected() == "Sample Mean") {
+            sd = fpc*popSd/Math.sqrt(sampleSize + 0.0);
+            mu = popMean;
+          } else if (varChoice.selected() == "Sample Sum") {
+            sd = fpc*popSd * Math.sqrt(sampleSize + 0.0);
+            mu = popMean * sampleSize;
+          } else if (varChoice.selected() == "Sample S-Squared") {
+            // E(chi^2) = (n-1), so E( sigma^2 chi^2 / (n-1) = sigma^2.
+            // SD(chi^2) = sqrt(2(n-1)), so SD( sigma^2 chi^2/ (n-1)) = sqrt(2/(n-1)) sigma^2.
+            sd = Math.sqrt(2.0/(sampleSize-1.0))*popSd*popSd; // FIX ME!
+            // doesn't account for no replacement
+            mu = popVar;
+          } else if (varChoice.selected() == "Sample Chi-Squared") {
+            sd = Math.sqrt(2.0*(pop.length-1.0));
+            mu = pop.length-1;
+          } else if (varChoice.selected() == "Sample t") {
+            if (sampleSize > 2) {
+              sd = sampleSize/(sampleSize-2.0);
+            } else {
+              sd = NaN;
+              console.warn("Warning in SampleDist.setCurve(): normal " +
+                           "approximation to Student t with sample size <= 2 " +
+                           " Not Supported!");
+              curveChoice.select("No Curve");
+              hist.hideCurves();
+              return(false);
+            }
+            mu = 0;
+          }
+          hist.curves(1, function(x) {
+            return normPdf(mu, sd, x);
+          });
+        } else if (curveChoice.selected() == "Student t Curve") {
+          if (varChoice.selected() == "Sample t") {
+            hist.curves(1, function(x) {
+              return tPdf(sampleSize-1, x);
+            });
+          } else {
+            console.warn("Warning in SampleDist.setCurve(): Student t " +
+                         "approximation to " + varChoice.selected() +
+                         " Not Supported!");
+            curveChoice.select("No Curve");
+            hist.hideCurves();
+            return(false);
+          }
+        }
+      }
+      return(true);
+    }
+
+    function hiLitArea() {
+      var area = 0;
+      for (var i=0; i < nBins; i++) {
+        if( binEnd[i]  > hiLiteHi ||  binEnd[i+1] <= hiLiteLo) {
+        } else if (binEnd[i] >= hiLiteLo && binEnd[i+1] <= hiLiteHi) {
+          area += countSample[i]*(binEnd[i+1]-binEnd[i]);
+        } else if (binEnd[i] >= hiLiteLo && binEnd[i+1] > hiLiteHi) {
+          area += countSample[i]*(hiLiteHi - binEnd[i]);
+        } else if (binEnd[i] <= hiLiteLo && binEnd[i+1] <= hiLiteHi) {
+          area += countSample[i]*(binEnd[i+1]-hiLiteLo);
+        } else if (binEnd[i] < hiLiteLo && binEnd[i+1] > hiLiteHi) {
+          area += countSample[i]*(hiLiteHi - hiLiteLo);
+        }
+      }
+      return(area);
+    } // ends hiLitArea()
+
+
+    function normHiLitArea() {
+        var area = 0;
+        var fpc = 1.0;
+        if (!replaceCheck.is(':checked')) {
+            fpc = Math.sqrt( (pop.length - sampleSize + 0.0)/(pop.length-1.0));
+        }
+        if (hiLiteHi > hiLiteLo) {
+           area = normCdf((hiLiteHi - EX)/(fpc*SE)) - normCdf((hiLiteLo - EX)/(fpc*SE));
+        }
+        return(area);
+    }// ends normHiLitArea
+
+    function chiHiLitArea() {
+       var area = 0;
+       if (hiLiteHi > hiLiteLo) {
+           if (varChoice.selected() == "Sample S-Squared") {
+               var scale = (sampleSize - 1.0)/(popSd*popSd);
+               area = chi2Cdf(sampleSize-1, scale*hiLiteHi) -
+                      chi2Cdf(sampleSize-1, scale*hiLiteLo);
+           } else if (varChoice.selected() == "Sample Chi-Squared") {
+               area = chi2Cdf(pop.length-1, hiLiteHi) -
+                      chi2Cdf(pop.length-1, hiLiteLo);
+           } else {
+               console.error("Error in SampleDist.chiHiLitArea(): " + varChoice.selected() +
+                      " not supported. ");
+               area = 0.0;
+           }
+       }
+       return(area);
+    }// ends chiHiLitArea
+
+    function tHiLitArea() {
+       var area = 0;
+       if (hiLiteHi > hiLiteLo) {
+           if (varChoice.selected() == "Sample t") {
+               area = tCdf(sampleSize-1, hiLiteHi) -
+                      tCdf(sampleSize-1, hiLiteLo);
+           } else {
+               console.error("Error in SampleDist.tHiLitArea(): " + varChoice.selected() +
+                      " not supported. ");
+               area = 0.0;
+           }
+       }
+       return(area);
+    }// ends chiHiLitArea
+
+    init();
+}
+
 //js rewrite of http://statistics.berkeley.edu/~stark/Java/Html/SampleDist.htm
 
-function Stici_SampleDist(container_id, params) {
+function Stici_OldSampleDist(container_id, params) {
   var self = this;
 
   var SUM = 'sum';
@@ -1407,7 +2190,7 @@ function Stici_SampleDist(container_id, params) {
     bins: 10,
     population: [0,1,2,3,4],
     boxContents: [0,1,2,3,4].join('\n'),
-    showPopulationButton: true,
+    showBoxHist: true,
     showPopulation: true,
     populationType: BOX,
     dataSets: [UNIFORM, BOX, NORMAL],
@@ -1442,7 +2225,7 @@ function Stici_SampleDist(container_id, params) {
   this.sampleSum = [];
   this.sampleSsq = [];
   this.sampleT = [];
-  this.binEnds = [];
+  this.binEnd = [];
   this.sampleBinCounts = null;
   this.mu = 0;
   this.sd = 0;
@@ -1473,20 +2256,20 @@ function Stici_SampleDist(container_id, params) {
   this.container = jQuery('#' + container_id);
 
   this.reloadChart = function() {
-    self.areaFromSlider.slider('option', 'min', self.binEnds.min());
-    self.areaFromSlider.slider('option', 'max', self.binEnds.max());
+    self.areaFromSlider.slider('option', 'min', self.binEnd.min());
+    self.areaFromSlider.slider('option', 'max', self.binEnd.max());
     if (self.options.hiLiteLo === null) {
-      self.areaFromSlider.slider('option', 'value', self.binEnds.min());
-      self.areaFromInput.val(self.binEnds.min());
+      self.areaFromSlider.slider('option', 'value', self.binEnd.min());
+      self.areaFromInput.val(self.binEnd.min());
     } else {
       self.areaFromSlider.slider('option', 'value', self.options.hiLiteLo);
       self.areaFromInput.val(self.options.hiLiteLo);
     }
-    self.areaToSlider.slider('option', 'min', self.binEnds.min());
-    self.areaToSlider.slider('option', 'max', self.binEnds.max());
+    self.areaToSlider.slider('option', 'min', self.binEnd.min());
+    self.areaToSlider.slider('option', 'max', self.binEnd.max());
     if (self.options.hiLiteHi === null) {
-      self.areaToSlider.slider('option', 'value', self.binEnds.min());
-      self.areaToInput.val(self.binEnds.min());
+      self.areaToSlider.slider('option', 'value', self.binEnd.min());
+      self.areaToInput.val(self.binEnd.min());
     } else {
       self.areaToSlider.slider('option', 'value', self.options.hiLiteHi);
       self.areaToInput.val(self.options.hiLiteHi);
@@ -1599,7 +2382,7 @@ function getPopStats() {
 function getUniformPopulation() {
   var population = [];
   for(var i=0; i < self.options.bins; i++) {
-    midPt = (self.binEnds[i]+self.binEnds[i+1])/2;
+    midPt = (self.binEnd[i]+self.binEnd[i+1])/2;
     if (midPt >= 0 && midPt <= 1) {
       population.push(midPt);
     }
@@ -1611,10 +2394,10 @@ function getNormalPopulation() {
   var normalPopulation = [];
   for(var i=0; i < self.options.bins; i++) {
 
-    count = (normCdf(self.binEnds[i+1]) - normCdf(self.binEnds[i]))/(self.binEnds[i+1] - self.binEnds[i]);
+    count = (normCdf(self.binEnd[i+1]) - normCdf(self.binEnd[i]))/(self.binEnd[i+1] - self.binEnd[i]);
     count = Math.round(count * 100);
     while (count > 0) {
-      normalPopulation.push(self.binEnds[i]);
+      normalPopulation.push(self.binEnd[i]);
       count--;
     }
   }
@@ -1666,11 +2449,11 @@ function setLims() {
       self.xMax = 5;
     }
   }
-  if (self.showPopulationButton) {
+  if (self.showBoxHist) {
     self.xMin = Math.min(self.popMin, self.xMin);
     self.xMax = Math.max(self.popMax, self.xMax);
   }
-  self.binEnds = histMakeBins(self.options.bins, [self.xMin, self.xMax]);
+  self.binEnd = histMakeBins(self.options.bins, [self.xMin, self.xMax]);
 }
 
 function refreshStatsBox() {
@@ -1678,33 +2461,33 @@ function refreshStatsBox() {
     if (self.options.statisticType == SUM) {
       statExpText = "E(sum): " + Number(self.ex).toFixed(2);
       statSEText = "SE(sum): " + Number(self.se).toFixed(2);
-      statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleMean)).toFixed(4);
-      statSampleSDText = "SD(values) = " + Number(sd(self.sampleMean)).toFixed(4);
+      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleMean)).toFixed(4);
+      statSampleSDText = "SD(values): " + Number(sd(self.sampleMean)).toFixed(4);
     } else if (self.options.statisticType == MEAN) {
       statExpText = "E(mean): " + Number(self.ex).toFixed(2);
       statSEText = "SE(mean): " + Number(self.se).toFixed(2);
-      statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleMean)).toFixed(4);
-      statSampleSDText = "SD(values) = " + Number(sd(self.sampleMean)).toFixed(4);
+      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleMean)).toFixed(4);
+      statSampleSDText = "SD(values): " + Number(sd(self.sampleMean)).toFixed(4);
     } else if (self.options.statisticType == T) {
       statExpText = "E(t): " + Number(self.ex).toFixed(2);
       statSEText = "SE(t): " + Number(self.se).toFixed(2);
-      statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleT)).toFixed(4);
-      statSampleSDText = "SD(values) = " + Number(sd(self.sampleT)).toFixed(4);
+      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleT)).toFixed(4);
+      statSampleSDText = "SD(values): " + Number(sd(self.sampleT)).toFixed(4);
     } else if (self.options.statisticType == SSQ) {
       statExpText = "E(S-squared): " + Number(self.ex).toFixed(2);
       statSEText = "df: " +  (self.options.sampleSize-1);
-      statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleSsq)).toFixed(4);
-      statSampleSDText = "SD(values) = " + Number(sd(self.sampleSsq)).toFixed(4);
+      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleSsq)).toFixed(4);
+      statSampleSDText = "SD(values): " + Number(sd(self.sampleSsq)).toFixed(4);
     } else if (self.options.statisticType == CHISQUARE) {
       statExpText = "df: " + Number(self.ex).toFixed(2);
       statSEText = "     ";
-      statSampleMeanText = "Mean(values) = " + Number(mean(self.sampleSsq)).toFixed(4);
-      statSampleSDText = "SD(values) = " + Number(sd(self.sampleSsq)).toFixed(4);
+      statSampleMeanText = "Mean(values): " + Number(mean(self.sampleSsq)).toFixed(4);
+      statSampleSDText = "SD(values): " + Number(sd(self.sampleSsq)).toFixed(4);
     }
 
     if (self.samplesSoFar === 0) {
-      statSampleMeanText = "Mean(values) = NaN";
-      statSampleSDText = "SD(values) = NaN";
+      statSampleMeanText = "Mean(values): NaN";
+      statSampleSDText = "SD(values): NaN";
     }
 
     if (self.options.statisticType == CHISQUARE) {
@@ -1853,13 +2636,13 @@ function tHiLitArea() {
 
 var normalCurveY = function(d) {
   var x =
-    self.binEnds[0] +
-    d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width() - 1);
+    self.binEnd[0] +
+    d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width() - 1);
   var y = normPdf(self.mu, self.sd, x);
   return y;
 };
 var chisquaredCurveCSQY = function (d) {
-  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var x = self.binEnd[0] + d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width()-1);
   var y = chi2Pdf(self.options.population.length - 1, x);
   return y;
 };
@@ -1869,12 +2652,12 @@ var chisquaredCurveSSQY = function(d) {
     popVar = popVar*self.population.length/(self.population.length -1);
   }
   scale = (self.options.sampleSize - 1)/popVar;
-  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var x = self.binEnd[0] + d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width()-1);
   var y = scale*chi2Pdf(self.options.sampleSize-1, x*scale);
   return y;
 };
 var studentTCurveY = function(d) {
-  var x = self.binEnds[0] + d * (self.binEnds[self.options.bins] - self.binEnds[0]) / (self.overlayDiv.width()-1);
+  var x = self.binEnd[0] + d * (self.binEnd[self.options.bins] - self.binEnd[0]) / (self.overlayDiv.width()-1);
   //PbsStat.tPdf(xVal[i], sampleSize-1);
   var y = tPdf(self.options.sampleSize-1, x);
   return y;
@@ -1904,23 +2687,23 @@ function redrawChart() {
         sampleData = self.sampleT;
       }
       var allPops = self.options.population.concat(sampleData);
-      var currentBinCounts = histMakeCounts(self.binEnds, allPops);
+      var currentBinCounts = histMakeCounts(self.binEnd, allPops);
       var yScale = null;
       var totalDataLength = self.options.population.length + sampleData.length;
-      var popBinCounts = histMakeCounts(self.binEnds, self.options.population, totalDataLength);
+      var popBinCounts = histMakeCounts(self.binEnd, self.options.population, totalDataLength);
       yScale = popBinCounts.max();
       if (sampleData.length !== 0) {
-        var sampleBinCounts = histMakeCounts(self.binEnds, sampleData, totalDataLength);
+        var sampleBinCounts = histMakeCounts(self.binEnd, sampleData, totalDataLength);
         yScale = Math.max(yScale, sampleBinCounts.max());
       }
       var width = self.overlayDiv.width();
       var height = self.overlayDiv.height();
-      var graphWidth = self.binEnds.max() - self.binEnds.min();
+      var graphWidth = self.binEnd.max() - self.binEnd.min();
       yScale /= (height - 1);
 
 
       function appendPopulationSvg(div) {
-        var popBinCounts = histMakeCounts(self.binEnds, self.options.population);
+        var popBinCounts = histMakeCounts(self.binEnd, self.options.population);
         if (self.options.population.length !== 0) {
         var svg = d3.select(div.get(0)).append('svg').selectAll('div');
         svg.data(popBinCounts)
@@ -1929,11 +2712,11 @@ function redrawChart() {
           .attr('y', function(d) { return height - d / yScale; })
           .attr('height', function(d) { return d / yScale; })
           .attr('x', function(d, i) {
-            return (width * (self.binEnds[i] - self.binEnds.min()) /
+            return (width * (self.binEnd[i] - self.binEnd.min()) /
                     graphWidth);
           })
           .attr('width', function(d, i) {
-            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
+            return width * (self.binEnd[i + 1] - self.binEnd[i]) /
               graphWidth;
           })
           .attr('class', 'population');
@@ -1941,7 +2724,7 @@ function redrawChart() {
     }
     function appendSamplesSvg(div) {
       if (sampleData.length !== 0) {
-        self.sampleBinCounts = histMakeCounts(self.binEnds, sampleData);
+        self.sampleBinCounts = histMakeCounts(self.binEnd, sampleData);
         var svg = d3.select(div.get(0)).append('svg').selectAll('div');
         svg.data(self.sampleBinCounts)
           .enter()
@@ -1949,11 +2732,11 @@ function redrawChart() {
           .attr('y', function(d) { return height - d / yScale; })
           .attr('height', function(d) { return d / yScale; })
           .attr('x', function(d, i) {
-            return (width * (self.binEnds[i] - self.binEnds.min()) /
+            return (width * (self.binEnd[i] - self.binEnd.min()) /
                     graphWidth);
           })
           .attr('width', function(d, i) {
-            return width * (self.binEnds[i + 1] - self.binEnds[i]) /
+            return width * (self.binEnd[i + 1] - self.binEnd[i]) /
                   graphWidth;
           })
           .attr('class', 'sample');
@@ -1969,7 +2752,7 @@ function redrawChart() {
                   .append('svg')
                   .attr('class', 'axis');
       var axisScale = d3.scale.linear()
-                              .domain([self.binEnds.min(), self.binEnds.max()])
+                              .domain([self.binEnd.min(), self.binEnd.max()])
                               .range([0, width]);
       var axis = d3.svg.axis().scale(axisScale).orient('bottom');
       axisSvg.append('g').call(axis);
@@ -2015,9 +2798,9 @@ function redrawChart() {
       self.options.hiLiteLo = parseFloat(self.areaFromSlider.slider('value'));
       self.options.hiLiteHi = parseFloat(self.areaToSlider.slider('value'));
       var scale = self.chartDiv.width() /
-        (self.binEnds.max() - self.binEnds.min());
-      var left = (self.options.hiLiteLo - self.binEnds.min()) * scale;
-      var right = (self.options.hiLiteHi - self.binEnds.min()) * scale;
+        (self.binEnd.max() - self.binEnd.min());
+      var left = (self.options.hiLiteLo - self.binEnd.min()) * scale;
+      var right = (self.options.hiLiteHi - self.binEnd.min()) * scale;
       self.overlayDiv.css('clip',
                           'rect(0px,' +
                                 right + 'px,' +
@@ -2025,7 +2808,7 @@ function redrawChart() {
                                 left + 'px)');
       var p = 0;
       if (self.sampleBinCounts !== null) {
-        p = histHiLitArea(self.options.hiLiteLo, self.options.hiLiteHi, self.binEnds, self.sampleBinCounts);
+        p = histHiLitArea(self.options.hiLiteLo, self.options.hiLiteHi, self.binEnd, self.sampleBinCounts);
       }
       p *= 100;
       var text = 'Selected area: ' + p.fix(2) + '%';
@@ -2228,22 +3011,22 @@ function redrawChart() {
         });
       }
       function createPopulationButton() {
-        self.showPopulationButton = jQuery('<button/>')
+        self.showBoxHist = jQuery('<button/>')
                              .addClass('open');
-        if (self.options.showPopulation)
-          self.showPopulationButton.text('Hide Population Histogram');
-        else
-          self.showPopulationButton.text('Show Population Histogram');
-        self.showPopulationButton.click(function(e) {
+        if (self.options.showPopulation) {
+          self.showBoxHist.text('No Population Histogram');
+        } else {
+          self.showBoxHist.text('Population Histogram');
+        }
+        self.showBoxHist.click(function(e) {
           e.preventDefault();
           if (self.options.statisticType != CHISQUARE) {
             jQuery('.population').toggle();
-            if (!self.options.showPopulation)
-              self.showPopulationButton
-                  .text(self.showPopulationButton.text().replace('Show', 'Hide'));
-            else
-              self.showPopulationButton
-                  .text(self.showPopulationButton.text().replace('Hide', 'Show'));
+            if (!self.options.showPopulation) {
+              self.showBoxHist.text('No Population Histogram');
+            } else {
+              self.showBoxHist.text('Population Histogram');
+            }
             self.options.showPopulation = !self.options.showPopulation;
             refreshSelectedAreaOverlay();
           }
@@ -2318,11 +3101,11 @@ function redrawChart() {
         createPopulationButton();
         self.areaInfoSpan = jQuery('<span/>');
         self.curveInfoSpan = jQuery('<span/>');
-        if (self.options.showPopulationButton) {
+        if (self.options.showBoxHist) {
           row.append(self.areaInfoSpan);
           row.append(self.curveInfoSpan);
           row.append(createCurveSelectControls());
-          row.append(self.showPopulationButton);
+          row.append(self.showBoxHist);
         }
 
         function drawPopulationArea(div) {
@@ -2372,6 +3155,7 @@ function redrawChart() {
   this.reloadChart();
 
 }
+
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/ScatterPlot.htm
 //
@@ -3813,9 +4597,20 @@ Array.prototype.max = function() { // beware: do not use for long arrays
 Array.prototype.min = function() { // beware: do not use for long arrays
   return Math.min.apply(null, this);
 };
-Number.prototype.fix = function(n) { // beware: do not use for long arrays
+Number.prototype.fix = function(n) {
   return parseFloat(this.toFixed(n));
 };
+Number.prototype.pct = function() {
+  return (100 * this).fix(2) + '%';
+};
+
+// Includes lo, excludes hi.
+function range(lo, hi) {
+  var seq = [];
+  for (var i = lo; i < hi; i++)
+    seq.push(i);
+  return seq;
+}
 
 var rmin = 2.3e-308;
 var eps = 2.3e-16;
@@ -3823,7 +4618,10 @@ var eps = 2.3e-16;
 // ============================================================================
 // ========================= STATISTICAL SUBROUTINES ==========================
 
-function mean(list) { // computes the mean of the list
+function mean(list, n) { // computes the mean of the list
+  if (n !== undefined)
+    list = list.slice(0, n);
+
     return(vSum(list)/list.length);
 }
 
@@ -4008,7 +4806,10 @@ function numberGreaterThan(a,b) { // numerical ordering for javascript sort func
     }
 }
 
-function sd(list) { // computes the SD of the list
+function sd(list, n) { // computes the SD of the list
+  if (n !== undefined)
+    list = list.slice(0, n);
+
     ave = mean(list);
     ssq = 0;
     for (var i = 0; i < list.length; i++) {
@@ -4081,15 +4882,6 @@ function histMakeCounts(binEnd, data, fulllength) {  // makes vector of histogra
         return(counts);
 }
 
-function histMakeBins(nBins, data) { // makes equispaced histogram bins that span the range of data
-        binEnd = new Array(nBins+1);
-        dMnMx = vMinMax(data);
-        for (var i=0; i < nBins+1; i++) {
-           binEnd[i] = dMnMx[0] + i*(dMnMx[1] - dMnMx[0])/nBins;
-        }
-        return(binEnd);
-}
-
 function histEstimatedPercentile(pct, binEnd, counts) {  // estimates the pth percentile from a histogram
         var p = pct/100.0;
         var pctile;
@@ -4130,6 +4922,91 @@ function histHiLitArea(loEnd, hiEnd, binEnd, counts) { // area of counts from lo
             }
          }
       return(area);
+}
+
+function normHiLitArea(loEnd, hiEnd, sampleSize, nPop, EX, SE, replacement) {
+    var area = 0;
+    var fpc = 1.0;
+    if (!replacement) {
+        fpc = Math.sqrt( (nPop - sampleSize + 0.0)/(nPop-1.0));
+    }
+    if (hiEnd > loEnd) {
+        area = normCdf((hiEnd - EX)/(fpc*SE)) - normCdf((loEnd - EX)/(fpc*SE));
+    }
+    return(area);
+}
+
+function chiHiLitArea(loEnd, hiEnd, sampleSize, pop, popSd, sampleType) {
+    var area = 0;
+    if (hiEnd > loEnd) {
+        if (varChoice.getSelectedItem().equals("Sample S-Squared")) {
+            var scale = (sampleSize - 1.0)/(popSd*popSd);
+            area = PbsStat.chi2Cdf(scale*hiEnd, sampleSize-1) -
+                PbsStat.chi2Cdf(scale*loEnd, sampleSize-1);
+        } else if (varChoice.getSelectedItem().equals("Sample Chi-Squared")) {
+            area = PbsStat.chi2Cdf(hiEnd, pop.length-1) -
+                PbsStat.chi2Cdf(loEnd, pop.length-1);
+        } else {
+            console.log("Error in SampleDist.chiHiLitArea(): " + varChoice.getSelectedItem() +
+                        " not supported. ");
+            area = 0.0;
+        }
+    }
+    return(area);
+}
+
+function tHiLitArea(loEnd, hiEnd) {
+    var area = 0;
+    if (hiEnd > loEnd) {
+        if (varChoice.getSelectedItem().equals("Sample t")) {
+            area = PbsStat.tCdf(hiEnd, sampleSize-1) -
+                PbsStat.tCdf(loEnd, sampleSize-1);
+        } else {
+            console.log("Error in SampleDist.tHiLitArea(): " + varChoice.getSelectedItem() +
+                        " not supported. ");
+            area = 0.0;
+        }
+    }
+    return(area);
+}
+
+function histSetBins(nBins, xMin, xMax) {
+    var binEnd = new Array(nBins+1);
+    for (var i=0; i < nBins+1; i++) {
+        binEnd[i] = xMin + i*(xMax - xMin)/nBins;
+    }
+    return binEnd;
+}
+
+function histMakeBins(nBins, data) { // makes equispaced histogram bins that span the range of data
+        binEnd = new Array(nBins+1);
+        dMnMx = vMinMax(data);
+        for (var i=0; i < nBins+1; i++) {
+           binEnd[i] = dMnMx[0] + i*(dMnMx[1] - dMnMx[0])/nBins;
+        }
+        return(binEnd);
+}
+
+function listToHist(list, binEnd, nBins, lim) {
+    // lim is an optional paramater, defaulting to list.length if not set
+    lim = lim || list.length;
+    c = new Array(nBins);
+    var i;
+    for (i = 0; i < nBins; i++) {
+        c[i] = 0;
+    }
+    var mass = 1.0/lim;
+    for (i = 0; i < lim; i++) {
+        for (var j = 0; j < nBins - 1; j++) {
+            if (list[i] >= binEnd[j] && list[i] < binEnd[j+1]) {
+                c[j] += mass/(binEnd[j+1] - binEnd[j]);
+            }
+        }
+        if (list[i] >= binEnd[nBins - 1] && list[i] <= binEnd[nBins]) {
+            c[nBins-1] += mass/(binEnd[nBins] - binEnd[nBins - 1]);
+        }
+    }
+    return(c);
 }
 
 function listOfRandSigns(n) { // random +-1 vector
@@ -4712,6 +5589,24 @@ function tPdf(df, x) {
   return(Math.exp(lnGamma((d+1)/2) - lnGamma(d/2))/
          ( Math.sqrt(d*Math.PI)*Math.pow((1+x*x/d),(d+1)/2)) );
 }
+
+function scalVMult(s, v) {
+  var ans = new Array(v.length);
+  for (var i=0; i < v.length; i++) {
+    ans[i] = s*v[i];
+  }
+  return(ans);
+}
+
+function vCumSum(x) {  // cumulative sum of vector
+  ans = new Array(x.length);
+  ans[0] = x[0];
+  for (var i=1; i < x.length; i++) {
+    ans[i] = ans[i-1] + x[i];
+  }
+  return(ans);
+}
+
 
 function tInv(p, df ) { // inverse Student-t distribution with
                                               // df degrees of freedom
@@ -6828,6 +7723,656 @@ function Stici_Venn3(container_id, params) {
       stop: syncPositions
     });
   }
+}
+
+// Author: James Eady <jeady@berkeley.edu>
+//
+// This file defines a javascript combo box.
+//
+// Usage:
+// $('body').append(new SticiComboBox({
+//   label: 'Choose your favorite pet: ',
+//   options: {
+//     'cats'         : 'MEOW!',
+//     'dogs'         : 'WOOF!',
+//     'anything else': 'Fascinating...'
+//   },
+//   selected: 'cats',
+//   change: function(e, value, label) {
+//     alert(value);
+// }}));
+function SticiComboBox(params) {
+  var self = this;
+
+  // Make this object jQuery compatible by making it a jQuery object.
+  self = jQuery('<div/>').addClass('stici_combobox');
+  var label = jQuery('<span/>');
+  var select = jQuery('<select/>');
+
+  // Options.
+  var options = {
+    label: 'Choose: ',
+    options: {
+      'foo': null,
+      'bar': null
+    },
+    selected: null,
+    value: null,
+    change: function(e, value, label) {}
+  };
+  jQuery.extend(options, params);
+
+  // Accessors and modifiers.
+  self.val = function(val) {
+    if (val !== undefined) {
+      jQuery.each(options.options, function(key, value) {
+        if (val == value)
+          self.selected(key);
+      });
+      return self;
+    }
+    return options.options[select.val()];
+  };
+  self.selected = function(label) {
+    if (label !== undefined) {
+      select.val(label);
+      return self;
+    }
+    return select.val();
+  };
+  self.options = function(opts) {
+    if (opts !== undefined) {
+      options.options = opts;
+      select.children().remove();
+      jQuery.each(options.options, function(key, value) {
+        var opt =
+          jQuery('<option/>').data('value', value).text(key);
+        select.append(opt);
+      });
+      return self;
+    }
+    return options.options;
+  };
+  self.change = function(c) {
+    if (c !== undefined) {
+      options.change = c;
+      return self;
+    }
+    return options.change;
+  };
+
+  // Put things together.
+  label.text(options.label);
+  self.append(label, select);
+
+  // Fill in the combobox.
+  self.options(options.options);
+  if (options.value !== null)
+    self.val(options.value);
+  if (options.selected !== null)
+    self.selected(options.selected);
+
+  // Change handler, which will in turn dispatch the event to the user.
+  select.change(function(e) {
+    e.preventDefault();
+    e.target = self;
+
+    options.change(e, self.val(), select.val());
+  });
+
+  return self;
+}
+
+// Author: James Eady <jeady@berkeley.edu>
+//
+// This file defines a javascript control that displays a histogram.
+//
+// Usage:
+// TODO(jmeady): Add Usage.
+function SticiHistogram(params) {
+  var self = this;
+
+  // Make this object jQuery compatible by making it a jQuery object.
+  self = jQuery('<div/>').addClass('stici_histogram');
+
+  // Options.
+  var options = {
+    hiLiteLo: 0,
+    hiLiteHi: 0,
+    binEnds: [0, 10, 20, 30, 40, 50, 60],
+    showCurves: true,
+
+    // These can be either arrays of binCount arrays/curves or a single
+    // binCount array and curve.
+    binCounts: [[2, 8, 10, 17, 3, 5], [5, 10, 15, 12, 8, 2]],
+    curves: [function(x) {return 7;}, function(x) {return 13;}]
+  };
+  jQuery.extend(options, params);
+
+  // Private handle to the overlay to adjust the highlighting.
+  var overlay = null;
+
+  // If the given binCounts/curves are not arrays, make them single-element
+  // arrays. This means we can use the same code regardless of how many
+  // overlain histograms there are.
+  if (!(options.binCounts[0] instanceof Array))
+    options.binCounts = [options.binCounts];
+  if (!(options.curves) instanceof Array)
+    options.curves = [options.curves];
+
+  // Accessor and modifier functions.
+  self.hilite = function(lo, hi) {
+    if (lo !== undefined)
+      options.hiLiteLo = lo;
+    if (hi !== undefined)
+      options.hiLiteHi = hi;
+
+    var bounds = calculateBounds();
+    var scale = self.width() / (bounds.x_hi - bounds.x_lo);
+    var left = (options.hiLiteLo - bounds.x_lo) * scale;
+    var right = (options.hiLiteHi - bounds.x_lo) * scale;
+    overlay.css(
+      'clip',
+      'rect(0px,' + right + 'px,' + self.height() + 'px,' + left + 'px)');
+
+    if (lo !== undefined || hi !== undefined)
+      return self;
+    else
+      return [options.hiLiteLo, options.hiLiteHi];
+  };
+  self.binEnds = function(ends) {
+   if (ends !== undefined) {
+     options.binEnds = ends;
+     self.redraw();
+     return self;
+   }
+   return options.binEnds;
+  };
+  self.showCurves = function(show) {
+    if (show === undefined)
+      show = true;
+    options.showCurves = show;
+    self.redraw();
+    return self;
+  };
+  self.hideCurves = function() {
+    options.showCurves = false;
+    self.redraw();
+    return self;
+  };
+
+  // The following functions are rather magical. If only a single histogram is
+  // being displayed, 'i' can always be ommitted and all arguments/return
+  // values will traffic in the binCounts array and curve function directly
+  // (e.g. set([2,3,4], [5,6], function(x) {return 7;});). If multiple
+  // histograms are being displayed, however, they will traffic in arrays
+  // of bin count arays and curve functions.
+  self.binCounts = function(i, counts) {
+    if (counts === undefined && options.binCounts.length == 1) {
+      // Single-histogram mode.
+      counts = i;
+      if (counts === undefined)
+        return options.binCounts[0];
+
+      setBinCounts(counts);
+      self.redraw();
+      return self;
+    } else {
+      // Multi-histogram mode
+      if (i === undefined)
+        return options.binCounts;
+
+      if (!isFinite(i)) {
+        setBinCounts(i);
+        self.redraw();
+        return self;
+      }
+
+      if (counts === undefined)
+        return options.binCounts[i];
+
+      options.binCounts[i] = counts;
+      self.redraw();
+      return self;
+    }
+  };
+  self.curves = self.curve = function(i, curve) {
+    if (curve === undefined && options.curves.length == 1) {
+      // Single-histogram mode.
+      curve = i;
+      if (curve === undefined)
+        return options.curves[0];
+
+      setCurves(curves);
+      self.redraw();
+      return self;
+    } else {
+      // Multi-histogram mode
+      if (i === undefined)
+        return options.curves;
+
+      if (!isFinite(i)) {
+        setCurves(i);
+        self.redraw();
+        return self;
+      }
+
+      if (curve === undefined)
+        return options.curves[i];
+
+      options.curves[i] = curve;
+      self.redraw();
+      return self;
+    }
+  };
+  self.set = function(binEnds, binCounts, curves) {
+    if (curves === undefined)
+      curves = [];
+
+    options.binEnds = binEnds;
+    setBinCounts(binCounts);
+    setCurves(curves);
+    self.redraw();
+    return self;
+  };
+
+  // These methods provide validation so we prefer them over setting variables
+  // directly.
+  function setBinCounts(binCounts) {
+    if (!(binCounts[0] instanceof Array))
+      binCounts = [binCounts];
+
+    binCounts = jQuery.map(binCounts, function(counts) {
+      return [jQuery.map(counts, function(v) {
+        if (v === undefined || v === null || isNaN(v))
+          return 0;
+        return v;
+      })];
+    });
+
+    options.binCounts = binCounts;
+  }
+  function setCurves(curves) {
+    if (!(curves instanceof Array))
+      curves = [curves];
+
+    options.curves = curves;
+  }
+
+  // This can be called in the case that our size has changed.
+  self.redraw = function() {
+    // Clear everything.
+    self.children().remove();
+
+    // Don't try to draw if we cannot be seen.
+    if (!self.is(':visible') || self.width() === 0 || self.height() === 0)
+      return;
+
+    // Basic pieces. Use these to enforce ordering.
+    overlay = jQuery('<div/>').addClass('chart_box overlay');
+    var chart = jQuery('<div/>').addClass('chart_box');
+    var curves = jQuery('<div/>').addClass('chart_box');
+    var axis = jQuery('<div/>').addClass('chart_box axis');
+    self.append(chart, overlay, curves, axis);
+
+    // Basic chart parameters.
+    var width = self.width();
+    var height = self.height() - axis.height();
+    var bounds = calculateBounds();
+    var yScale = bounds.y_hi / (height - 1);
+
+    // Draw the bins. Iterate once for each set of binCounts, but draw them so
+    // that the tallest bins regardless of binCounts set get rendered first,
+    // and are therefore in the back.
+    var interleaved = interleaveAndSortBinCounts();
+    jQuery.each(options.binCounts, function(i) {
+      d3.select(chart.get(0))
+        .append('svg')
+        .selectAll('div')
+        .data(interleaved)
+        .enter()
+        .append('rect')
+        .attr('y', function(d) { return height - d[i][0] / yScale; })
+        .attr('height', function(d) { return d[i][0] / yScale; })
+        .attr('x', function(d, i) {
+          return (width * (options.binEnds[i] - bounds.x_lo) / bounds.width);
+        })
+        .attr('width', function(d, i) {
+          return width * (options.binEnds[i + 1] - options.binEnds[i]) /
+            bounds.width;
+        })
+        .attr('class', function(d) {
+          return 'set' + d[i][1];
+        });
+    });
+
+    // Create the hilite overlay.
+    overlay.append(chart.children().clone().detach());
+
+    // Hide the overlay. This clip will be controlled to highlight sections.
+    overlay.css('clip', 'rect(0px, 0px, ' + height + 'px, 0px)');
+
+    // Draw the curves.
+    if (options.showCurves) {
+      jQuery.each(options.curves, function(i, curve) {
+        if (curve === undefined || curve === null)
+          return;
+
+        var line =
+          d3.svg.line()
+            .x(function(d) {return d;})
+            .y(function(d) {
+              // Convert the pixel offset to a usable x-coordinate that means
+              // something to the curve.
+              var x = bounds.x_lo + d * bounds.width / width;
+              var y = height - (curve(x) / yScale);
+              if (isNaN(y))
+                return 0;
+              return y;
+            });
+        d3.select(curves.get(0))
+          .append('svg')
+          .append('path')
+          .attr('class', 'set' + i)
+          .data([range(0, width)])
+          .attr('d', line);
+      });
+    }
+
+    // Draw the axis
+    var scale =
+      d3.scale.linear()
+        .domain([bounds.x_lo, bounds.x_hi])
+        .range([0, width]);
+    d3.select(axis.get(0))
+      .append('svg')
+      .append('g').call(d3.svg.axis().scale(scale).orient('bottom'));
+
+    // Reset the highlight position.
+    self.hilite();
+  };
+
+  // Calculates the chart bounds from the binCounts and curves.
+  function calculateBounds() {
+    var bounds = {
+      x_lo: Infinity,
+      x_hi: -Infinity,
+      width: -Infinity,
+      y_lo: 0, // We don't allow negative bin counts.
+      y_hi: -Infinity,
+      height: -Infinity
+    };
+
+    // X range is easy to calculate.
+    bounds.x_lo = options.binEnds.min();
+    bounds.x_hi = options.binEnds.max();
+    bounds.width = bounds.x_hi - bounds.x_lo;
+
+    // Y height can be bounded either by the curve or by the bins. Check both,
+    // and watch out for NaN.
+    var boxHi =
+      jQuery.map(options.binCounts, function(a) {
+        if (a === undefined || a === null || a.length === 0)
+          return -Infinity;
+
+        return a.max();
+      }).max();
+    var curveHi =
+        jQuery.map(options.curves, function(c) {
+          if (c === undefined || c === null)
+            return -Infinity;
+
+          return jQuery.grep(
+            jQuery.map(range(bounds.x_lo, bounds.x_hi), c),
+            isNaN,
+            true).max();
+        }).max();
+    if (isNaN(curveHi))
+      curveHi = -Infinity;
+
+    bounds.y_hi = Math.max(curveHi, boxHi);
+    bounds.height = bounds.y_hi - bounds.y_lo;
+
+    return bounds;
+  }
+
+  // Interleaves the values from all of the binCounts. Each value is
+  // transformed into a [value, binCountsIndex] pair. The resulting interleaved
+  // elements are then sorted in descending order by value. For example:
+  // Given:   [[1, 5, 8], [3, 9, 7], [2, 6, 4]]
+  // Outputs: [[[3, 1], [2, 2], [1, 0]],
+  //           [[9, 1], [6, 2], [5, 0]],
+  //           [[8, 0], [7, 1], [4, 2]]]
+  function interleaveAndSortBinCounts() {
+    return jQuery.map(range(0, options.binEnds.length - 1), function(i) {
+      // jQuery requires that we double-wrap this array because it flattens map
+      // results.
+      return [jQuery.map(options.binCounts, function(binCounts, set) {
+        // Just use 0 if there is no count for this bin.
+        if (i >= binCounts.length)
+          return [[0, set]];
+
+        return [[binCounts[i], set]];
+      }).sort(function(a, b) {
+        return b[0] - a[0];
+      })];
+    });
+  }
+
+  // Draw once before we return. All other draws will be triggered by events.
+  self.redraw();
+
+  return self;
+}
+
+// Author: James Eady <jeady@berkeley.edu>
+//
+// This file defines a javascript control that consists of both a text input
+// and a jQuery-UI slider.
+//
+// Usage:
+// $('body').append(new SticiTextBar({
+//   label: 'Insanity',
+//   min: 0,
+//   max: 10000,
+//   step: 1,
+//   value: 2000,
+//   change: function(e, value) {
+//     if (value > 9000)
+//       alert('OVER 9000!!!');
+//   }}));
+function SticiTextBar(params) {
+  var self = this;
+
+  // Make this object jQuery compatible by making it a jQuery object.
+  self = jQuery('<div/>').addClass('stici_textbar');
+
+  // Options.
+  var options = {
+    min: 0,
+    max: 100,
+    step: 1,
+    value: 25,
+    label: '',
+    change: function(e, value) {}
+  };
+  jQuery.extend(options, params);
+
+  // Create the basic pieces.
+  var label = jQuery('<span/>').addClass('stici_textbar_label');
+  var input = jQuery('<input type="text"/>').addClass('stici_textbar_input');
+  var slider = jQuery('<div/>').addClass('stici_textbar_slider');
+
+  // Compose the pieces.
+  self.append(jQuery('<div/>').append(label, input));
+  self.append(jQuery('<div/>').append(slider));
+
+  // Accessor and modifier functions.
+  self.min = function(min) {
+    if (min !== undefined) {
+      options.min = min;
+      slider.slider('option', 'min', options.min);
+      self.val(self.val());
+      return self;
+    }
+    return options.min;
+  };
+  self.max = function(max) {
+    if (max !== undefined) {
+      options.max = max;
+      slider.slider('option', 'max', options.max);
+      self.val(self.val());
+      return self;
+    }
+    return options.max;
+  };
+  self.bounds = function(min, max) {
+    self.min(min);
+    self.max(max);
+    return self;
+  };
+  self.step = function(step) {
+    if (step !== undefined) {
+      options.step = step;
+      slider.slider('option', 'step', options.step);
+      self.val(self.val());
+      return self;
+    }
+    return options.step;
+  };
+  self.val = function(val) {
+    if (val !== undefined) {
+      // Set the slider value first and allow it to do things like bounds
+      // checking.
+      slider.slider('value', val);
+
+      val = slider.slider('value');
+      input.val(val);
+      return self;
+    }
+    return slider.slider('value');
+  };
+  self.label = function(label) {
+    if (label !== undefined) {
+      options.label = label;
+      label.text(options.label);
+      return self;
+    }
+    return options.label;
+  };
+  self.change = function(change) {
+    if (change !== undefined) {
+      options.change = change;
+      return self;
+    }
+    return options.change;
+  };
+  self.set = function(val, min, max, step) {
+    return self.val(val).bounds(min, max).step(step);
+  };
+
+  // Initialize the pieces.
+  label.text(options.label);
+  input.change(onChange);
+  slider.slider({
+    min: options.min,
+    max: options.max,
+    step: options.step,
+    value: options.value,
+    slide: onChange
+  });
+  input.val(slider.slider('value'));
+
+  // This function receives a change event and sets both the slider and text
+  // input equal to the event value. Used as the change callback for both
+  // inputs.
+  function onChange(e, ui) {
+    var value;
+    e.target = self;
+
+    // If ui is undefined, we are coming from the text input.
+    if (ui === undefined)
+       value = jQuery(this).val();
+    else
+      value = ui.value;
+
+    // This method will do bounds and step checking so use it.
+    self.val(value);
+    options.change(e, self.val());
+  }
+
+  return self;
+}
+
+// Author: James Eady <jeady@berkeley.edu>
+//
+// This file defines a javascript toggle button.
+//
+// Usage:
+// $('body').append(new SticiToggleButton({
+//   trueLabel: 'On',
+//   falseLabel: 'Off',
+//   value: false,
+//   change: function(e, is_on) {
+//     if (is_on)
+//       alert('On!');
+// }}));
+function SticiToggleButton(params) {
+  var self = this;
+
+  // Make this object jQuery compatible by making it a jQuery object.
+  self = jQuery('<button/>').addClass('stici_togglebutton');
+
+  // Options.
+  var options = {
+    trueLabel: 'On',
+    falseLabel: 'Off',
+    value: false,
+    change: function(e, is_on) {}
+  };
+  jQuery.extend(options, params);
+
+  // Accessors.
+  self.val = self.is_true = self.is_toggled = self.toggled = function() {
+    return options.value;
+  };
+  self.is_false = function() {
+    return !options.value;
+  };
+  self.set = function(val) {
+    options.value = val;
+    return self;
+  };
+  self.change = function(c) {
+    if (c !== undefined) {
+      options.change = c;
+      return self;
+    }
+    return options.change;
+  };
+
+  // Helper method.
+  function setLabel() {
+    if (options.value)
+      self.text(options.trueLabel);
+    else
+      self.text(options.falseLabel);
+  }
+
+  // Set up the button.
+  self.click(function(e) {
+    e.preventDefault();
+    e.target = self;
+
+    options.value = !options.value;
+    setLabel();
+
+    options.change(e, options.value);
+  });
+
+  setLabel();
+
+  return self;
 }
 
 (function(){
