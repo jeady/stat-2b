@@ -150,6 +150,11 @@
   margin: 0 15px 0 15px;
 }
 
+.stici_lln {
+  font-family: Helvetica;
+  font-size: 14px;
+}
+
 .stici_lln div.stici_textbar {
   width: 200px;
   margin-right: 15px;
@@ -219,7 +224,6 @@
   width: 100%;
   text-align: center;
   font-size: 18px;
-  font-family: Helvetica;
 }
 
 .stici_normhilite .overlay path {
