@@ -17,3 +17,10 @@
   top: 50%;
   margin-top: -12px;
 }
+
+.stici_lln path,
+.stici_lln line {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 1px;
+}
