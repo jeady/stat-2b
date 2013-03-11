@@ -181,7 +181,7 @@
   position: absolute;
   left: 30px;
   right: 0px;
-  top: 0px;
+  top: 20px;
   bottom: 20px;
 }
 
@@ -212,6 +212,13 @@
 
 .stici_lln .x_axis svg g:last-of-type>text {
   text-anchor: end;
+}
+
+.stici_lln .title {
+  height: 20px;
+  width: 100%;
+  text-align: center;
+  font-size: 18px;
 }
 
 .stici_normhilite .overlay path {
