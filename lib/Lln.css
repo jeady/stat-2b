@@ -1,0 +1,19 @@
+.stici_lln div.stici_textbar {
+  width: 200px;
+  margin-right: 15px;
+}
+
+.stici_lln div.controls {
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
+  display: table-cell;
+  text-align: center;
+}
+
+.stici_lln div.controls button {
+  position: absolute;
+  height: 25px;
+  top: 50%;
+  margin-top: -12px;
+}
