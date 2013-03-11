@@ -1017,9 +1017,9 @@ function Stici_Lln(container_id, params) {
 
     // Set the title
     if (self.percent.val())
-      self.title.text('Law of Large Numbers: Successes - Expected (%)');
+      self.title.text('Law of Large Numbers: %Successes - %Expected');
     else
-      self.title.text('Law of Large Numbers: Successes - Expected');
+      self.title.text('Law of Large Numbers: #Successes - #Expected');
   }
 
   // Initial render.
