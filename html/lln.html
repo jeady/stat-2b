@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script src="http://d3js.org/d3.v2.js"></script>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<script src="../sticigui.js"></script>
+<link href="../sticigui.css" rel="stylesheet" type="text/css" />
+<title>Law of Large Numbers Demonstration</title>
+<style>
+#chart {
+  width: 600px;
+  height: 350px;
+  border: 1px #000 solid;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</head>
+
+<body >
+<p align=center>
+<div id="chart"></div>
+
+<script>
+jQuery(function() {
+  new Stici_Lln('chart', {});
+});
+</script>
+</p>
+
+<p>
+The <a href="../../SticiGui/Text/gloss.htm#law_of_large_numbers">Law
+  of Large Numbers</a> says that in repeated, independent trials with
+the same probability <em>p</em> of success in each trial, the chance that
+the percentage of successes differs from the probability <em>p</em> by
+more than a fixed positive amount, <em>e</em> > 0, converges to zero
+as the number
+of trials <em>n</em> goes to infinity, for every positive <em>e</em>.
+Note two things:
+</p>
+<p>
+<ol>
+  <li> The difference between the number of successes and the number of
+  trials times the chance of success in each trial (the expected number
+  of successes) tends to <strong>grow</strong> as the number of trials
+  increases. (In fact, this difference tends to grow like the square-root
+  of the number of trials.)
+  </li>
+  <li>
+  Although the chance of a large difference between the percentage of successes
+  and the chance of success gets smaller and smaller as <em>n</em>
+  grows, nothing prevents the difference from being large in some sequences
+  of trials.
+  The assumption that this difference always tends to zero, as opposed to
+  this difference having a large probability of being arbitrarily close to
+  zero, is the difference between the
+  <a href="../../SticiGui/Text/gloss.htm#law_of_large_numbers">Law
+    of Large Numbers</a>, which is a mathematical theorem, and the
+  <a href="../../SticiGui/Text/gloss.htm#empirical_law_of_averages">Empirical
+    Law
+    of Averages</a>, which is an assumption about how the world works that
+  lies at the base of the
+  <a href="../../SticiGui/Text/gloss.htm#frequency_theory">Frequency
+    Theory</a> of probability.
+  </li>
+</ol>
+</p>
+<p>
+The distribution of the number of successes in <em>n</em> independent
+trials with probability <em>p</em> of success in each trial is
+<a href="../../SticiGui/Text/gloss.htm#binomial">Binomial</a>,
+with parameters <em>n</em> and <em>p</em>.
+</p>
+<p>
+The controls on this applet let you change the number of trials, the
+probability of success in each trial, and toggle between viewing either
+the
+difference between the number of successes and the expected number
+of successes, or the difference between the percentage of successes
+and the probability of success in each trial.
+</p>
+</body>
+</html>

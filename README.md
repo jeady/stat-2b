@@ -16,6 +16,8 @@ Currently the following interactive charts are supported:
    Created by invoking `new Stici_Venn`.
 5. Area under the curve (normal and chi-square curves)
    Created by invoking `new Stici_NormHiLite`
+6. Sampling distributions
+   Created by invoking `new Stici_SampleDist`
 
 Usage
 =====

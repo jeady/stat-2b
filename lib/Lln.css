@@ -1,0 +1,63 @@
+.stici_lln div.stici_textbar {
+  width: 200px;
+  margin-right: 15px;
+}
+
+.stici_lln div.controls {
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
+  display: table-cell;
+  text-align: center;
+}
+
+.stici_lln div.controls button {
+  position: absolute;
+  height: 25px;
+  top: 50%;
+  margin-top: -12px;
+}
+
+.stici_lln path,
+.stici_lln line {
+  stroke: #000000;
+  fill: none;
+  stroke-width: 1px;
+}
+
+.stici_lln .chart_box .simulation {
+  position: absolute;
+  left: 30px;
+  right: 0px;
+  top: 0px;
+  bottom: 20px;
+}
+
+.stici_lln .chart_box .x_axis {
+  position: absolute;
+  height: 20px;
+  left: 30px;
+  right: 0px;
+  bottom: 0px;
+}
+
+.stici_lln .chart_box .y_axis {
+  position: absolute;
+  width: 30px;
+  left: 0px;
+  bottom: 0px;
+  top: 0px;
+}
+
+.stici_lln .axis text {
+  font-family: sans-serif;
+  font-size: 11px;
+}
+
+.stici_lln .x_axis svg g:first-of-type>text {
+  text-anchor: start;
+}
+
+.stici_lln .x_axis svg g:last-of-type>text {
+  text-anchor: end;
+}
