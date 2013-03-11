@@ -824,6 +824,190 @@ function Stici_HistHiLite(container_id, params) {
 }
 
 // Javascript rewrite of
+// http://statistics.berkeley.edu/~stark/Java/Html/lln.htm
+//
+// Author: James Eady <jeady@berkeley.edu>
+//
+// container_id: the CSS ID of the container to create the histogram (and
+//               controls) in.
+// params: A javascript object with various parameters to customize the chart.
+//  // Show percentage mode by default.
+//  - percent: false
+
+function Stici_Lln(container_id, params) {
+  var self = this;
+
+  if (!params instanceof Object) {
+    console.error('Stici_Lln params should be an object');
+    return;
+  }
+
+  // Configuration option defaults.
+  this.options = {
+    percent: false
+  };
+
+  // For debugging: Warn of user params that are unknown.
+  jQuery.each(params, function(key) {
+    if (typeof(self.options[key]) == 'undefined')
+      console.warn('Stici_Lln: Unknown key \'' + key + '\'');
+  });
+
+  // Override options with anything specified by the user.
+  jQuery.extend(this.options, params);
+
+  // jQuery object containing the entire chart.
+  this.container = jQuery('#' + container_id);
+
+  // The root object that holds everything.
+  this.root = jQuery('<div/>').addClass('stici stici_lln');
+
+  // The divs holding the SVGs.
+  this.chart_box = jQuery('<div/>').addClass('chart_box');
+  this.chart = jQuery('<div/>').addClass('simulation');
+  this.x_axis = jQuery('<div/>').addClass('axis x_axis');
+  this.y_axis = jQuery('<div/>').addClass('axis y_axis');
+
+  // The div that holds the controls at the bottom.
+  this.controls = jQuery('<div/>').addClass('controls');
+
+  // The controls themselves.
+  this.probability = new SticiTextBar({
+    label: 'Chance of success (%)',
+    value: 50,
+    min: 0,
+    max: 100,
+    change: reset
+  });
+  this.trials = new SticiTextBar({
+    label: '# Trials',
+    value: 800,
+    min: 1,
+    max: 20000,
+    change: redraw
+  });
+  this.percent = new SticiToggleButton({
+    trueLabel: 'Number',
+    falseLabel: 'Percent',
+    value: this.options.percent,
+    change: reset
+  });
+
+  // Compose everthing.
+  this.container.append(this.root);
+  this.root.append(this.chart_box, this.controls);
+  this.chart_box.append(this.chart, this.x_axis, this.y_axis);
+  this.controls.append(this.probability, this.trials, this.percent);
+  this.chart_box.height(this.container.height() - this.controls.height());
+  this.chart.height(this.chart_box.height() - this.x_axis.height());
+  this.chart.width(this.chart_box.width() - this.y_axis.width());
+
+  // The simulation data.
+  this.simulations = [];
+
+  // Reset the data and then redraw.
+  function reset() {
+    self.simulations = [];
+    redraw();
+  }
+
+  // The drawing function.
+  function redraw() {
+    // Start from fresh slate.
+    self.chart.children().remove();
+    self.x_axis.children().remove();
+    self.y_axis.children().remove();
+
+    // Fetch the probability.
+    var p = self.probability.val() / 100;
+    var n_trials = self.trials.val();
+
+    // If the trials the user has specified doesn't match what we have, either
+    // perform some more or cut some off.
+    var n;
+    var prev;
+    if (self.simulations.length > n_trials)
+      self.simulations = self.simulations.slice(0, n_trials);
+    if (self.percent.val()) {  // Percent.
+      if (self.simulations.length === 0) {
+        self.simulations.push(-p * 100);
+        if (rand.next() <= p)
+          self.simulations[0] += 100;
+      }
+      while (self.simulations.length < n_trials) {
+        n = self.simulations.length;
+        prev = self.simulations[n - 1];
+        self.simulations.push((n * prev - 100 * p) / (n + 1));
+        if (rand.next() <= p)
+          self.simulations[n] += (100 / (n + 1));
+      }
+    } else {  // Number.
+      if (self.simulations.length === 0) {
+        self.simulations.push(-p);
+        if (rand.next() <= p)
+          self.simulations[0] += 1;
+      }
+      while (self.simulations.length < n_trials) {
+        n = self.simulations.length;
+        prev = self.simulations[n - 1];
+        self.simulations.push(prev - p);
+        if (rand.next() <= p)
+          self.simulations[n] += 1;
+      }
+    }
+
+    // Draw the thing.
+    var width = self.chart.width();
+    var height = self.chart.height();
+    var y_min = self.simulations.min();
+    var y_max = self.simulations.max();
+    var yScale = (y_max - y_min) / height;
+    var line =
+      d3.svg.line()
+        .x(function(d) {return d;})
+        .y(function(d) {
+          // Convert the pixel offset to a usable x-coordinate that means
+          // something.
+          var x = Math.round(d * n_trials / width);
+          var y = height - ((self.simulations[x] - y_min) / yScale);
+          if (isNaN(y))
+            return 0;
+          return y;
+        });
+    d3.select(self.chart.get(0))
+      .append('svg')
+      .append('path')
+      .data([range(0, width)])
+      .attr('d', line);
+
+    // Draw the x axis.
+    var xscale =
+      d3.scale.linear()
+        .domain([0, n_trials])
+        .range([0, width]);
+    d3.select(self.x_axis.get(0))
+      .append('svg')
+      .append('g')
+      .call(d3.svg.axis().scale(xscale).orient('bottom'));
+    self.x_axis.css('top', ((y_max / (y_max - y_min)) * height) + 'px');
+
+    // Draw the y axis.
+    var yscale =
+      d3.scale.linear()
+        .domain([y_max, y_min])
+        .range([0, height]);
+    d3.select(self.y_axis.get(0))
+      .append('svg')
+      .append('g')
+      .attr("transform", "translate(" + self.y_axis.width() + ", 0)")
+      .call(d3.svg.axis().scale(yscale).orient('left'));
+  }
+
+  // Initial render.
+  redraw();
+}
+
+// Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/NormHiLite.htm
 //
 // Author: James Eady <jeady@berkeley.edu>
@@ -1154,6 +1338,88 @@ function Stici_NormHiLite(container_id, params) {
   this.reloadChart();
 }
 
+// Javascript rewrite of
+// http://statistics.berkeley.edu/~stark/Java/Html/SampleDist.htm
+//
+// Author: James Eady <jeady@berkeley.edu>
+//
+// container_id: the CSS ID of the container to create the histogram (and
+//               controls) in.
+// params: A javascript object with various parameters to customize the chart.
+//  // Whether or not to allow the user to edit the number of bins.
+//  - binControls: true,
+//
+//  // Lorem
+//  - bins: 100,
+//
+//  // What to initialize the population box contents to.
+//  - boxContents: "0,1,2,3,4",
+//
+//  // Whether or not the sure can change the contents of the population box.
+//  - boxEditable: true,
+//
+//  // Whether or not to show the button that toggles the population histogram.
+//  - boxHistControl: false,
+//
+//  // Whether or not to show the curve selection box and curve area.
+//  - curveControls: true,
+//
+//  // Which curves to allow the user to choose. If not 'all', the curves whose
+//  // names (either short or long form) are present in this string are visible
+//  // for the user to select.
+//  - curves: "all",
+//
+//  // Default hilighting bounds.
+//  - hiLiteHi: 0.0,
+//  - hiLiteLo: 0.0,
+//
+//  // Default value of the "with replacement" checkbox.
+//  - replace: true,
+//
+//  // Whether or not to show the "with replacement" checkbox.
+//  - replaceControl: false,
+//
+//  // Defaults for sampling parameters.
+//  - sampleSize: 5,
+//  - samplesToTake: 1,
+//
+//  // Default value for the show/hide population histogram button.
+//  - showBoxHist: true,
+//
+//        if (varChoice.selected() == "Sample Mean" ||
+//            varChoice.selected() == "Sample Sum") {
+//          curveChoice.selected("Normal Curve");
+//        } else if (varChoice.selected() == "Sample S-Squared" ||
+//                   varChoice.selected() == "Sample Chi-Squared") {
+//          curveChoice.selected("Chi-Squared Curve");
+//        } else if (varChoice == "Sample t") {
+//          curveChoice.selected("Student t curve");
+//        }
+//  // Whether or not to initially display the curve. If set to true, the curve
+//  // choice is set to:
+//  // - Normal for 'Sample Mean' and 'Sample Sum' variables
+//  // - Chi-Squared for 'Sample S-Squared' and 'Sample Chi-Squared' variables.
+//  // - Student t for 'Sample t' variable.
+//  - showCurve: false,
+//
+//  // Which sources to allow the user to choose. If not 'all', the sources
+//  // whose names (either short or long form) are present in this string are
+//  // visible for the user to select.
+//  - sources: "all",
+//
+//  // The source to initialize the variables combobox to.
+//  - startWith: "sum",
+//
+//  // Whether or not to display the sample mean and SD.
+//  - statLabels: true,
+//
+//  // Whether or not the selected variable can be changed.
+//  - toggleVar: true,
+//
+//  // Which curves to allow the user to choose. If not 'all', the curves whose
+//  // names (either short or long form) are present in this string are visible
+//  // for the user to select.
+//  - variables: "all"
 function Stici_SampleDist(container_id, params) {
     var self = this;
 
@@ -3633,12 +3899,20 @@ function Stici_Scatterplot(container_id, params) {
 
 // !!!!Beginning of the code!!!!
 
-Array.prototype.max = function() { // beware: do not use for long arrays
-  return Math.max.apply(null, this);
+Array.prototype.max = function() {
+  var max = -Infinity;
+  for(var i = 0; i < this.length; i++) {
+    max = Math.max(max, this[i]);
+  }
+  return max;
 };
 
-Array.prototype.min = function() { // beware: do not use for long arrays
-  return Math.min.apply(null, this);
+Array.prototype.min = function() {
+  var min = Infinity;
+  for(var i = 0; i < this.length; i++) {
+    min = Math.min(min, this[i]);
+  }
+  return min;
 };
 Number.prototype.fix = function(n) {
   return parseFloat(this.toFixed(n));
