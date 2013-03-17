@@ -1,0 +1,21 @@
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="Check.js"></script>
+<title>SticiGui Check Control Demo</title>
+</head>
+<body>
+<script type="text/javascript">
+$('body').append(new SticiCheck({
+  label: 'Check to turn on',
+  readonly: false,
+  value: false,
+  change: function(e, is_checked) {
+    if (is_checked)
+      alert('On!');
+}}));
+</script>
+</body>
+</html>
