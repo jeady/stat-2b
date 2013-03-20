@@ -1,3 +1,147 @@
+.stici_ci button.open {
+  padding: 3px 3px 3px 3px;
+}
+.stici_ci {
+  font-size: 14px;
+}
+
+.stici_ci .area_info {
+  width: 100%;
+  height: 15px;
+  position: absolute;
+  bottom: 60px;
+  padding-left: 5px;
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+  font-size: 10pt;
+}
+
+.stici_ci .statsText ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/**
+ * Rules to align the general sections (top, middle, bottom).
+ */
+.stici_ci .top_controls {
+  height: 35px;
+  display: table-cell;
+  vertical-align: middle;
+  padding-left: 5px;
+}
+.stici_ci div.middle {
+  position: absolute;
+  top: 35px;
+  width: 100%;
+  padding: 0 2px 0 2px;
+}
+.stici.stici_ci>.bottom_controls {
+  height: 35px;
+  text-align: center;
+  padding: 0 0 0 0;
+  margin: 0 0 0 0;
+}
+
+.stici_ci .bottom_controls p {
+  display: inline-block;
+}
+
+/**
+ * Rules to align the midle subsections.
+ */
+.stici_ci div.middle>* {
+  display: inline-block;
+  height: 100%;
+}
+
+.stici_ci .statsText {
+  font-size: 14px;
+  width: 120px;
+  float: left;
+  margin-left: 2px;
+}
+
+.stici_ci div.population {
+  float: right;
+  margin: 0 12px 0 0;
+  padding: 0 0 0 0;
+  width: 100px;
+}
+
+/**
+ * Customizations to individual controls.
+ */
+.stici_ci .stici_check {
+  display: inline-block;
+}
+.stici_ci .population textarea {
+  width: inherit;
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+}
+.stici_ci .statsText p {
+  margin: 0 0 0 0;
+  padding: 3px 0 3px 0;
+}
+.stici_ci div.stici_combobox {
+  display: inline-block;
+}
+.stici_ci .stici_textbar {
+  width: inherit;
+  height: 20px;
+}
+.stici_ci .stici_textbar>div {
+  display: inline-block;
+  width: inherit;
+}
+.stici_ci .stici_textbar .stici_textbar_slider {
+  display: inline-block;
+  width: 100px;
+  margin: 0 15px 0 15px;
+}
+.stici_ci rect {
+  stroke: #000000;
+  stroke-width: 1px;
+}
+.stici_ci rect.inner {
+  fill: #37DA7E;
+}
+.stici_ci rect.outer {
+  fill: #CA1F7B;
+}
+.stici_ci .stici_chartbox {
+  position: relative;
+}
+.stici_ci svg {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+}
+
+.stici_ci svg.axis {
+  top: auto;
+  bottom: 0px;
+  height: 20px;
+}
+
+.stici_ci .axis path,
+.stici_ci .axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.stici_ci svg.truth path {
+  stroke: #0032A8;
+  stroke-width: 2px;
+}
+
 .stici {
   position: relative;
   padding: 0 0 0 0;
