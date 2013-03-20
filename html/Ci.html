@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:pref="http://www.w3.org/2002/Math/preference"
+      pref:renderer="css">
+
+<head>
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<link href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="http://d3js.org/d3.v2.js"></script>
+<script src="../sticigui.js"></script>
+<link href="../sticigui.css" rel="stylesheet" type="text/css" />
+<style>
+#chart {
+  width: 800px;
+  height: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px black solid;
+}
+</style>
+</head>
+
+<body >
+
+<h3 align="left">
+    <a href="#controls">Explanation of Controls</a>.
+</h3>
+
+<p align="center">
+<div id="chart"></div>
+<script>
+jQuery(function() {
+  new Stici_Ci('chart', {
+    boxContents: "0,1,2,3,4",
+    sources: "all",
+    showTruth: true,
+    replaceControl: true,
+    seChoices: "True SE,Estimated SE,Bound on SE (0-1 Box only)"
+  });
+});
+</script>
+</p>
+
+<p align="center">&nbsp;</p>
+
+<h2 align="center">
+  <a name="controls"></a>Explanation of Controls
+</h2>
+
+</body>
+</html>
