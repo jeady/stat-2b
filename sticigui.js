@@ -34,16 +34,15 @@ function Stici_Ci(container_id, params) {
     var options = {
       factor: 1,
       showTruth: true,
-      toggleSe: true,
       toggleTruth: true,
       editBox: true,
       replaceControl: false,
       replace: true,
       sampleSize: 2,
       sources: "all",
-      seChoices: "all"
-      //useSe: null,
-      //boxContents,
+      seChoices: "all",
+      useSe: null,
+      boxContents: "0,1,2,3,4"
     };
     jQuery.extend(options, params);
 
@@ -161,6 +160,8 @@ function Stici_Ci(container_id, params) {
           value: options.replace,
           readonly: !options.replaceControl
         });
+        if (!options.replaceControl && !options.replace)
+          replaceCheck.label(' without replacement');
         takeSampleButton = jQuery('<button id="takeSample"/>').text('Take Sample');
         dataSelectControls.append(takeSampleButton);
         dataSelectControls.append(replaceCheck);
@@ -219,6 +220,15 @@ function Stici_Ci(container_id, params) {
                    " ",
                    coverLabel);
         return row;
+      }
+
+      if (options.useSe !== null) {
+        if (options.useSe == "estimated")
+          seChoice.selected("Estimated SE");
+        else if (options.useSe == "true")
+          seChoice.selected("True SE");
+        else if (options.useSe == "bound")
+          seChoice.selected("Bound on SE (0-1 box only)");
       }
 
       // The UI has been set up. Now initialize the data.
@@ -366,9 +376,9 @@ function Stici_Ci(container_id, params) {
               lastSE = "Estimated SE";
               seChoice.select(lastSE);
             }
-            setBox(box.text(),true);
+            setBox(box.val(),true);
           } else if (sourceChoice.selected() == "0-1 Box") {
-            setBox(box.text(),true);
+            setBox(box.val(),true);
           } else {
             setBox(sourceChoice.selected());
           }
@@ -389,7 +399,7 @@ function Stici_Ci(container_id, params) {
           showPlot();
         }
       } else if (box.is(e.target)) {
-        setBox(box.text(),false);
+        setBox(box.val(),false);
         showPlot();
       } else if (takeSampleButton.is(e.target)) {
         var lim = maxSamples - samplesSoFar; // number possible
@@ -404,7 +414,7 @@ function Stici_Ci(container_id, params) {
       } else if (hideBoxButton.is(e.target)) {
           showTruth = hideBoxButton.val();
           if (!showTruth) {
-            box.text("Contents \n Hidden");
+            box.val("Contents \n Hidden");
             randBox();
             samplesSoFar = 0;
             setCover();
@@ -483,18 +493,19 @@ function Stici_Ci(container_id, params) {
         pop = new Array(2);
         pop[0] = -4;
         pop[1] = 4;
-        box.text("Normal");
+        box.val("Normal");
         sourceChoice.select("Normal");
       } else if (newBox.toLowerCase() == "uniform") {
         replaceCheck.checked(true);
         pop = new Array(2);
         pop[0] = 0;
         pop[1] = 1;
-        box.text("Uniform");
+        box.val("Uniform");
         sourceChoice.select("Uniform");
       } else {
         pop = newBox.split(/[,\n\t\r ]+/);
         pop = jQuery.map(pop, function(v) {return parseFloat(v);});
+        nPop = pop.length;
         var zeroOneOnly = true;
         if (sourceChoice.selected() == "0-1 Box") {
           for (i = 0; i < nPop; i++) {
@@ -510,9 +521,9 @@ function Stici_Ci(container_id, params) {
         }
         if (updateBox || (!zeroOneOnly && sourceChoice.selected() == "0-1 Box")) {
           if (showTruth) {
-            box.text(jQuery.map(pop, function(e) {return e.fix(nDigs);}).join("\n"));
+            box.val(jQuery.map(pop, function(e) {return e.fix(nDigs);}).join("\n"));
           } else {
-            box.text("Contents Hidden");
+            box.val("Contents Hidden");
           }
         }
       }
@@ -648,7 +659,9 @@ function Stici_Ci(container_id, params) {
           .attr('class', function(d, i) {
             var lo = d - factor * se[i];
             var hi = d + factor * se[i];
-            if (truth >= lo && truth <= hi)
+            if (!showTruth)
+              return 'hidden';
+            else if (truth >= lo && truth <= hi)
               return 'inner';
             else
               return 'outer';
@@ -7776,6 +7789,8 @@ function SticiCheck(params) {
 
   // Make this object jQuery compatible by making it a jQuery object.
   self = jQuery('<div/>').addClass('stici_check');
+  var check = jQuery('<input type="checkbox"/>');
+  var label = jQuery('<span/>');
 
   // Options.
   var options = {
@@ -7787,6 +7802,14 @@ function SticiCheck(params) {
   jQuery.extend(options, params);
 
   // Accessors.
+  self.label = function(l) {
+    if (l !== undefined) {
+      options.label = l;
+      label.text(options.label);
+      return self;
+    }
+    return options.l;
+  };
   self.val = self.checked = function(val) {
     if (val !== undefined) {
       options.value = val;
@@ -7803,9 +7826,7 @@ function SticiCheck(params) {
   };
 
   // Build the UI.
-  var check = jQuery('<input type="checkbox"/>');
   check.prop('checked', options.value);
-  var label = jQuery('<span/>');
   label.text(options.label);
 
   if (!options.readonly)

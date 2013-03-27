@@ -113,6 +113,9 @@
 .stici_ci rect.outer {
   fill: #CA1F7B;
 }
+.stici_ci rect.hidden {
+  fill: #e1ff00;
+}
 .stici_ci .stici_chartbox {
   position: relative;
 }
