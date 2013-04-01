@@ -47,6 +47,7 @@
 
 .stici_ci .bottom_controls p {
   display: inline-block;
+  margin: 0 0 0 0;
 }
 
 /**
@@ -82,6 +83,7 @@
   position: absolute;
   top: 0px;
   bottom: 0px;
+  left: 0px;
 }
 .stici_ci .statsText p {
   margin: 0 0 0 0;
