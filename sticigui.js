@@ -402,6 +402,7 @@ function Stici_Ci(container_id, params) {
         setBox(box.val(),false);
         showPlot();
       } else if (takeSampleButton.is(e.target)) {
+        e.preventDefault();
         var lim = maxSamples - samplesSoFar; // number possible
         for (i = 0; i < Math.min(samplesToTake, lim); i++) {
           xBar();
