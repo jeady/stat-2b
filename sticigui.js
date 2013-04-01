@@ -374,7 +374,7 @@ function Stici_Ci(container_id, params) {
           if ( sourceChoice.selected() == "Box" ) {
             if (lastSE == "Bound on SE (0-1 box only)") {
               lastSE = "Estimated SE";
-              seChoice.select(lastSE);
+              seChoice.selected(lastSE);
             }
             setBox(box.val(),true);
           } else if (sourceChoice.selected() == "0-1 Box") {
@@ -390,7 +390,7 @@ function Stici_Ci(container_id, params) {
         if (thisSE != lastSE) {
           if (thisSE == "Bound on SE (0-1 box only)") {  // make sure this is a 0-1 box
             if (sourceChoice.selected() != "0-1 Box") {
-              seChoice.select(lastSE);
+              seChoice.selected(lastSE);
             }
           }
           lastSE = thisSE;
@@ -488,20 +488,23 @@ function Stici_Ci(container_id, params) {
         updateBox = true;
       if (reInit === undefined)
         reInit = true;
+      if (sourceChoice.selected() == '0-1 Box' &&
+          (newBox == 'Uniform' || newBox == 'Normal'))
+        newBox = '0 1';
       if (newBox.toLowerCase() == "normal") {
         replaceCheck.checked(true);
         pop = new Array(2);
         pop[0] = -4;
         pop[1] = 4;
         box.val("Normal");
-        sourceChoice.select("Normal");
+        sourceChoice.selected("Normal");
       } else if (newBox.toLowerCase() == "uniform") {
         replaceCheck.checked(true);
         pop = new Array(2);
         pop[0] = 0;
         pop[1] = 1;
         box.val("Uniform");
-        sourceChoice.select("Uniform");
+        sourceChoice.selected("Uniform");
       } else {
         pop = newBox.split(/[,\n\t\r ]+/);
         pop = jQuery.map(pop, function(v) {return parseFloat(v);});
@@ -4607,6 +4610,1254 @@ function Stici_Scatterplot(container_id, params) {
   this.reloadData();
 }
 
+// Javascript implementation of venn diagram for sticigui. No params are
+// currently available.
+function Stici_Venn(container_id, params) {
+  var self = this;
+
+  this.env = jQuery('#' + container_id);
+  var app = jQuery('<div/>',{id:container_id + 'app'})
+              .addClass('stici_venn')
+              .addClass('stici');
+  this.env.append(app);
+
+  this.container = jQuery('<div/>',{id:container_id + 'container'}).addClass('container');
+  var buttons = jQuery('<div/>',{id:container_id + 'buttons'}).addClass('buttons');
+  var scrollbars = jQuery('<div/>',{id:container_id + 'scrollbars'}).addClass('scrollbars');
+
+  app.append(self.container);
+  app.append(buttons);
+  app.append(scrollbars);
+
+  this.container.css('width',(this.env.width() - buttons.width()) + 'px');
+  this.container.css('height', (this.env.height() - scrollbars.height()) + 'px');
+
+  var s_outline, a_outline, b_outline;
+  var a_fill, b_fill, ab_fill;
+  var ab_text, a_or_b_text;
+
+  // Create all of the html objects so we can get handles to them and all. Then
+  // create the controls.
+  draw();
+
+  // Array of row arrays. E.g.:
+  //
+  // A B C
+  // X Y C
+  //
+  // Is represented as
+  // [[A, B, C],
+  //  [X, Y, Z]]
+  var button_args = [
+    [{label: 'A', filled: a_fill},
+     {label: 'Ac', filled: s_outline, opaque: a_fill}],
+
+    [{label: 'B', filled: b_fill},
+     {label: 'Bc', filled: s_outline, opaque: b_fill}],
+
+    [{label: 'A or B', filled: [a_fill, b_fill]},
+     {label: 'AB', filled: ab_fill}],
+
+    [{label: 'ABc', filled: a_fill, opaque: ab_fill},
+     {label: 'AcB', filled: b_fill, opaque: ab_fill}],
+
+    [{label: 'S', filled: s_outline},
+     {label: '{}'}]
+  ];
+  $.each(button_args, function(i, button_row) {
+    var row = jQuery('<div/>').addClass('button_row');
+    $.each(button_row, function(i, button) {
+      button.label = button.label.replace(/c/g, '<sup>c</sup>');
+      button.label = button.label.replace(/\|/g, '&nbsp;|&nbsp;');
+      button.label = button.label.replace(/ or /g, '&nbsp;\u222A&nbsp;');
+
+      var button_div = jQuery('<div/>').addClass('button');
+      row.append(button_div);
+      var inp = jQuery('<input/>',{type:'radio',name:'buttons'});
+      var label = jQuery('<label/>').click(function() {inp.prop('checked', true);});
+      button_div.click(function() {
+        inp.prop('checked', true);
+        a_outline.removeClass('selected opaque');
+        b_outline.removeClass('selected opaque');
+        a_fill.removeClass('selected opaque');
+        b_fill.removeClass('selected opaque');
+        ab_fill.removeClass('selected opaque');
+        s_outline.removeClass('selected opaque');
+
+        if (button.opaque !== undefined) {
+          if (!button.opaque instanceof Array)
+            button.opaque = [button.opaque];
+          $.each(button.opaque, function(i, opaque_element) {
+            jQuery(opaque_element).addClass('opaque');
+          });
+        }
+        if (button.filled !== undefined) {
+          if (!button.filled instanceof Array)
+            button.filled = [button.filled];
+          $.each(button.filled, function(i, fill_element) {
+            jQuery(fill_element).addClass('selected');
+          });
+        }
+      });
+      label.html(button.label);
+      button_div.append(inp);
+      button_div.append(label);
+    });
+    buttons.append(row);
+  });
+  function createPercentControl(letter, size) {
+    var sb = jQuery('<div/>',{id:container_id + 'psb' + letter}).addClass('scrollbar');
+    var lbl = jQuery('<label/>').attr('for', container_id + 'sb'+letter);
+    lbl.html('P(' + letter + ') (%)');
+    var idFunc1 = function() {
+      $('#' + container_id + 'sb' + letter).slider('value', this.value);
+      updateSizes();
+    };
+    var idFunc2 = function() {
+      $('#' + container_id + 'sb' + letter + 't').val($(this).slider('value'));
+      updateSizes();
+    };
+    var input = jQuery('<input/>', {
+      type: 'text',
+      id: container_id + 'sb'+letter+'t',
+      change: idFunc1,
+      value: size,
+      size: 2
+    });
+    var input2 =
+      jQuery('<span/>')
+        .addClass('slider')
+        .attr('id', container_id + 'sb' + letter)
+        .slider({
+      change: idFunc2,
+      slide: idFunc2,
+      min: 1,
+      max: 100,
+      step: 1,
+      value: size
+    });
+
+    sb.append(lbl);
+    sb.append(input);
+    sb.append(input2);
+
+    scrollbars.append(sb);
+  }
+  createPercentControl('A', 30);
+  createPercentControl('B', 20);
+
+  var infoDiv = jQuery('<div/>').addClass('info');
+  ab_text = jQuery('<p/>');
+  a_or_b_text = jQuery('<p/>');
+  infoDiv.append(ab_text).append(a_or_b_text);
+  scrollbars.append(infoDiv);
+
+  updateSizes();
+
+  // Synchronizes fill positions so that the outline is always visible on the A
+  // and B boxes, and the intersection area is synchronized.
+  function syncPositions() {
+    // Make sure everything stays in bounds.
+    function bound(outline) {
+      var x_offset = outline.offset().left + outline.width() -
+        (s_outline.offset().left + s_outline.width());
+      if (x_offset > 0)
+        outline.css('left', (outline.position().left - x_offset) + 'px');
+      var y_offset = outline.offset().top + outline.height() -
+        (s_outline.offset().top + s_outline.height());
+      if (y_offset > 0)
+        outline.css('top', (outline.position().top - y_offset) + 'px');
+
+      if (outline.position().left < s_outline.position().left)
+        outline.css('left', s_outline.position().left + 'px');
+      if (outline.position().top < s_outline.position().top)
+        outline.css('top', s_outline.position().top + 'px');
+    }
+    function intersect(a, b, ab) {
+      var a_x = a.position().left;
+      var a_y = a.position().top;
+      var a_w = a.width();
+      var a_h = a.height();
+      var b_x = b.position().left;
+      var b_y = b.position().top;
+      var b_w = b.width();
+      var b_h = b.height();
+      if (a_x + a_w < b_x || b_x + b_w < a_x ||
+          a_y + a_h < b_y || b_y + b_h < a_y) {
+        ab.css('display', 'none');
+      } else {
+        ab.css('display', '');
+        var x1 = Math.max(a_x, b_x);
+        var y1 = Math.max(a_y, b_y);
+        ab.css('left', x1 + 'px');
+        ab.css('top', y1 + 'px');
+        var x2 = Math.min(a_x + a_w, b_x + b_w);
+        var y2 = Math.min(a_y + a_h, b_y + b_h);
+        ab.css('width', (x2 - x1) + 'px');
+        ab.css('height', (y2 - y1) + 'px');
+      }
+    }
+    bound(a_outline);
+    bound(b_outline);
+
+    // Synchronize the fills with the outlines.
+    a_fill.css('left', a_outline.css('left'));
+    a_fill.css('top', a_outline.css('top'));
+    a_fill.css('width', a_outline.css('width'));
+    a_fill.css('height', a_outline.css('height'));
+
+    b_fill.css('left', b_outline.css('left'));
+    b_fill.css('top', b_outline.css('top'));
+    b_fill.css('width', b_outline.css('width'));
+    b_fill.css('height', b_outline.css('height'));
+
+    // Calculate the intersection.
+    intersect(a_outline, b_outline, ab_fill);
+
+    // Calculate P(AB) and P(A or B)
+    var s_area = s_outline.width() * s_outline.height();
+    var p_a = a_fill.width() * a_fill.height() / s_area * 100;
+    var p_b = b_fill.width() * b_fill.height() / s_area * 100;
+    var p_ab = ab_fill.width() * ab_fill.height() / s_area * 100;
+    var p_a_or_b = (p_a + p_b - p_ab);
+    if ((ab_fill.position().left == a_outline.position().left &&
+         ab_fill.position().top == a_outline.position().top &&
+         ab_fill.width() == a_outline.width() &&
+         ab_fill.height() == a_outline.height()) ||
+        (ab_fill.position().left == b_outline.position().left &&
+         ab_fill.position().top == b_outline.position().top &&
+         ab_fill.width() == b_outline.width() &&
+         ab_fill.height() == b_outline.height())) {
+      p_ab = Math.min($('#' + container_id + 'sbA').slider('value'),
+                      $('#' + container_id + 'sbB').slider('value'));
+      p_a_or_b = Math.max($('#' + container_id + 'sbA').slider('value'),
+                          $('#' + container_id + 'sbB').slider('value'));
+    }
+    if (ab_fill.css('display') == 'none') {
+      p_ab = 0;
+      p_a_or_b = parseFloat($('#' + container_id + 'sbA').slider('value')) +
+                 parseFloat($('#' + container_id + 'sbB').slider('value'));
+    }
+    ab_text.text('P(AB): ' + p_ab.fix(1) + '%');
+    a_or_b_text.text('P(A or B): ' + p_a_or_b.fix(1) + '%');
+  }
+
+  // Updates the sizes of A and B to what the slider specifies.
+  function updateSizes() {
+    // ratio = width / height
+    // area = width * height
+    // width = area / height
+    // width = ratio * height
+    // width * width = area * ratio
+    // height = area / width
+    var ratio = s_outline.width() / s_outline.height();
+    var s_area = s_outline.width() * s_outline.height();
+    var a_p = $('#' + container_id + 'sbA').slider('value') / 100;
+    var a_area = s_area * a_p;
+    var a_width = Math.sqrt(a_area * ratio);
+    var a_height = a_area / a_width;
+    a_outline.width(a_width + 'px');
+    a_outline.height(a_height + 'px');
+    var b_p = $('#' + container_id + 'sbB').slider('value') / 100;
+    var b_area = s_area * b_p;
+    var b_width = Math.sqrt(b_area * ratio);
+    var b_height = b_area / b_width;
+    b_outline.width(b_width + 'px');
+    b_outline.height(b_height + 'px');
+    syncPositions();
+  }
+
+  function draw() {
+    // Initial sizes. These will get overwritten as soon as updateSizes is
+    // called.
+    var scaleFactorX = 0.3;
+    var scaleFactorY = 0.3;
+
+    s_outline = jQuery('<div/>').addClass('box').addClass('S');
+    s_outline.css('left', '10px');
+    s_outline.css('top', '10px');
+    s_outline.css('width', (self.container.width() - 20) + 'px');
+    s_outline.css('height', (self.container.height() - 20) + 'px');
+    s_outline.text('S');
+    self.container.append(s_outline);
+
+    var rectX = self.container.width() / 2 - 50;
+    var rectY = self.container.height() / 2 - 25;
+
+    a_fill = jQuery('<div/>').addClass('box').addClass('A').addClass('fill');
+    a_outline = jQuery('<div/>').addClass('box').addClass('A').addClass('outline');
+    a_outline.css('left', (rectX - 32) + 'px');
+    a_outline.css('top', (rectY - 16) + 'px');
+    a_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
+    a_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
+    a_outline.text('A');
+
+    b_fill = jQuery('<div/>').addClass('box').addClass('B').addClass('fill');
+    b_outline = jQuery('<div/>').addClass('box').addClass('B').addClass('outline');
+    b_outline.css('left', (rectX + 32) + 'px');
+    b_outline.css('top', (rectY + 16) + 'px');
+    b_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
+    b_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
+    b_outline.text('B');
+
+    ab_fill = jQuery('<div/>').addClass('box').addClass('AB').addClass('fill');
+    self.container.append(a_fill);
+    self.container.append(b_fill);
+    self.container.append(ab_fill);
+    self.container.append(a_outline);
+    self.container.append(b_outline);
+    a_outline.draggable({
+      containment: s_outline,
+      drag: syncPositions,
+      stop: syncPositions
+    });
+    b_outline.draggable({
+      containment: s_outline,
+      drag: syncPositions,
+      stop: syncPositions
+    });
+  }
+}
+
+// Javascript implementation of venn diagram for sticigui. No params are
+// currently available.
+//
+// container_id: the CSS ID of the container to create the venn diagram (and
+//               controls) in.
+// params: A javascript object with various parameters to customize the chart.
+//  // Whether or not to render the conditional probability radio buttons.
+//  - showConditional: false
+//
+//  // Whether or not to show the P= labels
+//  - showProbabilities: true
+
+function Stici_Venn3(container_id, params) {
+  var self = this;
+
+  this.env = jQuery('#' + container_id);
+  var app = jQuery('<div/>',{id:container_id + 'app'})
+              .addClass('stici_venn')
+              .addClass('stici_venn3')
+              .addClass('stici');
+  this.env.append(app);
+
+
+  // Configuration option defaults.
+  this.options = {
+    showConditional: false,
+    showProbabilities: true
+  };
+
+  // Override options with anything specified by the user.
+  jQuery.extend(this.options, params);
+
+  this.container = jQuery('<div/>',{id:container_id + 'container'}).addClass('container');
+  var buttons_div = jQuery('<div/>',{id:container_id + 'buttons'}).addClass('buttons');
+  var scrollbars = jQuery('<div/>',{id:container_id + 'scrollbars'}).addClass('scrollbars');
+
+  app.append(self.container);
+  app.append(buttons_div);
+  app.append(scrollbars);
+
+  this.container.css('width',(this.env.width() - buttons_div.width()) + 'px');
+  this.container.css('height', (this.env.height() - scrollbars.height()) + 'px');
+
+  var s_outline, a_outline, b_outline, c_outline;
+  var a_fill, b_fill, c_fill, ab_fill, ac_fill, bc_fill, abc_fill;
+
+  // Create all of the html objects so we can get handles to them and all. Then
+  // create the controls.
+  draw();
+
+  // Array of row arrays. E.g.:
+  //
+  // A B C
+  // X Y C
+  //
+  // Is represented as
+  // [[A, B, C],
+  //  [X, Y, Z]]
+  this.buttons_arr = [
+    [{label: 'A', filled: a_fill},
+     {label: 'B', filled: b_fill},
+     {label: 'C', filled: c_fill},
+     {label: 'Ac', filled: s_outline, opaque: a_fill}],
+
+    [{label: 'Bc', filled: s_outline, opaque: b_fill},
+     {label: 'Cc', filled: s_outline, opaque: c_fill},
+     {label: 'AB', filled: ab_fill},
+     {label: 'AC', filled: ac_fill}],
+
+    [{label: 'BC', filled: bc_fill},
+     {label: 'A or B', filled: [a_fill, b_fill]},
+     {label: 'A or C', filled: [a_fill, c_fill]},
+     {label: 'B or C', filled: [b_fill, c_fill]}],
+
+    [{label: 'ABC', filled: abc_fill},
+     {label: 'A or B or C', filled: [a_fill, b_fill, c_fill]},
+     {label: 'ABc', filled: a_fill, opaque: ab_fill},
+     {label: 'AcB', filled: b_fill, opaque: ab_fill}],
+
+    [{label: 'AcBC', filled: bc_fill, opaque: abc_fill},
+     {label: 'Ac or BC', filled: [bc_fill, s_outline], opaque: a_fill},
+     {label: 'S', filled: s_outline},
+     {label: '{}'}]
+  ];
+
+  if (this.options.showConditional) {
+    self.buttons_arr.push(
+      [{label: 'P(A|B)', filled: b_fill, hilite: ab_fill},
+       {label: 'P(Ac|B)', filled: ab_fill, hilite: b_fill},
+       {label: 'P(B|A)', filled: a_fill, hilite: ab_fill}]);
+
+    self.buttons_arr.push(
+      [{label: 'P(A|BC)', filled: bc_fill, hilite: abc_fill},
+       {label: 'P(Ac|BC)', filled: abc_fill, hilite: bc_fill},
+       {label: 'P(A|(B or C))', filled: [b_fill, c_fill], hilite: [ab_fill, ac_fill]}]);
+  }
+
+  self.buttons = {};
+  self.buttons_arr = $.map(self.buttons_arr, function(button_row) {
+    var row = jQuery('<div/>').addClass('button_row');
+    button_row = $.map(button_row, function(button) {
+      button.human_label = button.label;
+      button.label = button.label.replace(/c/g, '<sup>c</sup>');
+      button.label = button.label.replace(/\|/g, '&nbsp;|&nbsp;');
+      button.label = button.label.replace(/ or /g, '&nbsp;\u222A&nbsp;');
+
+      if (button.opaque !== undefined) {
+        if (!(button.opaque instanceof Array))
+          button.opaque = [button.opaque];
+      } else {
+        button.opaque = [];
+      }
+      if (button.filled !== undefined) {
+        if (!(button.filled instanceof Array))
+          button.filled = [button.filled];
+      } else {
+        button.filled = [];
+      }
+      if (button.hilite !== undefined) {
+        if (!(button.hilite instanceof Array))
+          button.hilite = [button.hilite];
+      } else {
+        button.hilite = [];
+      }
+
+      var button_div = jQuery('<div/>').addClass('button');
+      button.div = button_div;
+      row.append(button_div);
+      var inp = jQuery('<input/>',{type:'radio',name:'buttons'});
+      var label = jQuery('<label/>').click(function() {inp.prop('checked', true);});
+      button_div.click(function() {
+        inp.prop('checked', true);
+        a_outline.removeClass('selected opaque hilite');
+        b_outline.removeClass('selected opaque hilite');
+        c_outline.removeClass('selected opaque hilite');
+        a_fill.removeClass('selected opaque hilite');
+        b_fill.removeClass('selected opaque hilite');
+        c_fill.removeClass('selected opaque hilite');
+        ab_fill.removeClass('selected opaque hilite');
+        bc_fill.removeClass('selected opaque hilite');
+        ac_fill.removeClass('selected opaque hilite');
+        abc_fill.removeClass('selected opaque hilite');
+        s_outline.removeClass('selected opaque hilite');
+
+        $.each(button.opaque, function(i, opaque_element) {
+          jQuery(opaque_element).addClass('opaque');
+        });
+        $.each(button.filled, function(i, fill_element) {
+          jQuery(fill_element).addClass('selected');
+        });
+        $.each(button.hilite, function(i, fill_element) {
+          jQuery(fill_element).addClass('hilite');
+        });
+      });
+      label.html(button.label);
+      var prob_span = jQuery('<div/>');
+      label.append(prob_span);
+
+      button.p = function(p) {
+        if (isNaN(p))
+          p = 0;
+        prob_span.text(' (P = ' + (p / s_outline.area() * 100).fix(1) + '%)');
+      };
+
+      button_div.append(inp);
+      button_div.append(label);
+
+      self.buttons[button.human_label] = button;
+      return button;
+    });
+    buttons_div.append(row);
+    return button_row;
+  });
+
+  function createPercentControl(letter, size) {
+    var sb = jQuery('<div/>',{id:container_id + 'psb' + letter}).addClass('scrollbar');
+    var lbl = jQuery('<label/>').attr('for', container_id + 'sb'+letter);
+    lbl.html('P(' + letter + ') (%)');
+    var idFunc1 = function() {
+      $('#' + container_id + 'sb' + letter).slider('value', this.value);
+      updateSizes();
+    };
+    var idFunc2 = function() {
+      $('#' + container_id + 'sb' + letter + 't').val($(this).slider('value'));
+      updateSizes();
+    };
+    var input = jQuery('<input/>', {
+      type: 'text',
+      id: container_id + 'sb'+letter+'t',
+      change: idFunc1,
+      value: size,
+      size: 2
+    });
+    var input2 =
+      jQuery('<span/>')
+        .addClass('slider')
+        .attr('id', container_id + 'sb' + letter)
+        .slider({
+      change: idFunc2,
+      slide: idFunc2,
+      min: 1,
+      max: 100,
+      step: 1,
+      value: size
+    });
+
+    sb.append(lbl);
+    sb.append(input);
+    sb.append(input2);
+
+    scrollbars.append(sb);
+  }
+  createPercentControl('A', 30);
+  createPercentControl('B', 20);
+  createPercentControl('C', 10);
+
+  updateSizes();
+
+  function createBox() {
+    var box = jQuery('<div/>').addClass('box');
+    box.area = function() {
+      if (box.css('display') == 'none')
+        return 0;
+
+      if (a_outline.isSameBox(box))
+        return $('#' + container_id + 'sbA').slider('value') / 100 *
+          s_outline.area();
+      if (b_outline.isSameBox(box))
+        return $('#' + container_id + 'sbB').slider('value') / 100 *
+          s_outline.area();
+      if (c_outline.isSameBox(box))
+        return $('#' + container_id + 'sbC').slider('value') / 100 *
+          s_outline.area();
+
+      return box.width() * box.height();
+    };
+    box.x = function() {
+      return box.position().left;
+    };
+    box.y = function() {
+      return box.position().top;
+    };
+    box.isSameBox = function(other) {
+      return box.y() == other.y() &&
+             box.x() == other.x() &&
+             box.width() == other.width() &&
+             box.height() == other.height();
+    };
+    return box;
+  }
+
+  // Synchronizes fill positions so that the outline is always visible on the A
+  // and B boxes, and the intersection area is synchronized.
+  function syncPositions() {
+    // Make sure everything stays in bounds.
+    function bound(outline) {
+      var x_offset = outline.offset().left + outline.width() -
+        (s_outline.offset().left + s_outline.width());
+      if (x_offset > 0)
+        outline.css('left', (outline.position().left - x_offset) + 'px');
+      var y_offset = outline.offset().top + outline.height() -
+        (s_outline.offset().top + s_outline.height());
+      if (y_offset > 0)
+        outline.css('top', (outline.position().top - y_offset) + 'px');
+
+      if (outline.position().left < s_outline.position().left)
+        outline.css('left', s_outline.position().left + 'px');
+      if (outline.position().top < s_outline.position().top)
+        outline.css('top', s_outline.position().top + 'px');
+    }
+    function intersect(a, b, ab) {
+      if (ab === undefined) {
+        ab = createBox();
+      }
+
+      var a_x = a.position().left;
+      var a_y = a.position().top;
+      var a_w = a.width();
+      var a_h = a.height();
+      var b_x = b.position().left;
+      var b_y = b.position().top;
+      var b_w = b.width();
+      var b_h = b.height();
+      if (a_x + a_w < b_x || b_x + b_w < a_x ||
+          a_y + a_h < b_y || b_y + b_h < a_y) {
+        ab.css('display', 'none');
+      } else {
+        ab.css('display', '');
+        var x1 = Math.max(a_x, b_x);
+        var y1 = Math.max(a_y, b_y);
+        ab.css('left', x1 + 'px');
+        ab.css('top', y1 + 'px');
+        var x2 = Math.min(a_x + a_w, b_x + b_w);
+        var y2 = Math.min(a_y + a_h, b_y + b_h);
+        ab.css('width', (x2 - x1) + 'px');
+        ab.css('height', (y2 - y1) + 'px');
+      }
+
+      return ab;
+    }
+    bound(a_outline);
+    bound(b_outline);
+    bound(c_outline);
+
+    // Synchronize the fills with the outlines.
+    a_fill.css('left', a_outline.css('left'));
+    a_fill.css('top', a_outline.css('top'));
+    a_fill.css('width', a_outline.css('width'));
+    a_fill.css('height', a_outline.css('height'));
+
+    b_fill.css('left', b_outline.css('left'));
+    b_fill.css('top', b_outline.css('top'));
+    b_fill.css('width', b_outline.css('width'));
+    b_fill.css('height', b_outline.css('height'));
+
+    c_fill.css('left', c_outline.css('left'));
+    c_fill.css('top', c_outline.css('top'));
+    c_fill.css('width', c_outline.css('width'));
+    c_fill.css('height', c_outline.css('height'));
+
+    // Calculate the intersection.
+    intersect(a_outline, b_outline, ab_fill);
+    intersect(b_outline, c_outline, bc_fill);
+    intersect(a_outline, c_outline, ac_fill);
+    intersect(ab_fill, bc_fill, abc_fill);
+
+    if (self.options.showProbabilities) {
+      self.buttons['A'].p(a_outline.area());
+      self.buttons['B'].p(b_outline.area());
+      self.buttons['C'].p(c_outline.area());
+      self.buttons['Ac'].p(s_outline.area() - a_outline.area());
+      self.buttons['Bc'].p(s_outline.area() - b_outline.area());
+      self.buttons['Cc'].p(s_outline.area() - c_outline.area());
+      self.buttons['AB'].p(ab_fill.area());
+      self.buttons['AC'].p(ac_fill.area());
+      self.buttons['BC'].p(bc_fill.area());
+      self.buttons['A or B'].p(
+        a_outline.area() + b_outline.area() - ab_fill.area());
+      self.buttons['A or C'].p(
+        a_outline.area() + c_outline.area() - ac_fill.area());
+      self.buttons['B or C'].p(
+        b_outline.area() + c_outline.area() - bc_fill.area());
+      self.buttons['ABC'].p(abc_fill.area());
+      self.buttons['A or B or C'].p(
+        a_outline.area() + b_outline.area() + c_outline.area() -
+        ab_fill.area() - bc_fill.area() - bc_fill.area() +
+        abc_fill.area());
+      self.buttons['ABc'].p(a_outline.area() - ab_fill.area());
+      self.buttons['AcB'].p(b_outline.area() - ab_fill.area());
+      self.buttons['AcBC'].p(bc_fill.area() - abc_fill.area());
+      self.buttons['Ac or BC'].p(
+        s_outline.area() - a_outline.area() + abc_fill.area());
+      self.buttons['S'].p(s_outline.area());
+      self.buttons['{}'].p(0);
+      if (self.options.showConditional) {
+        self.buttons['P(A|B)'].p(
+          ab_fill.area() / b_outline.area() * s_outline.area());
+        self.buttons['P(Ac|B)'].p(
+          s_outline.area() -
+          ab_fill.area() / b_outline.area() * s_outline.area());
+        self.buttons['P(B|A)'].p(
+          ab_fill.area() / a_outline.area() * s_outline.area());
+        self.buttons['P(A|BC)'].p(
+          abc_fill.area() / bc_fill.area() * s_outline.area());
+        self.buttons['P(Ac|BC)'].p(
+          s_outline.area() -
+          abc_fill.area() / bc_fill.area() * s_outline.area());
+        self.buttons['P(A|(B or C))'].p(
+          s_outline.area() *
+          (ab_fill.area() + ac_fill.area() - abc_fill.area()) /
+          (b_outline.area() + c_outline.area() - bc_fill.area()));
+      }
+    }
+  }
+
+  // Updates the sizes of the boxes according to their sliders.
+  function updateSizes() {
+    // ratio = width / height
+    // area = width * height
+    // width = area / height
+    // width = ratio * height
+    // width * width = area * ratio
+    // height = area / width
+    var ratio = s_outline.width() / s_outline.height();
+    var s_area = s_outline.width() * s_outline.height();
+    var a_p = $('#' + container_id + 'sbA').slider('value') / 100;
+    var a_area = s_area * a_p;
+    var a_width = Math.sqrt(a_area * ratio);
+    var a_height = a_area / a_width;
+    a_outline.width(a_width + 'px');
+    a_outline.height(a_height + 'px');
+    var b_p = $('#' + container_id + 'sbB').slider('value') / 100;
+    var b_area = s_area * b_p;
+    var b_width = Math.sqrt(b_area * ratio);
+    var b_height = b_area / b_width;
+    b_outline.width(b_width + 'px');
+    b_outline.height(b_height + 'px');
+    var c_p = $('#' + container_id + 'sbC').slider('value') / 100;
+    var c_area = s_area * c_p;
+    var c_width = Math.sqrt(c_area * ratio);
+    var c_height = c_area / c_width;
+    c_outline.width(c_width + 'px');
+    c_outline.height(c_height + 'px');
+    syncPositions();
+  }
+
+  function draw() {
+    // Initial sizes. These will get overwritten as soon as updateSizes is
+    // called.
+    var scaleFactorX = 0.3;
+    var scaleFactorY = 0.3;
+
+    s_outline = createBox().addClass('S');
+    s_outline.css('left', '10px');
+    s_outline.css('top', '10px');
+    s_outline.css('width', (self.container.width() - 20) + 'px');
+    s_outline.css('height', (self.container.height() - 20) + 'px');
+    s_outline.text('S');
+    self.container.append(s_outline);
+
+    a_fill = createBox().addClass('A').addClass('fill');
+    a_outline = createBox().addClass('A').addClass('outline');
+    a_outline.css('left', (self.container.width() * 0.15) + 'px');
+    a_outline.css('top', (self.container.height() * 0.3) + 'px');
+    a_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
+    a_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
+    a_outline.text('A');
+
+    b_fill = createBox().addClass('B').addClass('fill');
+    b_outline = createBox().addClass('B').addClass('outline');
+    b_outline.css('left', (self.container.width() * 0.5) + 'px');
+    b_outline.css('top', (self.container.height() * 0.4) + 'px');
+    b_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
+    b_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
+    b_outline.text('B');
+
+    c_fill = createBox().addClass('C').addClass('fill');
+    c_outline = createBox().addClass('C').addClass('outline');
+    c_outline.css('left', (self.container.width() * 0.4) + 'px');
+    c_outline.css('top', (self.container.height() * 0.2) + 'px');
+    c_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
+    c_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
+    c_outline.text('C');
+
+    ab_fill = createBox().addClass('AB').addClass('fill');
+    ac_fill = createBox().addClass('AC').addClass('fill');
+    bc_fill = createBox().addClass('BC').addClass('fill');
+    abc_fill = createBox().addClass('BC').addClass('fill');
+    self.container.append(a_fill);
+    self.container.append(b_fill);
+    self.container.append(c_fill);
+    self.container.append(ab_fill);
+    self.container.append(ac_fill);
+    self.container.append(bc_fill);
+    self.container.append(abc_fill);
+    self.container.append(a_outline);
+    self.container.append(b_outline);
+    self.container.append(c_outline);
+    a_outline.draggable({
+      containment: s_outline,
+      drag: syncPositions,
+      stop: syncPositions
+    });
+    b_outline.draggable({
+      containment: s_outline,
+      drag: syncPositions,
+      stop: syncPositions
+    });
+    c_outline.draggable({
+      containment: s_outline,
+      drag: syncPositions,
+      stop: syncPositions
+    });
+  }
+}
+
+/*
+This file contains two functions:
+    statCalc: a simple calculator
+    distCalc: a calculator probability distributions
+
+copyright (c) 2013 by P.B. Stark
+last modified 27 January 2013.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Affero Public License for more details.
+    http://www.gnu.org/licenses/
+
+Dependencies: irGrade, jQuery, jQuery-ui
+
+*/
+
+function statCalc(container_id, params) {
+    var self = this;
+    this.container = $('#' + container_id);
+
+    if (!params instanceof Object) {
+       console.error('statCalc parameters should be an object');
+       return;
+    }
+
+// default options
+    this.options = {
+                    keys: [ [["7","num"],["8","num"],["9","num"],["/","bin"], ["nCk","bin"]],
+                            [["4","num"],["5","num"],["6","num"],["*","bin"], ["nPk","bin"]],
+                            [["1","num"],["2","num"],["3","num"],["-","bin"], ["!","una"]],
+                            [["0","num"],[".","num"],["+/-","una"],["+","bin"], ["1/x","una"]],
+                            [["=","eq"],  ["CE","una"],  ["C","una"], ["Sqrt","una"], ["x^2","una"]]
+                          ],
+                    buttonsPerRow: 5,
+/*      Full set of keys:
+                    keys: [ [["7","num"],["8","num"],["9","num"],["/","bin"], ["nCk","bin"], ["nPk","bin"]],
+                            [["4","num"],["5","num"],["6","num"],["*","bin"], ["!","una"], ["U[0,1]","una"]],
+                            [["1","num"],["2","num"],["3","num"],["-","bin"], ["Sqrt","una"], ["x^2","una"]],
+                            [["0","num"],[".","num"],["+/-","una"],["+","bin"], ["1/x","una"], ["x^y","bin"]],
+                            [["=","eq"],  ["CE","una"],  ["C","una"], ["exp(x)","una"], ["log(x)","una"],  ["log_y(x)", "bin"]]
+                          ],
+                    buttonsPerRow: 6
+*/
+                    digits: 16
+    };
+
+// Extend options
+    $.extend(this.options, params);
+
+    self.x = 0.0;
+    self.inProgress = false;
+    self.currentOp = null;
+
+    function initCalc() {
+        var me = $('<div />').addClass('calc');
+        self.container.append(me);
+        // display
+        self.theDisplay = $('<input type="text" />').attr('size',self.options.digits);
+        me.append(self.theDisplay);
+        // buttons
+        self.buttonDiv = $('<div />').addClass('buttonDiv');
+        self.numButtonDiv = $('<div />').addClass('numButtonDiv');
+        self.fnButtonDiv = $('<div />').addClass('fnButtonDiv');
+        self.numButtonTable = $('<table />').addClass('numButtonTable');
+        self.fnButtonTable = $('<table />').addClass('fnButtonTable');
+        self.numButtonDiv.append(self.numButtonTable);
+        self.fnButtonDiv.append(self.fnButtonTable);
+        self.buttonDiv.append(self.numButtonDiv);
+        self.buttonDiv.append(self.fnButtonDiv);
+        $.each(self.options.keys, function(j, rowKeys) {
+          var row = $('<tr>');
+          self.numButtonTable.append(row);
+          $.each(rowKeys, function(i, v) {
+            if (null === v) {
+              row.append($('<td/>'));
+              return;
+            }
+            newBut = $('<input type="button" value="' + v[0] + '">')
+              .button()
+              .addClass(v[1])
+              .addClass('calcButton')
+              .click( function(e) {
+                e.preventDefault();
+                buttonClick(v[0], v[1]);
+              });
+            row.append($('<td/>').append(newBut));
+          });
+        });
+        me.append(self.buttonDiv);
+    }
+    initCalc();
+
+//  action functions
+
+    function buttonClick(v, opType) {
+        var t = self.theDisplay.val().replace(/[^0-9e.\-]+/gi,'').replace(/^0+/,'');
+        try {
+            switch(opType) {
+               case 'num':
+                   self.theDisplay.val(t+v);
+                   break;
+
+               case 'una':
+                   switch(v) {
+                      case '+/-':
+                         t = (t.indexOf('-') === 0) ? t.substring(1) : '-'+t;
+                         self.theDisplay.val(t);
+                         break;
+                      case '!':
+                         self.theDisplay.val(factorial(t).toString());
+                         break;
+                      case 'Sqrt':
+                         self.theDisplay.val(Math.sqrt(t).toString());
+                         break;
+                      case 'x^2':
+                         self.theDisplay.val((t*t).toString());
+                         break;
+                      case 'exp(x)':
+                         self.theDisplay.val(Math.exp(t).toString());
+                         break;
+                      case 'ln(x)':
+                         self.theDisplay.val(Math.log(t).toString());
+                         break;
+                      case '1/x':
+                         self.theDisplay.val((1/t).toString());
+                         break;
+                      case 'U[0,1]':
+                         self.theDisplay.val(rand.next());
+                         break;
+                      case 'N(0,1)':
+                         self.theDisplay.val(rNorm());
+                         break;
+                      case 'CE':
+                         self.theDisplay.val('0');
+                         break;
+                      case 'C':
+                         self.x = 0;
+                         self.inProgress = false;
+                         self.currentOp = null;
+                         self.theDisplay.val('0');
+                    }
+                    break;
+
+               case 'bin':
+                   if (self.inProgress) {
+                        self.x = doBinaryOp(self.x, self.currentOp, t);
+                        self.theDisplay.val(self.x.toString());
+                   } else {
+                        self.x = t;
+                        self.theDisplay.val('?');
+                        self.inProgress = true;
+                   }
+                   self.currentOp = v;
+                   break;
+
+               case 'eq':
+                   if (self.inProgress) {
+                        self.x = doBinaryOp(self.x, self.currentOp, t);
+                        self.theDisplay.val(self.x.toString());
+                        self.inProgress = false;
+                        self.currentOp = null;
+                   }
+                   break;
+
+               default:
+                   console.log('unexpected button in statCalc ' + v);
+            }
+        } catch(e) {
+           console.log(e);
+           self.theDisplay.val('NaN');
+        }
+    }
+
+    function doBinaryOp(x, op, y) {
+         var res = Math.NaN;
+         try {
+             switch(op) {
+                 case '+':
+                     res = parseFloat(x)+parseFloat(y);
+                     break;
+                 case '-':
+                     res = parseFloat(x)-parseFloat(y);
+                     break;
+                 case '*':
+                     res = parseFloat(x)*parseFloat(y);
+                     break;
+                 case '/':
+                     res = parseFloat(x)/parseFloat(y);
+                     break;
+                 case 'x^y':
+                     res = parseFloat(x)^parseFloat(y);
+                     break;
+                 case 'nCk':
+                     res = binomialCoef(parseFloat(x), parseFloat(y));
+                     break;
+                 case 'nPk':
+                     res = permutations(parseFloat(x), parseFloat(y));
+                     break;
+                 default:
+                     console.log('unexpected binary function in statCalc ' + op);
+              }
+        } catch(e) {
+        }
+        return(res);
+    }
+
+
+
+
+}
+
+function distCalc(container_id, params) {
+    var self = this;
+    this.container = $('#' + container_id);
+
+    if (!params instanceof Object) {
+       console.error('distCalc parameters should be an object');
+       return;
+    }
+
+// default options
+    this.options = {
+                    distributions: [ ["Binomial", ["n","p"]],
+                                     ["Geometric", ["p"]],
+                                     ["Negative Binomial", ["p","r"]],
+                                     ["Hypergeometric",["N","G","n"]],
+                                     ["Normal", ["mean","SD"]],
+                                     ["Student t", ["degrees of freedom"]],
+                                     ["Chi-square", ["degrees of freedom"]],
+                                     ["Exponential", ["mean"]],
+                                     ["Poisson", ["mean"]]
+                                   ],
+                    digits: 8,
+                    paramDigits: 4,
+                    showExpect: true
+    };
+
+// Extend options
+    $.extend(this.options, params);
+
+    self.lo = 0.0;
+    self.hi = 0.0;
+    self.currDist = null;
+    self.distDivs = [];
+
+    function init() {
+        var me = $('<div />').addClass('distCalc');
+        self.container.append(me);
+
+        // distribution selection
+        self.selectDiv = $('<div />').addClass('selectDiv').append('If X has a ');
+        self.selectDist = $('<select />').change(function() {
+              changeDist($(this).val());
+        });
+
+        // parameters of the distributions
+        $.each(self.options.distributions, function(i, v) {
+               $('<option/>', { value : v[0] }).text(v[0]).appendTo(self.selectDist);
+               self.distDivs[v[0]] = $('<div />').css('display','inline');
+               $.each(v[1], function(j, parm) {
+                     self.distDivs[v[0]].append(parm + ' = ')
+                                        .append(  $('<input type="text" />')
+                                                    .attr('size','paramDigits')
+                                                    .addClass(parm.replace(/ +/g,'_'))
+                                                    .blur(calcProb)
+                                        )
+                                        .append(', ');
+               });
+        });
+
+        self.paramSpan = $('<span />').addClass('paramSpan');
+        self.selectDiv.append(self.selectDist)
+                      .append('distribution with ')
+                      .append(self.paramSpan);
+
+        // start with the first listed distribution
+        self.currDist = self.options.distributions[0][0];
+        self.paramSpan.append(self.distDivs[self.currDist]);
+
+        // range over which to find the probability
+        self.selectDiv.append(' the chance that ')
+                      .append($('<input type="checkbox">').addClass('useLower').click(calcProb))
+                      .append('X &ge;')
+                      .append($('<input type="text" />').addClass('loLim').attr('size',self.options.digits).val("0").blur(calcProb))
+                      .append($('<input type="checkbox">').addClass('useUpper').click(calcProb))
+                      .append('and X &le;')
+                      .append($('<input type="text" />').addClass('hiLim').attr('size',self.options.digits).val("0").blur(calcProb))
+                      .append(' is ');
+
+        // display
+        self.theDisplay = $('<input type="text" readonly />').attr('size',self.options.digits+4);
+        self.expectSpan = $('<span />').addClass('expectSpan');
+        self.selectDiv.append(self.theDisplay).append(self.expectSpan);
+        me.append(self.selectDiv);
+    }
+    init();
+
+//  action functions
+
+    function changeDist(dist) {
+        self.currDist = dist;
+        self.paramSpan.empty();
+        self.expectSpan.empty();
+        var thisDist = $.grep(self.options.distributions, function(v,i) {
+                          return(v[0] === dist);
+        });
+        self.paramSpan.append(self.distDivs[thisDist[0][0]]);  // replace with parameters for current distribution
+        self.theDisplay.val('NaN');
+        calcProb();
+    }
+
+    function calcProb(e) {
+        if (typeof(e) != 'undefined' && e instanceof jQuery.Event)
+          e.preventDefault();
+        var prob  = Number.NaN;
+
+        // get range over which to compute the probability
+        var loCk  = self.selectDiv.find('.useLower').prop('checked');
+        var loLim = loCk ? parseFloat(self.selectDiv.find('.loLim').val()) : Number.NaN;
+        var hiCk  = self.selectDiv.find('.useUpper').prop('checked');
+        var hiLim = hiCk ? parseFloat(self.selectDiv.find('.hiLim').val()) : Number.NaN;
+
+        var allParamsDefined = true;
+        $.each(self.distDivs[self.currDist].find(':input'), function(i, v) {
+               if (v.value.trim().length === 0) {
+                   allParamsDefined = false;
+               }
+        });
+
+        if ((!loCk && !hiCk) || !allParamsDefined) {
+              prob = Number.NaN;
+        } else if (loCk && hiCk && (loLim > hiLim)) {
+              prob = 0.0;
+        } else {
+              self.expectSpan.empty();
+              var n;
+              var p;
+              var t;
+              var b;
+              var df;
+              var m;
+              switch(self.currDist) {
+                   case "Binomial":
+                      n = parseFloat(self.distDivs[self.currDist].find('.n').val());
+                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
+                      t = hiCk ? binomialCdf(n, p, hiLim) : 1.0;
+                      b = loCk ? binomialCdf(n, p, loLim-1) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                          self.expectSpan.append('E(X) = ' + (n*p).toFixed(self.options.paramDigits) +
+                                                 '; SE(X) = ' + Math.sqrt(n*p*(1-p)).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Geometric":
+                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
+                      t = hiCk ? geoCdf(p, hiLim) : 1.0;
+                      b = loCk ? geoCdf(p, loLim-1) : 0.0;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + (1/p).toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(1-p)/p).toFixed(self.options.paramDigits));
+                      }
+                      prob = t - b;
+                      break;
+
+                   case "Negative Binomial":
+                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
+                      r = parseFloat(self.distDivs[self.currDist].find('.r').val());
+                      t = hiCk ? negBinomialCdf( p,  r, hiLim) : 1.0;
+                      b = loCk ? negBinomialCdf( p,  r, loLim-1) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                          self.expectSpan.append('E(X) = ' + (r/p).toFixed(self.options.paramDigits) +
+                                                 '; SE(X) = ' + (Math.sqrt(r*(1-p))/p).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Hypergeometric":
+                      var N = parseFloat(self.distDivs[self.currDist].find('.N').val());
+                      var G = parseFloat(self.distDivs[self.currDist].find('.G').val());
+                      n = parseFloat(self.distDivs[self.currDist].find('.n').val());
+                      t = hiCk ? hyperGeoCdf(N,  G, n, hiLim) : 1.0;
+                      b = loCk ? hyperGeoCdf(N,  G, n, loLim-1) : 0.0;
+                      prob = t - b;
+                      var hyP = G/N;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + (n*hyP).toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(n*hyP*(1-hyP)*(N-n)/(N-1))).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Normal":
+                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
+                      var s = parseFloat(self.distDivs[self.currDist].find('.SD').val());
+                      t = hiCk ? normCdf((hiLim-m)/s) : 1.0;
+                      b = loCk ? normCdf((loLim-m)/s) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + s.toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Student t":
+                      df = parseFloat(self.distDivs[self.currDist].find('.degrees_of_freedom').val());
+                      t = hiCk ? tCdf(df, hiLim) : 1.0;
+                      b = loCk ? tCdf(df, loLim) : 0.0;
+                      prob = t - b;
+                      var se = (df > 2) ? (Math.sqrt(df/(df-2))).toFixed(self.options.paramDigits) : Number.NaN;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = 0; SE(X) = ' + se);
+                      }
+                      break;
+
+                   case "Chi-square":
+                      df = parseFloat(self.distDivs[self.currDist].find('.degrees_of_freedom').val());
+                      t = hiCk ? chi2Cdf(df, hiLim) : 1.0;
+                      b = loCk ? chi2Cdf(df, loLim) : 0.0;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + df.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(2*df)).toFixed(self.options.paramDigits));
+                      }
+                      prob = t - b;
+                      break;
+
+                   case "Exponential":
+                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
+                      t = hiCk ? expCdf(m, hiLim) : 1.0;
+                      b = loCk ? expCdf(m, loLim) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + m.toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   case "Poisson":
+                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
+                      t = hiCk ? poissonCdf(m, hiLim) : 1.0;
+                      b = loCk ? poissonCdf(m, loLim) : 0.0;
+                      prob = t - b;
+                      if (self.options.showExpect) {
+                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
+                                                  '; SE(X) = ' + (Math.sqrt(m)).toFixed(self.options.paramDigits));
+                      }
+                      break;
+
+                   default:
+                      console.log('unexpected distribution in distCalc.calcProb ' + dist);
+              }
+        }
+        self.theDisplay.val((100*prob).toFixed(self.options.digits-3)+'%');
+    }
+
+}
+
 /* script stat_utils: statistical functions, vector functions, linear algebra
 
    copyright (c) 1997-2013. P.B. Stark, statistics.berkeley.edu/~stark
@@ -6522,1254 +7773,6 @@ function crypt(s,t) {
 }
 
 
-
-/*
-This file contains two functions:
-    statCalc: a simple calculator
-    distCalc: a calculator probability distributions
-
-copyright (c) 2013 by P.B. Stark
-last modified 27 January 2013.
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero Public License for more details.
-    http://www.gnu.org/licenses/
-
-Dependencies: irGrade, jQuery, jQuery-ui
-
-*/
-
-function statCalc(container_id, params) {
-    var self = this;
-    this.container = $('#' + container_id);
-
-    if (!params instanceof Object) {
-       console.error('statCalc parameters should be an object');
-       return;
-    }
-
-// default options
-    this.options = {
-                    keys: [ [["7","num"],["8","num"],["9","num"],["/","bin"], ["nCk","bin"]],
-                            [["4","num"],["5","num"],["6","num"],["*","bin"], ["nPk","bin"]],
-                            [["1","num"],["2","num"],["3","num"],["-","bin"], ["!","una"]],
-                            [["0","num"],[".","num"],["+/-","una"],["+","bin"], ["1/x","una"]],
-                            [["=","eq"],  ["CE","una"],  ["C","una"], ["Sqrt","una"], ["x^2","una"]]
-                          ],
-                    buttonsPerRow: 5,
-/*      Full set of keys:
-                    keys: [ [["7","num"],["8","num"],["9","num"],["/","bin"], ["nCk","bin"], ["nPk","bin"]],
-                            [["4","num"],["5","num"],["6","num"],["*","bin"], ["!","una"], ["U[0,1]","una"]],
-                            [["1","num"],["2","num"],["3","num"],["-","bin"], ["Sqrt","una"], ["x^2","una"]],
-                            [["0","num"],[".","num"],["+/-","una"],["+","bin"], ["1/x","una"], ["x^y","bin"]],
-                            [["=","eq"],  ["CE","una"],  ["C","una"], ["exp(x)","una"], ["log(x)","una"],  ["log_y(x)", "bin"]]
-                          ],
-                    buttonsPerRow: 6
-*/
-                    digits: 16
-    };
-
-// Extend options
-    $.extend(this.options, params);
-
-    self.x = 0.0;
-    self.inProgress = false;
-    self.currentOp = null;
-
-    function initCalc() {
-        var me = $('<div />').addClass('calc');
-        self.container.append(me);
-        // display
-        self.theDisplay = $('<input type="text" />').attr('size',self.options.digits);
-        me.append(self.theDisplay);
-        // buttons
-        self.buttonDiv = $('<div />').addClass('buttonDiv');
-        self.numButtonDiv = $('<div />').addClass('numButtonDiv');
-        self.fnButtonDiv = $('<div />').addClass('fnButtonDiv');
-        self.numButtonTable = $('<table />').addClass('numButtonTable');
-        self.fnButtonTable = $('<table />').addClass('fnButtonTable');
-        self.numButtonDiv.append(self.numButtonTable);
-        self.fnButtonDiv.append(self.fnButtonTable);
-        self.buttonDiv.append(self.numButtonDiv);
-        self.buttonDiv.append(self.fnButtonDiv);
-        $.each(self.options.keys, function(j, rowKeys) {
-          var row = $('<tr>');
-          self.numButtonTable.append(row);
-          $.each(rowKeys, function(i, v) {
-            if (null === v) {
-              row.append($('<td/>'));
-              return;
-            }
-            newBut = $('<input type="button" value="' + v[0] + '">')
-              .button()
-              .addClass(v[1])
-              .addClass('calcButton')
-              .click( function(e) {
-                e.preventDefault();
-                buttonClick(v[0], v[1]);
-              });
-            row.append($('<td/>').append(newBut));
-          });
-        });
-        me.append(self.buttonDiv);
-    }
-    initCalc();
-
-//  action functions
-
-    function buttonClick(v, opType) {
-        var t = self.theDisplay.val().replace(/[^0-9e.\-]+/gi,'').replace(/^0+/,'');
-        try {
-            switch(opType) {
-               case 'num':
-                   self.theDisplay.val(t+v);
-                   break;
-
-               case 'una':
-                   switch(v) {
-                      case '+/-':
-                         t = (t.indexOf('-') === 0) ? t.substring(1) : '-'+t;
-                         self.theDisplay.val(t);
-                         break;
-                      case '!':
-                         self.theDisplay.val(factorial(t).toString());
-                         break;
-                      case 'Sqrt':
-                         self.theDisplay.val(Math.sqrt(t).toString());
-                         break;
-                      case 'x^2':
-                         self.theDisplay.val((t*t).toString());
-                         break;
-                      case 'exp(x)':
-                         self.theDisplay.val(Math.exp(t).toString());
-                         break;
-                      case 'ln(x)':
-                         self.theDisplay.val(Math.log(t).toString());
-                         break;
-                      case '1/x':
-                         self.theDisplay.val((1/t).toString());
-                         break;
-                      case 'U[0,1]':
-                         self.theDisplay.val(rand.next());
-                         break;
-                      case 'N(0,1)':
-                         self.theDisplay.val(rNorm());
-                         break;
-                      case 'CE':
-                         self.theDisplay.val('0');
-                         break;
-                      case 'C':
-                         self.x = 0;
-                         self.inProgress = false;
-                         self.currentOp = null;
-                         self.theDisplay.val('0');
-                    }
-                    break;
-
-               case 'bin':
-                   if (self.inProgress) {
-                        self.x = doBinaryOp(self.x, self.currentOp, t);
-                        self.theDisplay.val(self.x.toString());
-                   } else {
-                        self.x = t;
-                        self.theDisplay.val('?');
-                        self.inProgress = true;
-                   }
-                   self.currentOp = v;
-                   break;
-
-               case 'eq':
-                   if (self.inProgress) {
-                        self.x = doBinaryOp(self.x, self.currentOp, t);
-                        self.theDisplay.val(self.x.toString());
-                        self.inProgress = false;
-                        self.currentOp = null;
-                   }
-                   break;
-
-               default:
-                   console.log('unexpected button in statCalc ' + v);
-            }
-        } catch(e) {
-           console.log(e);
-           self.theDisplay.val('NaN');
-        }
-    }
-
-    function doBinaryOp(x, op, y) {
-         var res = Math.NaN;
-         try {
-             switch(op) {
-                 case '+':
-                     res = parseFloat(x)+parseFloat(y);
-                     break;
-                 case '-':
-                     res = parseFloat(x)-parseFloat(y);
-                     break;
-                 case '*':
-                     res = parseFloat(x)*parseFloat(y);
-                     break;
-                 case '/':
-                     res = parseFloat(x)/parseFloat(y);
-                     break;
-                 case 'x^y':
-                     res = parseFloat(x)^parseFloat(y);
-                     break;
-                 case 'nCk':
-                     res = binomialCoef(parseFloat(x), parseFloat(y));
-                     break;
-                 case 'nPk':
-                     res = permutations(parseFloat(x), parseFloat(y));
-                     break;
-                 default:
-                     console.log('unexpected binary function in statCalc ' + op);
-              }
-        } catch(e) {
-        }
-        return(res);
-    }
-
-
-
-
-}
-
-function distCalc(container_id, params) {
-    var self = this;
-    this.container = $('#' + container_id);
-
-    if (!params instanceof Object) {
-       console.error('distCalc parameters should be an object');
-       return;
-    }
-
-// default options
-    this.options = {
-                    distributions: [ ["Binomial", ["n","p"]],
-                                     ["Geometric", ["p"]],
-                                     ["Negative Binomial", ["p","r"]],
-                                     ["Hypergeometric",["N","G","n"]],
-                                     ["Normal", ["mean","SD"]],
-                                     ["Student t", ["degrees of freedom"]],
-                                     ["Chi-square", ["degrees of freedom"]],
-                                     ["Exponential", ["mean"]],
-                                     ["Poisson", ["mean"]]
-                                   ],
-                    digits: 8,
-                    paramDigits: 4,
-                    showExpect: true
-    };
-
-// Extend options
-    $.extend(this.options, params);
-
-    self.lo = 0.0;
-    self.hi = 0.0;
-    self.currDist = null;
-    self.distDivs = [];
-
-    function init() {
-        var me = $('<div />').addClass('distCalc');
-        self.container.append(me);
-
-        // distribution selection
-        self.selectDiv = $('<div />').addClass('selectDiv').append('If X has a ');
-        self.selectDist = $('<select />').change(function() {
-              changeDist($(this).val());
-        });
-
-        // parameters of the distributions
-        $.each(self.options.distributions, function(i, v) {
-               $('<option/>', { value : v[0] }).text(v[0]).appendTo(self.selectDist);
-               self.distDivs[v[0]] = $('<div />').css('display','inline');
-               $.each(v[1], function(j, parm) {
-                     self.distDivs[v[0]].append(parm + ' = ')
-                                        .append(  $('<input type="text" />')
-                                                    .attr('size','paramDigits')
-                                                    .addClass(parm.replace(/ +/g,'_'))
-                                                    .blur(calcProb)
-                                        )
-                                        .append(', ');
-               });
-        });
-
-        self.paramSpan = $('<span />').addClass('paramSpan');
-        self.selectDiv.append(self.selectDist)
-                      .append('distribution with ')
-                      .append(self.paramSpan);
-
-        // start with the first listed distribution
-        self.currDist = self.options.distributions[0][0];
-        self.paramSpan.append(self.distDivs[self.currDist]);
-
-        // range over which to find the probability
-        self.selectDiv.append(' the chance that ')
-                      .append($('<input type="checkbox">').addClass('useLower').click(calcProb))
-                      .append('X &ge;')
-                      .append($('<input type="text" />').addClass('loLim').attr('size',self.options.digits).val("0").blur(calcProb))
-                      .append($('<input type="checkbox">').addClass('useUpper').click(calcProb))
-                      .append('and X &le;')
-                      .append($('<input type="text" />').addClass('hiLim').attr('size',self.options.digits).val("0").blur(calcProb))
-                      .append(' is ');
-
-        // display
-        self.theDisplay = $('<input type="text" readonly />').attr('size',self.options.digits+4);
-        self.expectSpan = $('<span />').addClass('expectSpan');
-        self.selectDiv.append(self.theDisplay).append(self.expectSpan);
-        me.append(self.selectDiv);
-    }
-    init();
-
-//  action functions
-
-    function changeDist(dist) {
-        self.currDist = dist;
-        self.paramSpan.empty();
-        self.expectSpan.empty();
-        var thisDist = $.grep(self.options.distributions, function(v,i) {
-                          return(v[0] === dist);
-        });
-        self.paramSpan.append(self.distDivs[thisDist[0][0]]);  // replace with parameters for current distribution
-        self.theDisplay.val('NaN');
-        calcProb();
-    }
-
-    function calcProb(e) {
-        if (typeof(e) != 'undefined' && e instanceof jQuery.Event)
-          e.preventDefault();
-        var prob  = Number.NaN;
-
-        // get range over which to compute the probability
-        var loCk  = self.selectDiv.find('.useLower').prop('checked');
-        var loLim = loCk ? parseFloat(self.selectDiv.find('.loLim').val()) : Number.NaN;
-        var hiCk  = self.selectDiv.find('.useUpper').prop('checked');
-        var hiLim = hiCk ? parseFloat(self.selectDiv.find('.hiLim').val()) : Number.NaN;
-
-        var allParamsDefined = true;
-        $.each(self.distDivs[self.currDist].find(':input'), function(i, v) {
-               if (v.value.trim().length === 0) {
-                   allParamsDefined = false;
-               }
-        });
-
-        if ((!loCk && !hiCk) || !allParamsDefined) {
-              prob = Number.NaN;
-        } else if (loCk && hiCk && (loLim > hiLim)) {
-              prob = 0.0;
-        } else {
-              self.expectSpan.empty();
-              var n;
-              var p;
-              var t;
-              var b;
-              var df;
-              var m;
-              switch(self.currDist) {
-                   case "Binomial":
-                      n = parseFloat(self.distDivs[self.currDist].find('.n').val());
-                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
-                      t = hiCk ? binomialCdf(n, p, hiLim) : 1.0;
-                      b = loCk ? binomialCdf(n, p, loLim-1) : 0.0;
-                      prob = t - b;
-                      if (self.options.showExpect) {
-                          self.expectSpan.append('E(X) = ' + (n*p).toFixed(self.options.paramDigits) +
-                                                 '; SE(X) = ' + Math.sqrt(n*p*(1-p)).toFixed(self.options.paramDigits));
-                      }
-                      break;
-
-                   case "Geometric":
-                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
-                      t = hiCk ? geoCdf(p, hiLim) : 1.0;
-                      b = loCk ? geoCdf(p, loLim-1) : 0.0;
-                      if (self.options.showExpect) {
-                           self.expectSpan.append('E(X) = ' + (1/p).toFixed(self.options.paramDigits) +
-                                                  '; SE(X) = ' + (Math.sqrt(1-p)/p).toFixed(self.options.paramDigits));
-                      }
-                      prob = t - b;
-                      break;
-
-                   case "Negative Binomial":
-                      p = parsePercent(self.distDivs[self.currDist].find('.p').val());
-                      r = parseFloat(self.distDivs[self.currDist].find('.r').val());
-                      t = hiCk ? negBinomialCdf( p,  r, hiLim) : 1.0;
-                      b = loCk ? negBinomialCdf( p,  r, loLim-1) : 0.0;
-                      prob = t - b;
-                      if (self.options.showExpect) {
-                          self.expectSpan.append('E(X) = ' + (r/p).toFixed(self.options.paramDigits) +
-                                                 '; SE(X) = ' + (Math.sqrt(r*(1-p))/p).toFixed(self.options.paramDigits));
-                      }
-                      break;
-
-                   case "Hypergeometric":
-                      var N = parseFloat(self.distDivs[self.currDist].find('.N').val());
-                      var G = parseFloat(self.distDivs[self.currDist].find('.G').val());
-                      n = parseFloat(self.distDivs[self.currDist].find('.n').val());
-                      t = hiCk ? hyperGeoCdf(N,  G, n, hiLim) : 1.0;
-                      b = loCk ? hyperGeoCdf(N,  G, n, loLim-1) : 0.0;
-                      prob = t - b;
-                      var hyP = G/N;
-                      if (self.options.showExpect) {
-                           self.expectSpan.append('E(X) = ' + (n*hyP).toFixed(self.options.paramDigits) +
-                                                  '; SE(X) = ' + (Math.sqrt(n*hyP*(1-hyP)*(N-n)/(N-1))).toFixed(self.options.paramDigits));
-                      }
-                      break;
-
-                   case "Normal":
-                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
-                      var s = parseFloat(self.distDivs[self.currDist].find('.SD').val());
-                      t = hiCk ? normCdf((hiLim-m)/s) : 1.0;
-                      b = loCk ? normCdf((loLim-m)/s) : 0.0;
-                      prob = t - b;
-                      if (self.options.showExpect) {
-                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
-                                                  '; SE(X) = ' + s.toFixed(self.options.paramDigits));
-                      }
-                      break;
-
-                   case "Student t":
-                      df = parseFloat(self.distDivs[self.currDist].find('.degrees_of_freedom').val());
-                      t = hiCk ? tCdf(df, hiLim) : 1.0;
-                      b = loCk ? tCdf(df, loLim) : 0.0;
-                      prob = t - b;
-                      var se = (df > 2) ? (Math.sqrt(df/(df-2))).toFixed(self.options.paramDigits) : Number.NaN;
-                      if (self.options.showExpect) {
-                           self.expectSpan.append('E(X) = 0; SE(X) = ' + se);
-                      }
-                      break;
-
-                   case "Chi-square":
-                      df = parseFloat(self.distDivs[self.currDist].find('.degrees_of_freedom').val());
-                      t = hiCk ? chi2Cdf(df, hiLim) : 1.0;
-                      b = loCk ? chi2Cdf(df, loLim) : 0.0;
-                      if (self.options.showExpect) {
-                           self.expectSpan.append('E(X) = ' + df.toFixed(self.options.paramDigits) +
-                                                  '; SE(X) = ' + (Math.sqrt(2*df)).toFixed(self.options.paramDigits));
-                      }
-                      prob = t - b;
-                      break;
-
-                   case "Exponential":
-                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
-                      t = hiCk ? expCdf(m, hiLim) : 1.0;
-                      b = loCk ? expCdf(m, loLim) : 0.0;
-                      prob = t - b;
-                      if (self.options.showExpect) {
-                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
-                                                  '; SE(X) = ' + m.toFixed(self.options.paramDigits));
-                      }
-                      break;
-
-                   case "Poisson":
-                      m = parseFloat(self.distDivs[self.currDist].find('.mean').val());
-                      t = hiCk ? poissonCdf(m, hiLim) : 1.0;
-                      b = loCk ? poissonCdf(m, loLim) : 0.0;
-                      prob = t - b;
-                      if (self.options.showExpect) {
-                           self.expectSpan.append('E(X) = ' + m.toFixed(self.options.paramDigits) +
-                                                  '; SE(X) = ' + (Math.sqrt(m)).toFixed(self.options.paramDigits));
-                      }
-                      break;
-
-                   default:
-                      console.log('unexpected distribution in distCalc.calcProb ' + dist);
-              }
-        }
-        self.theDisplay.val((100*prob).toFixed(self.options.digits-3)+'%');
-    }
-
-}
-
-// Javascript implementation of venn diagram for sticigui. No params are
-// currently available.
-function Stici_Venn(container_id, params) {
-  var self = this;
-
-  this.env = jQuery('#' + container_id);
-  var app = jQuery('<div/>',{id:container_id + 'app'})
-              .addClass('stici_venn')
-              .addClass('stici');
-  this.env.append(app);
-
-  this.container = jQuery('<div/>',{id:container_id + 'container'}).addClass('container');
-  var buttons = jQuery('<div/>',{id:container_id + 'buttons'}).addClass('buttons');
-  var scrollbars = jQuery('<div/>',{id:container_id + 'scrollbars'}).addClass('scrollbars');
-
-  app.append(self.container);
-  app.append(buttons);
-  app.append(scrollbars);
-
-  this.container.css('width',(this.env.width() - buttons.width()) + 'px');
-  this.container.css('height', (this.env.height() - scrollbars.height()) + 'px');
-
-  var s_outline, a_outline, b_outline;
-  var a_fill, b_fill, ab_fill;
-  var ab_text, a_or_b_text;
-
-  // Create all of the html objects so we can get handles to them and all. Then
-  // create the controls.
-  draw();
-
-  // Array of row arrays. E.g.:
-  //
-  // A B C
-  // X Y C
-  //
-  // Is represented as
-  // [[A, B, C],
-  //  [X, Y, Z]]
-  var button_args = [
-    [{label: 'A', filled: a_fill},
-     {label: 'Ac', filled: s_outline, opaque: a_fill}],
-
-    [{label: 'B', filled: b_fill},
-     {label: 'Bc', filled: s_outline, opaque: b_fill}],
-
-    [{label: 'A or B', filled: [a_fill, b_fill]},
-     {label: 'AB', filled: ab_fill}],
-
-    [{label: 'ABc', filled: a_fill, opaque: ab_fill},
-     {label: 'AcB', filled: b_fill, opaque: ab_fill}],
-
-    [{label: 'S', filled: s_outline},
-     {label: '{}'}]
-  ];
-  $.each(button_args, function(i, button_row) {
-    var row = jQuery('<div/>').addClass('button_row');
-    $.each(button_row, function(i, button) {
-      button.label = button.label.replace(/c/g, '<sup>c</sup>');
-      button.label = button.label.replace(/\|/g, '&nbsp;|&nbsp;');
-      button.label = button.label.replace(/ or /g, '&nbsp;\u222A&nbsp;');
-
-      var button_div = jQuery('<div/>').addClass('button');
-      row.append(button_div);
-      var inp = jQuery('<input/>',{type:'radio',name:'buttons'});
-      var label = jQuery('<label/>').click(function() {inp.prop('checked', true);});
-      button_div.click(function() {
-        inp.prop('checked', true);
-        a_outline.removeClass('selected opaque');
-        b_outline.removeClass('selected opaque');
-        a_fill.removeClass('selected opaque');
-        b_fill.removeClass('selected opaque');
-        ab_fill.removeClass('selected opaque');
-        s_outline.removeClass('selected opaque');
-
-        if (button.opaque !== undefined) {
-          if (!button.opaque instanceof Array)
-            button.opaque = [button.opaque];
-          $.each(button.opaque, function(i, opaque_element) {
-            jQuery(opaque_element).addClass('opaque');
-          });
-        }
-        if (button.filled !== undefined) {
-          if (!button.filled instanceof Array)
-            button.filled = [button.filled];
-          $.each(button.filled, function(i, fill_element) {
-            jQuery(fill_element).addClass('selected');
-          });
-        }
-      });
-      label.html(button.label);
-      button_div.append(inp);
-      button_div.append(label);
-    });
-    buttons.append(row);
-  });
-  function createPercentControl(letter, size) {
-    var sb = jQuery('<div/>',{id:container_id + 'psb' + letter}).addClass('scrollbar');
-    var lbl = jQuery('<label/>').attr('for', container_id + 'sb'+letter);
-    lbl.html('P(' + letter + ') (%)');
-    var idFunc1 = function() {
-      $('#' + container_id + 'sb' + letter).slider('value', this.value);
-      updateSizes();
-    };
-    var idFunc2 = function() {
-      $('#' + container_id + 'sb' + letter + 't').val($(this).slider('value'));
-      updateSizes();
-    };
-    var input = jQuery('<input/>', {
-      type: 'text',
-      id: container_id + 'sb'+letter+'t',
-      change: idFunc1,
-      value: size,
-      size: 2
-    });
-    var input2 =
-      jQuery('<span/>')
-        .addClass('slider')
-        .attr('id', container_id + 'sb' + letter)
-        .slider({
-      change: idFunc2,
-      slide: idFunc2,
-      min: 1,
-      max: 100,
-      step: 1,
-      value: size
-    });
-
-    sb.append(lbl);
-    sb.append(input);
-    sb.append(input2);
-
-    scrollbars.append(sb);
-  }
-  createPercentControl('A', 30);
-  createPercentControl('B', 20);
-
-  var infoDiv = jQuery('<div/>').addClass('info');
-  ab_text = jQuery('<p/>');
-  a_or_b_text = jQuery('<p/>');
-  infoDiv.append(ab_text).append(a_or_b_text);
-  scrollbars.append(infoDiv);
-
-  updateSizes();
-
-  // Synchronizes fill positions so that the outline is always visible on the A
-  // and B boxes, and the intersection area is synchronized.
-  function syncPositions() {
-    // Make sure everything stays in bounds.
-    function bound(outline) {
-      var x_offset = outline.offset().left + outline.width() -
-        (s_outline.offset().left + s_outline.width());
-      if (x_offset > 0)
-        outline.css('left', (outline.position().left - x_offset) + 'px');
-      var y_offset = outline.offset().top + outline.height() -
-        (s_outline.offset().top + s_outline.height());
-      if (y_offset > 0)
-        outline.css('top', (outline.position().top - y_offset) + 'px');
-
-      if (outline.position().left < s_outline.position().left)
-        outline.css('left', s_outline.position().left + 'px');
-      if (outline.position().top < s_outline.position().top)
-        outline.css('top', s_outline.position().top + 'px');
-    }
-    function intersect(a, b, ab) {
-      var a_x = a.position().left;
-      var a_y = a.position().top;
-      var a_w = a.width();
-      var a_h = a.height();
-      var b_x = b.position().left;
-      var b_y = b.position().top;
-      var b_w = b.width();
-      var b_h = b.height();
-      if (a_x + a_w < b_x || b_x + b_w < a_x ||
-          a_y + a_h < b_y || b_y + b_h < a_y) {
-        ab.css('display', 'none');
-      } else {
-        ab.css('display', '');
-        var x1 = Math.max(a_x, b_x);
-        var y1 = Math.max(a_y, b_y);
-        ab.css('left', x1 + 'px');
-        ab.css('top', y1 + 'px');
-        var x2 = Math.min(a_x + a_w, b_x + b_w);
-        var y2 = Math.min(a_y + a_h, b_y + b_h);
-        ab.css('width', (x2 - x1) + 'px');
-        ab.css('height', (y2 - y1) + 'px');
-      }
-    }
-    bound(a_outline);
-    bound(b_outline);
-
-    // Synchronize the fills with the outlines.
-    a_fill.css('left', a_outline.css('left'));
-    a_fill.css('top', a_outline.css('top'));
-    a_fill.css('width', a_outline.css('width'));
-    a_fill.css('height', a_outline.css('height'));
-
-    b_fill.css('left', b_outline.css('left'));
-    b_fill.css('top', b_outline.css('top'));
-    b_fill.css('width', b_outline.css('width'));
-    b_fill.css('height', b_outline.css('height'));
-
-    // Calculate the intersection.
-    intersect(a_outline, b_outline, ab_fill);
-
-    // Calculate P(AB) and P(A or B)
-    var s_area = s_outline.width() * s_outline.height();
-    var p_a = a_fill.width() * a_fill.height() / s_area * 100;
-    var p_b = b_fill.width() * b_fill.height() / s_area * 100;
-    var p_ab = ab_fill.width() * ab_fill.height() / s_area * 100;
-    var p_a_or_b = (p_a + p_b - p_ab);
-    if ((ab_fill.position().left == a_outline.position().left &&
-         ab_fill.position().top == a_outline.position().top &&
-         ab_fill.width() == a_outline.width() &&
-         ab_fill.height() == a_outline.height()) ||
-        (ab_fill.position().left == b_outline.position().left &&
-         ab_fill.position().top == b_outline.position().top &&
-         ab_fill.width() == b_outline.width() &&
-         ab_fill.height() == b_outline.height())) {
-      p_ab = Math.min($('#' + container_id + 'sbA').slider('value'),
-                      $('#' + container_id + 'sbB').slider('value'));
-      p_a_or_b = Math.max($('#' + container_id + 'sbA').slider('value'),
-                          $('#' + container_id + 'sbB').slider('value'));
-    }
-    if (ab_fill.css('display') == 'none') {
-      p_ab = 0;
-      p_a_or_b = parseFloat($('#' + container_id + 'sbA').slider('value')) +
-                 parseFloat($('#' + container_id + 'sbB').slider('value'));
-    }
-    ab_text.text('P(AB): ' + p_ab.fix(1) + '%');
-    a_or_b_text.text('P(A or B): ' + p_a_or_b.fix(1) + '%');
-  }
-
-  // Updates the sizes of A and B to what the slider specifies.
-  function updateSizes() {
-    // ratio = width / height
-    // area = width * height
-    // width = area / height
-    // width = ratio * height
-    // width * width = area * ratio
-    // height = area / width
-    var ratio = s_outline.width() / s_outline.height();
-    var s_area = s_outline.width() * s_outline.height();
-    var a_p = $('#' + container_id + 'sbA').slider('value') / 100;
-    var a_area = s_area * a_p;
-    var a_width = Math.sqrt(a_area * ratio);
-    var a_height = a_area / a_width;
-    a_outline.width(a_width + 'px');
-    a_outline.height(a_height + 'px');
-    var b_p = $('#' + container_id + 'sbB').slider('value') / 100;
-    var b_area = s_area * b_p;
-    var b_width = Math.sqrt(b_area * ratio);
-    var b_height = b_area / b_width;
-    b_outline.width(b_width + 'px');
-    b_outline.height(b_height + 'px');
-    syncPositions();
-  }
-
-  function draw() {
-    // Initial sizes. These will get overwritten as soon as updateSizes is
-    // called.
-    var scaleFactorX = 0.3;
-    var scaleFactorY = 0.3;
-
-    s_outline = jQuery('<div/>').addClass('box').addClass('S');
-    s_outline.css('left', '10px');
-    s_outline.css('top', '10px');
-    s_outline.css('width', (self.container.width() - 20) + 'px');
-    s_outline.css('height', (self.container.height() - 20) + 'px');
-    s_outline.text('S');
-    self.container.append(s_outline);
-
-    var rectX = self.container.width() / 2 - 50;
-    var rectY = self.container.height() / 2 - 25;
-
-    a_fill = jQuery('<div/>').addClass('box').addClass('A').addClass('fill');
-    a_outline = jQuery('<div/>').addClass('box').addClass('A').addClass('outline');
-    a_outline.css('left', (rectX - 32) + 'px');
-    a_outline.css('top', (rectY - 16) + 'px');
-    a_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
-    a_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
-    a_outline.text('A');
-
-    b_fill = jQuery('<div/>').addClass('box').addClass('B').addClass('fill');
-    b_outline = jQuery('<div/>').addClass('box').addClass('B').addClass('outline');
-    b_outline.css('left', (rectX + 32) + 'px');
-    b_outline.css('top', (rectY + 16) + 'px');
-    b_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
-    b_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
-    b_outline.text('B');
-
-    ab_fill = jQuery('<div/>').addClass('box').addClass('AB').addClass('fill');
-    self.container.append(a_fill);
-    self.container.append(b_fill);
-    self.container.append(ab_fill);
-    self.container.append(a_outline);
-    self.container.append(b_outline);
-    a_outline.draggable({
-      containment: s_outline,
-      drag: syncPositions,
-      stop: syncPositions
-    });
-    b_outline.draggable({
-      containment: s_outline,
-      drag: syncPositions,
-      stop: syncPositions
-    });
-  }
-}
-
-// Javascript implementation of venn diagram for sticigui. No params are
-// currently available.
-//
-// container_id: the CSS ID of the container to create the venn diagram (and
-//               controls) in.
-// params: A javascript object with various parameters to customize the chart.
-//  // Whether or not to render the conditional probability radio buttons.
-//  - showConditional: false
-//
-//  // Whether or not to show the P= labels
-//  - showProbabilities: true
-
-function Stici_Venn3(container_id, params) {
-  var self = this;
-
-  this.env = jQuery('#' + container_id);
-  var app = jQuery('<div/>',{id:container_id + 'app'})
-              .addClass('stici_venn')
-              .addClass('stici_venn3')
-              .addClass('stici');
-  this.env.append(app);
-
-
-  // Configuration option defaults.
-  this.options = {
-    showConditional: false,
-    showProbabilities: true
-  };
-
-  // Override options with anything specified by the user.
-  jQuery.extend(this.options, params);
-
-  this.container = jQuery('<div/>',{id:container_id + 'container'}).addClass('container');
-  var buttons_div = jQuery('<div/>',{id:container_id + 'buttons'}).addClass('buttons');
-  var scrollbars = jQuery('<div/>',{id:container_id + 'scrollbars'}).addClass('scrollbars');
-
-  app.append(self.container);
-  app.append(buttons_div);
-  app.append(scrollbars);
-
-  this.container.css('width',(this.env.width() - buttons_div.width()) + 'px');
-  this.container.css('height', (this.env.height() - scrollbars.height()) + 'px');
-
-  var s_outline, a_outline, b_outline, c_outline;
-  var a_fill, b_fill, c_fill, ab_fill, ac_fill, bc_fill, abc_fill;
-
-  // Create all of the html objects so we can get handles to them and all. Then
-  // create the controls.
-  draw();
-
-  // Array of row arrays. E.g.:
-  //
-  // A B C
-  // X Y C
-  //
-  // Is represented as
-  // [[A, B, C],
-  //  [X, Y, Z]]
-  this.buttons_arr = [
-    [{label: 'A', filled: a_fill},
-     {label: 'B', filled: b_fill},
-     {label: 'C', filled: c_fill},
-     {label: 'Ac', filled: s_outline, opaque: a_fill}],
-
-    [{label: 'Bc', filled: s_outline, opaque: b_fill},
-     {label: 'Cc', filled: s_outline, opaque: c_fill},
-     {label: 'AB', filled: ab_fill},
-     {label: 'AC', filled: ac_fill}],
-
-    [{label: 'BC', filled: bc_fill},
-     {label: 'A or B', filled: [a_fill, b_fill]},
-     {label: 'A or C', filled: [a_fill, c_fill]},
-     {label: 'B or C', filled: [b_fill, c_fill]}],
-
-    [{label: 'ABC', filled: abc_fill},
-     {label: 'A or B or C', filled: [a_fill, b_fill, c_fill]},
-     {label: 'ABc', filled: a_fill, opaque: ab_fill},
-     {label: 'AcB', filled: b_fill, opaque: ab_fill}],
-
-    [{label: 'AcBC', filled: bc_fill, opaque: abc_fill},
-     {label: 'Ac or BC', filled: [bc_fill, s_outline], opaque: a_fill},
-     {label: 'S', filled: s_outline},
-     {label: '{}'}]
-  ];
-
-  if (this.options.showConditional) {
-    self.buttons_arr.push(
-      [{label: 'P(A|B)', filled: b_fill, hilite: ab_fill},
-       {label: 'P(Ac|B)', filled: ab_fill, hilite: b_fill},
-       {label: 'P(B|A)', filled: a_fill, hilite: ab_fill}]);
-
-    self.buttons_arr.push(
-      [{label: 'P(A|BC)', filled: bc_fill, hilite: abc_fill},
-       {label: 'P(Ac|BC)', filled: abc_fill, hilite: bc_fill},
-       {label: 'P(A|(B or C))', filled: [b_fill, c_fill], hilite: [ab_fill, ac_fill]}]);
-  }
-
-  self.buttons = {};
-  self.buttons_arr = $.map(self.buttons_arr, function(button_row) {
-    var row = jQuery('<div/>').addClass('button_row');
-    button_row = $.map(button_row, function(button) {
-      button.human_label = button.label;
-      button.label = button.label.replace(/c/g, '<sup>c</sup>');
-      button.label = button.label.replace(/\|/g, '&nbsp;|&nbsp;');
-      button.label = button.label.replace(/ or /g, '&nbsp;\u222A&nbsp;');
-
-      if (button.opaque !== undefined) {
-        if (!(button.opaque instanceof Array))
-          button.opaque = [button.opaque];
-      } else {
-        button.opaque = [];
-      }
-      if (button.filled !== undefined) {
-        if (!(button.filled instanceof Array))
-          button.filled = [button.filled];
-      } else {
-        button.filled = [];
-      }
-      if (button.hilite !== undefined) {
-        if (!(button.hilite instanceof Array))
-          button.hilite = [button.hilite];
-      } else {
-        button.hilite = [];
-      }
-
-      var button_div = jQuery('<div/>').addClass('button');
-      button.div = button_div;
-      row.append(button_div);
-      var inp = jQuery('<input/>',{type:'radio',name:'buttons'});
-      var label = jQuery('<label/>').click(function() {inp.prop('checked', true);});
-      button_div.click(function() {
-        inp.prop('checked', true);
-        a_outline.removeClass('selected opaque hilite');
-        b_outline.removeClass('selected opaque hilite');
-        c_outline.removeClass('selected opaque hilite');
-        a_fill.removeClass('selected opaque hilite');
-        b_fill.removeClass('selected opaque hilite');
-        c_fill.removeClass('selected opaque hilite');
-        ab_fill.removeClass('selected opaque hilite');
-        bc_fill.removeClass('selected opaque hilite');
-        ac_fill.removeClass('selected opaque hilite');
-        abc_fill.removeClass('selected opaque hilite');
-        s_outline.removeClass('selected opaque hilite');
-
-        $.each(button.opaque, function(i, opaque_element) {
-          jQuery(opaque_element).addClass('opaque');
-        });
-        $.each(button.filled, function(i, fill_element) {
-          jQuery(fill_element).addClass('selected');
-        });
-        $.each(button.hilite, function(i, fill_element) {
-          jQuery(fill_element).addClass('hilite');
-        });
-      });
-      label.html(button.label);
-      var prob_span = jQuery('<div/>');
-      label.append(prob_span);
-
-      button.p = function(p) {
-        if (isNaN(p))
-          p = 0;
-        prob_span.text(' (P = ' + (p / s_outline.area() * 100).fix(1) + '%)');
-      };
-
-      button_div.append(inp);
-      button_div.append(label);
-
-      self.buttons[button.human_label] = button;
-      return button;
-    });
-    buttons_div.append(row);
-    return button_row;
-  });
-
-  function createPercentControl(letter, size) {
-    var sb = jQuery('<div/>',{id:container_id + 'psb' + letter}).addClass('scrollbar');
-    var lbl = jQuery('<label/>').attr('for', container_id + 'sb'+letter);
-    lbl.html('P(' + letter + ') (%)');
-    var idFunc1 = function() {
-      $('#' + container_id + 'sb' + letter).slider('value', this.value);
-      updateSizes();
-    };
-    var idFunc2 = function() {
-      $('#' + container_id + 'sb' + letter + 't').val($(this).slider('value'));
-      updateSizes();
-    };
-    var input = jQuery('<input/>', {
-      type: 'text',
-      id: container_id + 'sb'+letter+'t',
-      change: idFunc1,
-      value: size,
-      size: 2
-    });
-    var input2 =
-      jQuery('<span/>')
-        .addClass('slider')
-        .attr('id', container_id + 'sb' + letter)
-        .slider({
-      change: idFunc2,
-      slide: idFunc2,
-      min: 1,
-      max: 100,
-      step: 1,
-      value: size
-    });
-
-    sb.append(lbl);
-    sb.append(input);
-    sb.append(input2);
-
-    scrollbars.append(sb);
-  }
-  createPercentControl('A', 30);
-  createPercentControl('B', 20);
-  createPercentControl('C', 10);
-
-  updateSizes();
-
-  function createBox() {
-    var box = jQuery('<div/>').addClass('box');
-    box.area = function() {
-      if (box.css('display') == 'none')
-        return 0;
-
-      if (a_outline.isSameBox(box))
-        return $('#' + container_id + 'sbA').slider('value') / 100 *
-          s_outline.area();
-      if (b_outline.isSameBox(box))
-        return $('#' + container_id + 'sbB').slider('value') / 100 *
-          s_outline.area();
-      if (c_outline.isSameBox(box))
-        return $('#' + container_id + 'sbC').slider('value') / 100 *
-          s_outline.area();
-
-      return box.width() * box.height();
-    };
-    box.x = function() {
-      return box.position().left;
-    };
-    box.y = function() {
-      return box.position().top;
-    };
-    box.isSameBox = function(other) {
-      return box.y() == other.y() &&
-             box.x() == other.x() &&
-             box.width() == other.width() &&
-             box.height() == other.height();
-    };
-    return box;
-  }
-
-  // Synchronizes fill positions so that the outline is always visible on the A
-  // and B boxes, and the intersection area is synchronized.
-  function syncPositions() {
-    // Make sure everything stays in bounds.
-    function bound(outline) {
-      var x_offset = outline.offset().left + outline.width() -
-        (s_outline.offset().left + s_outline.width());
-      if (x_offset > 0)
-        outline.css('left', (outline.position().left - x_offset) + 'px');
-      var y_offset = outline.offset().top + outline.height() -
-        (s_outline.offset().top + s_outline.height());
-      if (y_offset > 0)
-        outline.css('top', (outline.position().top - y_offset) + 'px');
-
-      if (outline.position().left < s_outline.position().left)
-        outline.css('left', s_outline.position().left + 'px');
-      if (outline.position().top < s_outline.position().top)
-        outline.css('top', s_outline.position().top + 'px');
-    }
-    function intersect(a, b, ab) {
-      if (ab === undefined) {
-        ab = createBox();
-      }
-
-      var a_x = a.position().left;
-      var a_y = a.position().top;
-      var a_w = a.width();
-      var a_h = a.height();
-      var b_x = b.position().left;
-      var b_y = b.position().top;
-      var b_w = b.width();
-      var b_h = b.height();
-      if (a_x + a_w < b_x || b_x + b_w < a_x ||
-          a_y + a_h < b_y || b_y + b_h < a_y) {
-        ab.css('display', 'none');
-      } else {
-        ab.css('display', '');
-        var x1 = Math.max(a_x, b_x);
-        var y1 = Math.max(a_y, b_y);
-        ab.css('left', x1 + 'px');
-        ab.css('top', y1 + 'px');
-        var x2 = Math.min(a_x + a_w, b_x + b_w);
-        var y2 = Math.min(a_y + a_h, b_y + b_h);
-        ab.css('width', (x2 - x1) + 'px');
-        ab.css('height', (y2 - y1) + 'px');
-      }
-
-      return ab;
-    }
-    bound(a_outline);
-    bound(b_outline);
-    bound(c_outline);
-
-    // Synchronize the fills with the outlines.
-    a_fill.css('left', a_outline.css('left'));
-    a_fill.css('top', a_outline.css('top'));
-    a_fill.css('width', a_outline.css('width'));
-    a_fill.css('height', a_outline.css('height'));
-
-    b_fill.css('left', b_outline.css('left'));
-    b_fill.css('top', b_outline.css('top'));
-    b_fill.css('width', b_outline.css('width'));
-    b_fill.css('height', b_outline.css('height'));
-
-    c_fill.css('left', c_outline.css('left'));
-    c_fill.css('top', c_outline.css('top'));
-    c_fill.css('width', c_outline.css('width'));
-    c_fill.css('height', c_outline.css('height'));
-
-    // Calculate the intersection.
-    intersect(a_outline, b_outline, ab_fill);
-    intersect(b_outline, c_outline, bc_fill);
-    intersect(a_outline, c_outline, ac_fill);
-    intersect(ab_fill, bc_fill, abc_fill);
-
-    if (self.options.showProbabilities) {
-      self.buttons['A'].p(a_outline.area());
-      self.buttons['B'].p(b_outline.area());
-      self.buttons['C'].p(c_outline.area());
-      self.buttons['Ac'].p(s_outline.area() - a_outline.area());
-      self.buttons['Bc'].p(s_outline.area() - b_outline.area());
-      self.buttons['Cc'].p(s_outline.area() - c_outline.area());
-      self.buttons['AB'].p(ab_fill.area());
-      self.buttons['AC'].p(ac_fill.area());
-      self.buttons['BC'].p(bc_fill.area());
-      self.buttons['A or B'].p(
-        a_outline.area() + b_outline.area() - ab_fill.area());
-      self.buttons['A or C'].p(
-        a_outline.area() + c_outline.area() - ac_fill.area());
-      self.buttons['B or C'].p(
-        b_outline.area() + c_outline.area() - bc_fill.area());
-      self.buttons['ABC'].p(abc_fill.area());
-      self.buttons['A or B or C'].p(
-        a_outline.area() + b_outline.area() + c_outline.area() -
-        ab_fill.area() - bc_fill.area() - bc_fill.area() +
-        abc_fill.area());
-      self.buttons['ABc'].p(a_outline.area() - ab_fill.area());
-      self.buttons['AcB'].p(b_outline.area() - ab_fill.area());
-      self.buttons['AcBC'].p(bc_fill.area() - abc_fill.area());
-      self.buttons['Ac or BC'].p(
-        s_outline.area() - a_outline.area() + abc_fill.area());
-      self.buttons['S'].p(s_outline.area());
-      self.buttons['{}'].p(0);
-      if (self.options.showConditional) {
-        self.buttons['P(A|B)'].p(
-          ab_fill.area() / b_outline.area() * s_outline.area());
-        self.buttons['P(Ac|B)'].p(
-          s_outline.area() -
-          ab_fill.area() / b_outline.area() * s_outline.area());
-        self.buttons['P(B|A)'].p(
-          ab_fill.area() / a_outline.area() * s_outline.area());
-        self.buttons['P(A|BC)'].p(
-          abc_fill.area() / bc_fill.area() * s_outline.area());
-        self.buttons['P(Ac|BC)'].p(
-          s_outline.area() -
-          abc_fill.area() / bc_fill.area() * s_outline.area());
-        self.buttons['P(A|(B or C))'].p(
-          s_outline.area() *
-          (ab_fill.area() + ac_fill.area() - abc_fill.area()) /
-          (b_outline.area() + c_outline.area() - bc_fill.area()));
-      }
-    }
-  }
-
-  // Updates the sizes of the boxes according to their sliders.
-  function updateSizes() {
-    // ratio = width / height
-    // area = width * height
-    // width = area / height
-    // width = ratio * height
-    // width * width = area * ratio
-    // height = area / width
-    var ratio = s_outline.width() / s_outline.height();
-    var s_area = s_outline.width() * s_outline.height();
-    var a_p = $('#' + container_id + 'sbA').slider('value') / 100;
-    var a_area = s_area * a_p;
-    var a_width = Math.sqrt(a_area * ratio);
-    var a_height = a_area / a_width;
-    a_outline.width(a_width + 'px');
-    a_outline.height(a_height + 'px');
-    var b_p = $('#' + container_id + 'sbB').slider('value') / 100;
-    var b_area = s_area * b_p;
-    var b_width = Math.sqrt(b_area * ratio);
-    var b_height = b_area / b_width;
-    b_outline.width(b_width + 'px');
-    b_outline.height(b_height + 'px');
-    var c_p = $('#' + container_id + 'sbC').slider('value') / 100;
-    var c_area = s_area * c_p;
-    var c_width = Math.sqrt(c_area * ratio);
-    var c_height = c_area / c_width;
-    c_outline.width(c_width + 'px');
-    c_outline.height(c_height + 'px');
-    syncPositions();
-  }
-
-  function draw() {
-    // Initial sizes. These will get overwritten as soon as updateSizes is
-    // called.
-    var scaleFactorX = 0.3;
-    var scaleFactorY = 0.3;
-
-    s_outline = createBox().addClass('S');
-    s_outline.css('left', '10px');
-    s_outline.css('top', '10px');
-    s_outline.css('width', (self.container.width() - 20) + 'px');
-    s_outline.css('height', (self.container.height() - 20) + 'px');
-    s_outline.text('S');
-    self.container.append(s_outline);
-
-    a_fill = createBox().addClass('A').addClass('fill');
-    a_outline = createBox().addClass('A').addClass('outline');
-    a_outline.css('left', (self.container.width() * 0.15) + 'px');
-    a_outline.css('top', (self.container.height() * 0.3) + 'px');
-    a_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
-    a_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
-    a_outline.text('A');
-
-    b_fill = createBox().addClass('B').addClass('fill');
-    b_outline = createBox().addClass('B').addClass('outline');
-    b_outline.css('left', (self.container.width() * 0.5) + 'px');
-    b_outline.css('top', (self.container.height() * 0.4) + 'px');
-    b_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
-    b_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
-    b_outline.text('B');
-
-    c_fill = createBox().addClass('C').addClass('fill');
-    c_outline = createBox().addClass('C').addClass('outline');
-    c_outline.css('left', (self.container.width() * 0.4) + 'px');
-    c_outline.css('top', (self.container.height() * 0.2) + 'px');
-    c_outline.css('width', (s_outline.width() * scaleFactorX) + 'px');
-    c_outline.css('height', (s_outline.height() * scaleFactorY) + 'px');
-    c_outline.text('C');
-
-    ab_fill = createBox().addClass('AB').addClass('fill');
-    ac_fill = createBox().addClass('AC').addClass('fill');
-    bc_fill = createBox().addClass('BC').addClass('fill');
-    abc_fill = createBox().addClass('BC').addClass('fill');
-    self.container.append(a_fill);
-    self.container.append(b_fill);
-    self.container.append(c_fill);
-    self.container.append(ab_fill);
-    self.container.append(ac_fill);
-    self.container.append(bc_fill);
-    self.container.append(abc_fill);
-    self.container.append(a_outline);
-    self.container.append(b_outline);
-    self.container.append(c_outline);
-    a_outline.draggable({
-      containment: s_outline,
-      drag: syncPositions,
-      stop: syncPositions
-    });
-    b_outline.draggable({
-      containment: s_outline,
-      drag: syncPositions,
-      stop: syncPositions
-    });
-    c_outline.draggable({
-      containment: s_outline,
-      drag: syncPositions,
-      stop: syncPositions
-    });
-  }
-}
 
 // Author: James Eady <jeady@berkeley.edu>
 //
