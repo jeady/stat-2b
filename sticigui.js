@@ -2012,6 +2012,7 @@ function Stici_NormHiLite(container_id, params) {
   doWhileVisible(self.container, function() {
     initControls();
     self.reloadChart();
+    refreshSelectedAreaOverlay();
   });
 }
 
