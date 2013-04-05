@@ -600,7 +600,9 @@ function Stici_Ci(container_id, params) {
     }
   }
 
-  init();
+  doWhileVisible(container, function() {
+    init();
+  });
 
   function CiPlot() {
     var self = this;
@@ -1533,8 +1535,10 @@ function Stici_HistHiLite(container_id, params) {
     self.areaInfoDiv.html(text);
   }
 
-  initControls();
-  this.reloadData();
+  doWhileVisible(self.container, function() {
+    initControls();
+    self.reloadData();
+  });
 }
 
 // Javascript rewrite of
@@ -1737,7 +1741,9 @@ function Stici_Lln(container_id, params) {
   }
 
   // Initial render.
-  redraw();
+  doWhileVisible(self.container, function() {
+    redraw();
+  });
 }
 
 // Javascript rewrite of
@@ -1842,36 +1848,27 @@ function Stici_NormHiLite(container_id, params) {
   this.chartDiv = null;
   this.overlayDiv = null;  // Used for the area selection feature.
   this.normalOverlayDiv = null;
-  this.areaFromInput = null;
-  this.areaFromSlider = null;
-  this.areaToInput = null;
-  this.areaToSlider = null;
+  this.areaFrom = null;
+  this.areaTo = null;
   this.areaInfoDiv = null;
-  this.additionalInfo = null;
 
   this.reloadChart = function() {
     redrawChart();
 
-    if (self.options.hiLiteLo === null) {
-      self.areaFromSlider.slider('option', 'value', self.distribution.lo());
-      self.areaFromInput.val(self.distribution.lo());
-    } else {
-      self.areaFromSlider.slider('option', 'value', self.options.hiLiteLo);
-      self.areaFromInput.val(self.options.hiLiteLo);
-    }
-    if (self.options.hiLiteHi === null) {
-      self.areaToSlider.slider('option', 'value', self.distribution.lo());
-      self.areaToInput.val(self.distribution.lo());
-    } else {
-      self.areaToSlider.slider('option', 'value', self.options.hiLiteHi);
-      self.areaToInput.val(self.options.hiLiteHi);
-    }
+    if (self.options.hiLiteLo === null)
+      self.areaFrom.val(self.distribution.lo());
+    else
+      self.areaFrom.val(self.options.hiLiteLo);
+    if (self.options.hiLiteHi === null)
+      self.areaTo.val(self.distribution.lo());
+    else
+      self.areaTo.val(self.options.hiLiteHi);
   };
   function redrawChart() {
-    self.areaFromSlider.slider('option', 'min', self.distribution.lo());
-    self.areaFromSlider.slider('option', 'max', self.distribution.hi());
-    self.areaToSlider.slider('option', 'min', self.distribution.lo());
-    self.areaToSlider.slider('option', 'max', self.distribution.hi());
+    self.areaFrom.min(self.distribution.lo());
+    self.areaFrom.max(self.distribution.hi());
+    self.areaTo.min(self.distribution.lo());
+    self.areaTo.max(self.distribution.hi());
 
     var i;
     self.chartDiv.children().remove();
@@ -1946,8 +1943,6 @@ function Stici_NormHiLite(container_id, params) {
     // top_controls -> stici_chart -> area_info -> botom_controls.
     var o = jQuery('<div/>').addClass('stici').addClass('stici_normhilite');
     self.container.append(o);
-    var top = jQuery('<div/>').addClass('top_controls');
-    o.append(top);
     self.chartDiv = jQuery('<div/>')
                       .addClass('stici_chart')
                       .addClass('chart_box');
@@ -1958,99 +1953,46 @@ function Stici_NormHiLite(container_id, params) {
     var bottom = jQuery('<div/>').addClass('bottom_controls');
     o.append(bottom);
 
-    var rowHeight = 30;  // px
-    var topOffset = 0;
-    var bottomOffset = 0;
-    function appendHeaderRow(o) {
-      top.append(o);
-      topOffset += rowHeight;
-    }
-    function appendFooterRow(o) {
-      bottom.append(o);
-      bottomOffset += rowHeight;
-    }
-    function createAreaSelectControls() {
-      var row = jQuery('<div/>');
+    // Area from input/slider.
+    self.areaFrom = new SticiTextBar({
+      label: 'Lower endpoint: ',
+      step: 0.001,
+      change: refreshSelectedAreaOverlay
+    });
 
-      // Area from input/slider.
-      self.areaFromInput = jQuery('<input type="text" />').change(function() {
-        self.areaFromSlider.slider('value', self.areaFromInput.val());
-      });
-      var updateAreaFromInput = function() {
-        self.areaFromInput.val(self.areaFromSlider.slider('value'));
-        refreshSelectedAreaOverlay();
-      };
-      self.areaFromSlider = jQuery('<span/>').addClass('slider').slider({
-        change: updateAreaFromInput,
-        slide: updateAreaFromInput,
-        step: 0.001
-      });
-      row.append('Lower endpoint: ').append(self.areaFromInput)
-                                .append(self.areaFromSlider);
+    // Area to input/slider.
+    self.areaTo = new SticiTextBar({
+      label: ' Upper endpoint: ',
+      step: 0.001,
+      change: refreshSelectedAreaOverlay
+    });
 
-      // Area to input/slider.
-      self.areaToInput = jQuery('<input type="text" />').change(function() {
-        self.areaToSlider.slider('value', self.areaToInput.val());
-      });
-      var updateAreaToInput = function() {
-        self.areaToInput.val(self.areaToSlider.slider('value'));
-        refreshSelectedAreaOverlay();
-      };
-      self.areaToSlider = jQuery('<span/>').addClass('slider').slider({
-        change: updateAreaToInput,
-        slide: updateAreaToInput,
-        step: 0.001
-      });
-      row.append(' Upper endpoint: ').append(self.areaToInput).append(self.areaToSlider);
+    bottom.append(self.areaFrom, self.areaTo);
 
-      appendFooterRow(row);
-    }
-
-    function createDegreesOfFreedom() {
-      var row = jQuery('<div/>');
-
-      dfInput = jQuery('<input type="text" />').change(function() {
-        dfSlider.slider('value', dfInput.val());
-      });
-      var updateDfInput = function() {
-        self.df = dfSlider.slider('value');
-        dfInput.val(dfSlider.slider('value'));
-        redrawChart();
-        refreshSelectedAreaOverlay();
-      };
-      dfSlider = jQuery('<span/>').addClass('slider').slider({
-        change: updateDfInput,
-        slide: updateDfInput,
+    if (self.options.distribution != 'normal') {
+      var df = new SticiTextBar({
+        label: ' Degrees of Freedom: ',
         step: 1,
         min: 1,
-        max: 350
+        max: 350,
+        value: self.df,
+        change: function(e, value) {
+          self.df = value;
+          redrawChart();
+          refreshSelectedAreaOverlay();
+        }
       });
-      row.append(' Degrees of Freedom: ').append(dfInput).append(dfSlider);
-      dfSlider.slider('value', self.df);
-
-      appendFooterRow(row);
+      bottom.append(df);
     }
-
-    createAreaSelectControls();
-    if (self.options.distribution != 'normal')
-      createDegreesOfFreedom();
-    var additionalInfoDiv = jQuery('<div/>').addClass('additional_info');
-    self.additionalInfo = jQuery('<p/>');
-    additionalInfoDiv.append(self.additionalInfo);
-    appendFooterRow(additionalInfoDiv);
-
     // Set vertical positions based upon available controls.
-    self.areaInfoDiv.css('bottom', bottomOffset + 'px');
-    top.css('height', topOffset + 'px');
-    bottom.css('height', bottomOffset + 'px');
-    self.chartDiv.css('margin-bottom', (bottomOffset + 15) + 'px');
-    self.chartDiv.css('margin-top', (topOffset) + 'px');
+    self.areaInfoDiv.css('bottom', (bottom.height() + 10) + 'px');
+    self.chartDiv.css('margin-bottom', (bottom.height() + self.areaInfoDiv.height() + 15) + 'px');
   }
   // Helper function that is called whenever any of the area overlay
   // sliders or inputs are changed.
   function refreshSelectedAreaOverlay() {
-    var lower = parseFloat(self.areaFromSlider.slider('value'));
-    var upper = parseFloat(self.areaToSlider.slider('value'));
+    var lower = parseFloat(self.areaFrom.val());
+    var upper = parseFloat(self.areaTo.val());
     var scale = self.chartDiv.width() /
       (self.distribution.hi() - self.distribution.lo());
     var left = (lower - self.distribution.lo()) * scale;
@@ -2067,8 +2009,10 @@ function Stici_NormHiLite(container_id, params) {
     self.areaInfoDiv.html(text);
   }
 
-  initControls();
-  this.reloadChart();
+  doWhileVisible(self.container, function() {
+    initControls();
+    self.reloadChart();
+  });
 }
 
 // Javascript rewrite of
@@ -3195,7 +3139,9 @@ function Stici_SampleDist(container_id, params) {
        return(area);
     }// ends chiHiLitArea
 
+  doWhileVisible(container, function() {
     init();
+  });
 }
 
 // Javascript rewrite of
@@ -4604,12 +4550,10 @@ function Stici_Scatterplot(container_id, params) {
       return false;
   }
 
-  // document ready
-  $().ready(function() {
+  doWhileVisible(self.container, function() {
+    initControls();
+    self.reloadData();
   });
-
-  initControls();
-  this.reloadData();
 }
 
 // Javascript implementation of venn diagram for sticigui. No params are
@@ -4640,7 +4584,9 @@ function Stici_Venn(container_id, params) {
 
   // Create all of the html objects so we can get handles to them and all. Then
   // create the controls.
-  draw();
+  doWhileVisible(self.env, function() {
+    draw();
+  });
 
   // Array of row arrays. E.g.:
   //
@@ -4969,7 +4915,9 @@ function Stici_Venn3(container_id, params) {
 
   // Create all of the html objects so we can get handles to them and all. Then
   // create the controls.
-  draw();
+  doWhileVisible(self.env, function() {
+    draw();
+  });
 
   // Array of row arrays. E.g.:
   //
@@ -5395,6 +5343,28 @@ function Stici_Venn3(container_id, params) {
       stop: syncPositions
     });
   }
+}
+
+// Searches the element's ancestry to make the element take up space (but still
+// not shown - i.e. temporarly change display: none to visibility: hidden),
+// execute func, and then set everything back the way it was. This means we can
+// correctly perform size calculations in func() regardless of whether the
+// element is meant to be visible now or later.
+function doWhileVisible(element, func) {
+  var rehide = [];
+  element.parents().each(function(i, e) {
+    e = jQuery(e);
+    if (e.is(':hidden')) {
+      e.show();
+      rehide.push([e, e.css('visibility')]);
+      e.css('visibility', 'hidden');
+    }
+  });
+  func();
+  jQuery.each(rehide, function(i, e) {
+    e[0].hide();
+    e[0].css('visibility', e[1]);
+  });
 }
 
 /*
