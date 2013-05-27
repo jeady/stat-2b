@@ -341,6 +341,7 @@
   width: 27%;
   margin-right: 2%;
   margin-left: 2%;
+  font-size: 12px;
 }
 .stici.stici_normhilite .stici_textbar input[type="text"]{
   width: 30px;

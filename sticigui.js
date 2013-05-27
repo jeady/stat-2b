@@ -1,7 +1,8 @@
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/Ci.htm
 //
-// Author: James Eady <jeady@berkeley.edu>
+// Authors: James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 //
 // container_id: the CSS ID of the container to create the histogram (and
 //               controls) in.
@@ -717,7 +718,8 @@ function Stici_Ci(container_id, params) {
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/HistHiLite.htm
 //
-// Author: James Eady <jeady@berkeley.edu>
+// Authors: James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 //
 // container_id: the CSS ID of the container to create the histogram (and
 //               controls) in.
@@ -1327,7 +1329,7 @@ function Stici_HistHiLite(container_id, params) {
         $.each(self.dataFields, function(index) {
           if (self.dataFields[index].indexOf('//') === 0)
             return;
-          html += '<div class="univariate-stat-wrapper">' + 
+          html += '<div class="univariate-stat-wrapper">' +
                     '<h3>' + self.dataFields[index] + '</h3>';
           var data = $.map(self.dataValues, function(values) {
             return parseFloat(values[index]);
@@ -1544,7 +1546,8 @@ function Stici_HistHiLite(container_id, params) {
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/lln.htm
 //
-// Author: James Eady <jeady@berkeley.edu>
+// Authors: James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 //
 // container_id: the CSS ID of the container to create the histogram (and
 //               controls) in.
@@ -1749,7 +1752,8 @@ function Stici_Lln(container_id, params) {
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/NormHiLite.htm
 //
-// Author: James Eady <jeady@berkeley.edu>
+// Authors: James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 //
 // container_id: the CSS ID of the container to create the curve (and
 //               controls) in.
@@ -2019,7 +2023,8 @@ function Stici_NormHiLite(container_id, params) {
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/SampleDist.htm
 //
-// Author: James Eady <jeady@berkeley.edu>
+// Authors: James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 //
 // container_id: the CSS ID of the container to create the histogram (and
 //               controls) in.
@@ -2459,7 +2464,7 @@ function Stici_SampleDist(container_id, params) {
         popMean = 0;
         popSd = 0;
         if (pop.length === 0) {
-          console.log("Error in SampleDist.initPop(): Population is empty!\n");
+          console.error("Error in SampleDist.initPop(): Population is empty!\n");
           for (var i= 0; i < nBins; i++) {
             countPop[i] = 0;
           }
@@ -3023,7 +3028,7 @@ function Stici_SampleDist(container_id, params) {
                          varChoice.selected() + " Not Supported!");
             curveChoice.select("No Curve");
             hist.hideCurves();
-            return(false);
+            return false;
           }
         } else if (curveChoice.selected() == "Normal Curve") {
           if (varChoice.selected() == "Sample Mean") {
@@ -3051,7 +3056,7 @@ function Stici_SampleDist(container_id, params) {
                            " Not Supported!");
               curveChoice.select("No Curve");
               hist.hideCurves();
-              return(false);
+              return false;
             }
             mu = 0;
           }
@@ -3069,11 +3074,11 @@ function Stici_SampleDist(container_id, params) {
                          " Not Supported!");
             curveChoice.select("No Curve");
             hist.hideCurves();
-            return(false);
+            return false;
           }
         }
       }
-      return(true);
+      return true;
     }
 
     function hiLitArea() {
@@ -3148,7 +3153,9 @@ function Stici_SampleDist(container_id, params) {
 // Javascript rewrite of
 // http://statistics.berkeley.edu/~stark/Java/Html/ScatterPlot.htm
 //
-// Author: Ken Yu <kenniyu@gmail.com>
+// Authors: Ken Yu <kenniyu@gmail.com>
+//          James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 //
 // container_id: the CSS ID of the container to create the scatterplot (and
 //               controls) in.
@@ -3642,7 +3649,7 @@ function Stici_Scatterplot(container_id, params) {
 
   /***
    * toggleOption:  toggles an option in bottom controls
-   * params:      String option - the option to plot, 
+   * params:      String option - the option to plot,
    *              Boolean show
    ***/
   this.toggleOption = function(option, show) {
@@ -3715,7 +3722,7 @@ function Stici_Scatterplot(container_id, params) {
     $.each(self.dataFields, function(index) {
       if (self.dataFields[index].indexOf('//') === 0)
         return;
-      html += '<div class="univariate-stat-wrapper">' + 
+      html += '<div class="univariate-stat-wrapper">' +
                 '<h3>' + self.dataFields[index] + '</h3>';
       var data = $.map(self.dataValues, function(values) {
         return parseFloat(values[index]);
@@ -4559,6 +4566,10 @@ function Stici_Scatterplot(container_id, params) {
 
 // Javascript implementation of venn diagram for sticigui. No params are
 // currently available.
+//
+// Authors: Jason McGee <mcghee.j@berkeley.edu>
+//          James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 function Stici_Venn(container_id, params) {
   var self = this;
 
@@ -4870,6 +4881,10 @@ function Stici_Venn(container_id, params) {
 
 // Javascript implementation of venn diagram for sticigui. No params are
 // currently available.
+//
+// Authors: Jason McGee <mcghee.j@berkeley.edu>
+//          James Eady <jeady@berkeley.edu>
+//          Philip B. Stark <stark@stat.berkeley.edu>
 //
 // container_id: the CSS ID of the container to create the venn diagram (and
 //               controls) in.
@@ -5346,6 +5361,8 @@ function Stici_Venn3(container_id, params) {
   }
 }
 
+// Author: James Eady <jeady@berkeley.edu>
+//
 // Searches the element's ancestry to make the element take up space (but still
 // not shown - i.e. temporarly change display: none to visibility: hidden),
 // execute func, and then set everything back the way it was. This means we can
@@ -5891,7 +5908,7 @@ function mean(list, n) { // computes the mean of the list
   if (n !== undefined)
     list = list.slice(0, n);
 
-    return(vSum(list)/list.length);
+    return vSum(list)/list.length;
 }
 
 function vMult(a, list) { // multiply a vector times a scalar
@@ -5899,7 +5916,7 @@ function vMult(a, list) { // multiply a vector times a scalar
     for (var i=0; i < list.length; i++) {
         list2[i] = a*list[i];
     }
-    return(list2);
+    return list2;
 }
 
 function vScalarSum(list, scalar) { // adds the scalar to every component of the list
@@ -5907,19 +5924,19 @@ function vScalarSum(list, scalar) { // adds the scalar to every component of the
     for (var i =0; i < list.length; i++) {
         vs[i] = list[i] + scalar;
     }
-    return(vs);
+    return vs;
 }
 
 function vVectorSum(list1, list2) { // vector addition
     if (list1.length != list2.length) {
         alert('Error #1 in irGrade.vVectorSum: vector lengths are not equal');
-        return(Math.NaN);
+        return Math.NaN;
     } else {
         var vs = new Array(length(list1));
         for (var i =0; i < list1.length; i++) {
             vs[i] = list1[i] + list2[i];
         }
-        return(vs);
+        return vs;
     }
 }
 
@@ -5933,7 +5950,7 @@ function vPointwiseMult(list1, list2) { // componentwise multiplication of two v
             list3[i] = list1[i]*list2[i];
         }
     }
-    return(list3);
+    return list3;
 }
 
 function vFloor(list) { // takes floor of all components
@@ -5941,7 +5958,7 @@ function vFloor(list) { // takes floor of all components
     for (var i = 0; i < list.length; i++) {
         list2[i] = Math.floor(list[i]);
     }
-    return(list2);
+    return list2;
 }
 
 function vCeil(list) { // takes ceil of all components
@@ -5949,7 +5966,7 @@ function vCeil(list) { // takes ceil of all components
     for (var i = 0; i < list.length; i++) {
         list2[i] = Math.ceil(list[i]);
     }
-    return(list2);
+    return list2;
 }
 
 function vRoundToInts(list) { // round all components to the nearest int
@@ -5961,7 +5978,7 @@ function vRoundToInts(list) { // round all components to the nearest int
             list2[i]++;
         }
     }
-    return(list2);
+    return list2;
 }
 
 function vSum(list) { // computes the sum of the elements of list
@@ -5969,7 +5986,7 @@ function vSum(list) { // computes the sum of the elements of list
     for (var i = 0; i < list.length; i++) {
         tot += list[i];
     }
-    return(tot);
+    return tot;
 }
 
 function vProd(list) { // computes the product of the elements of list
@@ -5977,7 +5994,7 @@ function vProd(list) { // computes the product of the elements of list
     for (var i = 0; i < list.length; i++) {
         p *= list[i];
     }
-    return(p);
+    return p;
 }
 
 function vCum(list) { // vector of cumulative sum
@@ -5985,7 +6002,7 @@ function vCum(list) { // vector of cumulative sum
     for (var i = 1; i < list.length; i++ ) {
         list2[i] += list2[i-1];
     }
-    return(list2);
+    return list2;
 }
 
 function vDiff(list) { // vector of differences; 1st element unchanged
@@ -5994,7 +6011,7 @@ function vDiff(list) { // vector of differences; 1st element unchanged
         list2[i] = list[i] - list[i-1];
     }
     list2[0] = list[0];
-    return(list2);
+    return list2;
 }
 
 
@@ -6004,7 +6021,7 @@ function vInterval(list) { // vector of differences between successive elements;
     for (var i = 1; i < list.length; i++) {
         list2[i] = list[i] - list[i-1];
     }
-    return(list2);
+    return list2;
 }
 
 function vZero(n) { // returns a vector of zeros of length n
@@ -6012,7 +6029,7 @@ function vZero(n) { // returns a vector of zeros of length n
     for (var i=0; i < n; i++) {
         list[i] = 0.0;
     }
-    return(list);
+    return list;
 }
 
 function vOne(n) { // returns a vector of ones of length n
@@ -6020,7 +6037,7 @@ function vOne(n) { // returns a vector of ones of length n
     for (var i=0; i < n; i++) {
         list[i] = 1.0;
     }
-    return(list);
+    return list;
 }
 
 function twoNorm(list) { // two norm of a vector
@@ -6028,7 +6045,7 @@ function twoNorm(list) { // two norm of a vector
     for (var i=0; i < list.length; i++) {
         tn += list[i]*list[i];
     }
-    return(Math.sqrt(tn));
+    return Math.sqrt(tn);
 }
 
 function convolve(a,b) { // convolve two lists
@@ -6042,7 +6059,7 @@ function convolve(a,b) { // convolve two lists
             c[i] += a[j]*b[b.length - i - 1 + j];
         }
     }
-    return(c);
+    return c;
 }
 
 function nFoldConvolve(a,n) {
@@ -6050,28 +6067,28 @@ function nFoldConvolve(a,n) {
     for (var i=0; i < n; i++ ) {
         b = convolve(b,a);
     }
-    return(b);
+    return b;
 }
 
 function numberLessThan(a,b) { // numerical ordering for javascript sort function
     var diff = parseFloat(a)-parseFloat(b);
     if (diff < 0) {
-        return(-1);
+        return -1;
     } else if (diff === 0) {
-        return(0);
+        return 0;
     } else {
-        return(1);
+        return 1;
     }
 }
 
 function numberGreaterThan(a,b) { // numerical ordering for javascript sort function
     var diff = parseFloat(a)-parseFloat(b);
     if (diff < 0) {
-        return(1);
+        return 1;
     } else if (diff === 0) {
-        return(0);
+        return 0;
     } else {
-        return(-1);
+        return -1;
     }
 }
 
@@ -6085,7 +6102,7 @@ function sd(list, n) { // computes the SD of the list
         ssq += (list[i] - ave)*(list[i] - ave);
     }
     ssq = Math.sqrt(ssq/list.length);
-    return(ssq);
+    return ssq;
 }
 
 function sampleSd(list) { // computes the sample SD of the list
@@ -6095,14 +6112,14 @@ function sampleSd(list) { // computes the sample SD of the list
         ssq += (list[i] - ave)*(list[i] - ave);
     }
     ssq = Math.sqrt(ssq/(list.length - 1.0));
-    return(ssq);
+    return ssq;
 }
 
 function corr(list1, list2) {
 // computes the correlation coefficient of list1 and list2
     if (list1.length != list2.length) {
         alert('Error #1 in irGrade.corr(): lists have different lengths!');
-        return(Math.NaN);
+        return Math.NaN;
     } else {
         var ave1 = mean(list1);
         var ave2 = mean(list2);
@@ -6113,7 +6130,7 @@ function corr(list1, list2) {
             cc += (list1[i] - ave1)*(list2[i] - ave2);
         }
         cc /= sd1*sd2*list1.length;
-        return(cc);
+        return cc;
     }
 }
 
@@ -6122,7 +6139,7 @@ function percentile(list,p) { // finds the pth percentile of list
     var sList = list.slice(0);
     sList.sort(numberLessThan);
     var ppt = Math.max(Math.ceil(p*n/100),1);
-    return(sList[ppt-1]);
+    return sList[ppt-1];
 }
 
 function histMakeCounts(binEnd, data, fulllength) {  // makes vector of histogram heights
@@ -6148,7 +6165,7 @@ function histMakeCounts(binEnd, data, fulllength) {  // makes vector of histogra
         for (i=0; i < nBins; i++) {
            counts[i] /= fulllength*(binEnd[i+1]-binEnd[i]);
         }
-        return(counts);
+        return counts;
 }
 
 function histEstimatedPercentile(pct, binEnd, counts) {  // estimates the pth percentile from a histogram
@@ -6170,7 +6187,7 @@ function histEstimatedPercentile(pct, binEnd, counts) {  // estimates the pth pe
             var nextBinArea = histHiLitArea(binEnd[j], binEnd[j+1], binEnd, counts);
             pctile = binEnd[j] + (area/nextBinArea) * (binEnd[j+1] - binEnd[j]);
         }
-        return(pctile);
+        return pctile;
 }
 
 function histHiLitArea(loEnd, hiEnd, binEnd, counts) { // area of counts from loEnd to hiEnd
@@ -6190,7 +6207,7 @@ function histHiLitArea(loEnd, hiEnd, binEnd, counts) { // area of counts from lo
                 }
             }
          }
-      return(area);
+      return area;
 }
 
 function normHiLitArea(loEnd, hiEnd, sampleSize, nPop, EX, SE, replacement) {
@@ -6202,7 +6219,7 @@ function normHiLitArea(loEnd, hiEnd, sampleSize, nPop, EX, SE, replacement) {
     if (hiEnd > loEnd) {
         area = normCdf((hiEnd - EX)/(fpc*SE)) - normCdf((loEnd - EX)/(fpc*SE));
     }
-    return(area);
+    return area;
 }
 
 function chiHiLitArea(loEnd, hiEnd, sampleSize, pop, popSd, sampleType) {
@@ -6221,7 +6238,7 @@ function chiHiLitArea(loEnd, hiEnd, sampleSize, pop, popSd, sampleType) {
             area = 0.0;
         }
     }
-    return(area);
+    return area;
 }
 
 function tHiLitArea(loEnd, hiEnd) {
@@ -6236,7 +6253,7 @@ function tHiLitArea(loEnd, hiEnd) {
             area = 0.0;
         }
     }
-    return(area);
+    return area;
 }
 
 function histSetBins(nBins, xMin, xMax) {
@@ -6253,7 +6270,7 @@ function histMakeBins(nBins, data) { // makes equispaced histogram bins that spa
         for (var i=0; i < nBins+1; i++) {
            binEnd[i] = dMnMx[0] + i*(dMnMx[1] - dMnMx[0])/nBins;
         }
-        return(binEnd);
+        return binEnd;
 }
 
 function listToHist(list, binEnd, nBins, lim) {
@@ -6276,7 +6293,7 @@ function listToHist(list, binEnd, nBins, lim) {
             c[nBins-1] += mass/(binEnd[nBins] - binEnd[nBins - 1]);
         }
     }
-    return(c);
+    return c;
 }
 
 function listOfRandSigns(n) { // random +-1 vector
@@ -6289,7 +6306,7 @@ function listOfRandSigns(n) { // random +-1 vector
             list[i] = 1;
         }
     }
-    return(list);
+    return list;
 }
 
 function listOfRandUniforms(n, lo, hi) { // n random variables uniform on (lo, hi)
@@ -6303,7 +6320,7 @@ function listOfRandUniforms(n, lo, hi) { // n random variables uniform on (lo, h
     for (var i=0; i < n; i++) {
         list[i] = lo + (hi-lo)*rand.next();
     }
-    return(list);
+    return list;
 }
 
 function listOfRandInts(n, lo, hi) { // n random integers between lo and hi
@@ -6311,7 +6328,7 @@ function listOfRandInts(n, lo, hi) { // n random integers between lo and hi
     for (var i=0; i < n; i++) {
         list[i] = Math.floor((hi+1 - lo)*rand.next()) + lo;
     }
-    return(list);
+    return list;
 }
 
 function listOfDistinctRandInts(n, lo, hi) { // n dintinct random integers between lo and hi
@@ -6330,7 +6347,7 @@ function listOfDistinctRandInts(n, lo, hi) { // n dintinct random integers betwe
             i++;
         }
     }
-    return(list);
+    return list;
 }
 
 function randomSample(list, ssize, replace) {
@@ -6346,7 +6363,7 @@ function randomSample(list, ssize, replace) {
     for (var i=0; i < ssize; i++) {
         sample[i] = list[indices[i]];
     }
-    return(sample) ;
+    return sample ;
 }
 
 function randomPartition(list, n) {
@@ -6366,14 +6383,14 @@ function randomPartition(list, n) {
            parts[j][i] = list[bars[j-1]+i];
         }
     }
-    return(parts);
+    return parts;
 }
 
 function constrainedRandomPartition(list, n, mx) {
   // randomly partition list into n nonempty groups no bigger than mx
     if (n*mx < list.length) {
         alert('Error in irGrade.constrainedRandomPartition: mx too small!');
-        return(false);
+        return false;
     } else {
         var bars = listOfDistinctRandInts(n-1, 1, list.length-1).sort(numberLessThan);
         bars[bars.length] = list.length;
@@ -6396,7 +6413,7 @@ function constrainedRandomPartition(list, n, mx) {
                parts[j][i] = list[bars[j-1]+i];
             }
         }
-        return(parts);
+        return parts;
     }
 }
 
@@ -6414,7 +6431,7 @@ function multinomialSample(pVec, n) { // multinomial sample of size n with proba
         }
         counts[inx]++;
     }
-    return(counts);
+    return counts;
 }
 
 function normPoints(n, mu, s, dig) {   // n normals with expected value mu, sd s, rounded to dig
@@ -6433,7 +6450,7 @@ function normPoints(n, mu, s, dig) {   // n normals with expected value mu, sd s
             xVal[i] = mu + s*rNorm();
         }
     }
-    return(xVal);
+    return xVal;
 }
 
 function cNormPoints(n, r) {
@@ -6497,7 +6514,7 @@ function cNormPoints(n, r) {
         yVal[0] = Number.NaN;
     }
     var lists = new Array(xVal,yVal);
-    return(lists);
+    return lists;
 }// ends cNormPoints
 
 function listOfRandReals(n,lo,hi) { // n-vector of uniforms on [lo, hi]
@@ -6505,16 +6522,16 @@ function listOfRandReals(n,lo,hi) { // n-vector of uniforms on [lo, hi]
     for (var i=0; i < n; i++) {
         list[i] = (hi - lo)*rand.next() + lo;
     }
-    return(list);
+    return list;
 }
 
 function rNorm() {  // standard normal pseudorandom variable
     var y = normInv(rand.next());
-    return(y);
+    return y;
 } // ends rNorm()
 
 function normCdf(y) { // normal distribution cumulative distribution function
-   return(0.5*erfc(-y*0.7071067811865475));
+   return 0.5*erfc(-y*0.7071067811865475);
 }
 
 function erfc(x) { // error function
@@ -6603,16 +6620,16 @@ by W. J. Cody, Math. Comp., 1969, PP. 631-638.
     if (x < -xbreak) {
         result = 2.0 - result;
     }
-    return(result);
+    return result;
 }
 
 function normInv(p) {
     if ( p === 0.0 ) {
-        return(Math.NEGATIVE_INFINITY);
+        return Math.NEGATIVE_INFINITY;
     } else if ( p >= 1.0 ) {
-        return(Math.POSITIVE_INFINITY);
+        return Math.POSITIVE_INFINITY;
     } else {
-        return(Math.sqrt(2.0) * erfInv(2*p - 1));
+        return Math.sqrt(2.0) * erfInv(2*p - 1);
     }
 }
 
@@ -6638,44 +6655,44 @@ function erfInv(y) {
     x = x - (1.0 - erfc(x) - y) / (2/Math.sqrt(Math.PI) * Math.exp(-x*x));
     x = x - (1.0 - erfc(x) - y) / (2/Math.sqrt(Math.PI) * Math.exp(-x*x));
 
-    return(x);
+    return x;
 } // ends erfInv
 
 function betaCdf( x,  a,  b) {
    if (a <= 0 || b <= 0) {
-      return(Math.NaN);
+      return Math.NaN;
    } else if (x >= 1) {
-      return(1.0);
+      return 1.0;
    } else if ( x > 0.0) {
-      return(Math.min(incBeta(x ,a ,b),1.0));
+      return Math.min(incBeta(x ,a ,b),1.0);
    } else {
-      return(0.0);
+      return 0.0;
    }
 }
 
 function betaPdf( x,  a,  b) {
     if (a <= 0 || b <= 0 || x < 0 || x > 1) {
-        return(Math.NaN);
+        return Math.NaN;
     } else if ((x === 0 && a < 1) || (x == 2 && b < 1)) {
-        return(Math.POSITIVE_INFINITY);
+        return Math.POSITIVE_INFINITY;
     } else if (!(a <= 0 || b <= 0 || x <= 0 || x >= 1)) {
-        return(Math.exp((a - 1)*Math.log(x) + (b-1)*Math.log(1 - x) - lnBeta(a,b)));
+        return Math.exp((a - 1)*Math.log(x) + (b-1)*Math.log(1 - x) - lnBeta(a,b));
     } else {
-        return(0.0);
+        return 0.0;
     }
 }
 
 function lnBeta( x, y) {
-    return(lnGamma(x) + lnGamma(y) - lnGamma(x+y));
+    return lnGamma(x) + lnGamma(y) - lnGamma(x+y);
 }
 
 function betaInv( p,  a,  b) {
     if (p < 0 || p > 1 || a <= 0 || b <= 0) {
-        return(Math.NaN);
+        return Math.NaN;
     } else if ( p === 0 ) {
-        return(Math.NEGATIVE_INFINITY);
+        return Math.NEGATIVE_INFINITY;
     } else if ( p == 1) {
-        return(Math.POSITIVE_INFINITY);
+        return Math.POSITIVE_INFINITY;
     } else {
         var maxIt = 100;
         var it = 0;
@@ -6700,7 +6717,7 @@ function betaInv( p,  a,  b) {
            }
            x = next;
          }
-         return(x);
+         return x;
      }
 }
 
@@ -6715,7 +6732,7 @@ function gammaPdf(x, a, b) {
   } else if (x === 0 && a == 1) {
     ans = 1/b;
   }
-  return(ans);
+  return ans;
 }
 
 function lnGamma(x) {
@@ -6779,9 +6796,9 @@ function lnGamma(x) {
      var i = 0;
 
    if (x < 0) {
-       return(lng);
+       return lng;
    } else if (x <= mach) {
-       return(-Math.log(x));
+       return -Math.log(x);
    } else if (x <= 0.5) {
       for (i = 0; i < 8; i++) {
             num = num * x + p1[i];
@@ -6828,13 +6845,13 @@ function lnGamma(x) {
       var spi = 0.9189385332046727417803297;
       lng = r + spi - 0.5*lnx + x*(lnx-1);
     }
-    return(lng);
+    return lng;
 } // ends lnGamma
 
 
 function normPdf( mu,  sigma, x) {
-     return(Math.exp(-(x-mu)*(x-mu)/(2*sigma*sigma))/
-            (Math.sqrt(2*Math.PI)*sigma));
+     return Math.exp(-(x-mu)*(x-mu)/(2*sigma*sigma))/
+            (Math.sqrt(2*Math.PI)*sigma);
 } // ends normPdf
 
 
@@ -6851,13 +6868,13 @@ function tCdf(df, x) { // cdf of Student's t distribution with df degrees of fre
     } else if (x < 0) {
         ans = incBeta(df/(df+x*x), df/2.0, 0.5)/2;
     }
-    return(ans);
+    return ans;
 }
 
 function tPdf(df, x) {
   var d = Math.floor(df);
-  return(Math.exp(lnGamma((d+1)/2) - lnGamma(d/2))/
-         ( Math.sqrt(d*Math.PI)*Math.pow((1+x*x/d),(d+1)/2)) );
+  return Math.exp(lnGamma((d+1)/2) - lnGamma(d/2))/
+         ( Math.sqrt(d*Math.PI)*Math.pow((1+x*x/d),(d+1)/2));
 }
 
 function scalVMult(s, v) {
@@ -6865,7 +6882,7 @@ function scalVMult(s, v) {
   for (var i=0; i < v.length; i++) {
     ans[i] = s*v[i];
   }
-  return(ans);
+  return ans;
 }
 
 function vCumSum(x) {  // cumulative sum of vector
@@ -6874,7 +6891,7 @@ function vCumSum(x) {  // cumulative sum of vector
   for (var i=1; i < x.length; i++) {
     ans[i] = ans[i-1] + x[i];
   }
-  return(ans);
+  return ans;
 }
 
 
@@ -6882,19 +6899,19 @@ function tInv(p, df ) { // inverse Student-t distribution with
                                               // df degrees of freedom
     var z;
     if (df < 0 || p < 0) {
-        return(Math.NaN);
+        return Math.NaN;
     } else if (p === 0.0) {
-        return(Math.NEGATIVE_INFINITY);
+        return Math.NEGATIVE_INFINITY;
     } else if (p == 1) {
-        return(Math.POSITIVE_INFINITY);
+        return Math.POSITIVE_INFINITY;
     } else if (df == 1) {
-        return(Math.tan(Math.PI*(p-0.5)));
+        return Math.tan(Math.PI*(p-0.5));
     } else if ( p >= 0.5) {
         z = betaInv(2.0*(1-p),df/2.0,0.5);
-        return(Math.sqrt(df/z - df));
+        return Math.sqrt(df/z - df);
     } else {
         z = betaInv(2.0*p,df/2.0,0.5);
-        return(-Math.sqrt(df/z - df));
+        return -Math.sqrt(df/z - df);
     }
 }
 
@@ -6914,7 +6931,7 @@ function incBeta(x, a, b) { // incomplete beta function
             res = 1 - bt*betaGuts(1-x, b, a) / b;
         }
     }
-    return(res);
+    return res;
 }
 
 function betaGuts( x, a, b) { // guts of the incomplete beta function
@@ -6948,19 +6965,19 @@ function betaGuts( x, a, b) { // guts of the incomplete beta function
        if (m == 1) bz = 1;
        m++;
     }
-    return(y);
+    return y;
 }
 
 function chi2Cdf(df,  x) {
     var p =  (df == Math.floor(df)) ? gammaCdf(x,df/2,2) : Number.NaN;
-    return(p);
+    return p;
 }
 
 function chi2Pdf(df, x) {
   if (x <= 0) {
-    return(0.0);
+    return 0.0;
   } else {
-    return(gammaPdf(x, Math.floor(df)/2, 2));
+    return gammaPdf(x, Math.floor(df)/2, 2);
   }
 }
 
@@ -7001,7 +7018,7 @@ function chi2Inv( p, df ) { // kluge for chi-square quantile function.
             currP = chi2Cdf(guess, df);
         }
     }
-    return(guess);
+    return guess;
 }
 
 function gammaCdf( x,  a,  b) { // gamma distribution CDF.
@@ -7012,7 +7029,7 @@ function gammaCdf( x,  a,  b) { // gamma distribution CDF.
     } else {
         p = Math.min(incGamma(x/b, a), 1.0);
     }
-    return(p);
+    return p;
 }
 
 function incGamma( x,  a) {
@@ -7056,7 +7073,7 @@ function incGamma( x,  a) {
        }
        inc = 1 - Math.exp(-x + a*Math.log(x) - gam) * g;
     }
-    return(inc);
+    return inc;
 }
 
 function poissonPmf( lambda, k) {  // Poisson probability mass function
@@ -7068,7 +7085,7 @@ function poissonPmf( lambda, k) {  // Poisson probability mass function
            p = Math.exp(-lambda)*Math.pow(lambda,k)/factorial(k);
         }
     }
-    return(p);
+    return p;
 }
 
 function poissonCdf( lambda, k) {  // Poisson CDF
@@ -7083,19 +7100,19 @@ function poissonCdf( lambda, k) {  // Poisson CDF
         }
         p += Math.exp(-lambda)*b;
     }
-    return(p);
+    return p;
 }
 
 function poissonTail(lambda, k) {  // upper tail probability of the Poisson
-    return(1.0-poissonCdf(lambda, k-1));
+    return 1.0-poissonCdf(lambda, k-1);
 }
 
 function expCdf(lambda, x) {   // exponential CDF
-        return(1-Math.exp(-x/lambda));
+        return 1-Math.exp(-x/lambda);
     }
 
 function expPdf(lambda, x) {  // exponential density
-        return((1.0/lambda)*Math.exp(-x/lambda));
+        return (1.0/lambda)*Math.exp(-x/lambda);
 }
 
 
@@ -7109,56 +7126,56 @@ function factorial(n) { // computes n!
         fac *= i;
       }
     }
-    return(Math.round(fac));
+    return Math.round(fac);
 }
 
 function binomialCoef(n,k) { // computes n choose k
     if (n != Math.floor(n) || k != Math.floor(k)) {
-        return(Number.NaN);
+        return Number.NaN;
     } else if (n < k || n < 0) {
-        return(0.0);
+        return 0.0;
     } else if ( k === 0 || n === 0 || n == k) {
-        return(1.0);
+        return 1.0;
     } else {
         var minnk = Math.min(k, n-k);
         var coef = 1;
         for (var j = 0; j < minnk; j++) {
             coef *= (n-j)/(minnk-j);
         }
-        return(Math.round(coef));
+        return Math.round(coef);
     }
 }
 
 function binomialPmf(n, p, k) {  // binomial pmf at k.
     var pmf = binomialCoef(n,k)*Math.pow(p,k)*Math.pow((1-p),(n-k));
-    return(pmf);
+    return pmf;
 }
 
 function binomialCdf(n, p, k) {  // binomial CDF:  Pr(X <= k), X~B(n,p)
     if (k < 0) {
-        return(0.0);
+        return 0.0;
     } else if (k >= n) {
-        return(1.0);
+        return 1.0;
     } else {
         var cdf = 0.0;
         for (var i = 0; i <= k; i++) {
             cdf += binomialPmf(n, p, i);
         }
-        return(cdf);
+        return cdf;
     }
 }
 
 function binomialTail(n,p,k) { // binomial tail probability Pr(X >= k), X~B(n,p)
     if (k < 0) {
-        return(1.0);
+        return 1.0;
     } else if (k >= n) {
-        return(0.0);
+        return 0.0;
     } else {
         var tailP = 0.0;
         for (var i = k; i <= n; i++) {
             tailP += binomialPmf(n, p, i);
         }
-        return(tailP);
+        return tailP;
     }
 }
 
@@ -7178,7 +7195,7 @@ function binomialInv(n, p, pt) { // binomial percentile function
         }
         t -= 1;
     }
-    return(t);
+    return t;
 }
 
 function binomialLowerCL(n, x, cl, inc) {
@@ -7192,7 +7209,7 @@ function binomialLowerCL(n, x, cl, inc) {
     } else {
         p = 0;
     }
-    return(p);
+    return p;
 }
 
 function multinomialCoef(list, n) { // multinomial coefficient.
@@ -7210,7 +7227,7 @@ function multinomialCoef(list, n) { // multinomial coefficient.
             val /= factorial(list[i]);
         }
     }
-    return(val);
+    return val;
 }
 
 function multinomialPmf(olist, plist, n) { // multinomial pmf; not stable algorithm
@@ -7234,7 +7251,7 @@ function multinomialPmf(olist, plist, n) { // multinomial pmf; not stable algori
             val *= Math.pow(pl[i], olist[i])/factorial(olist[i]);
         }
     }
-    return(val);
+    return val;
 }
 
 
@@ -7249,7 +7266,7 @@ function geoPmf( p,  k) {
     } else {
         prob = Math.pow((1-p),k-1)*p;
     }
-    return(prob);
+    return prob;
 }
 
 function geoCdf( p, k) {
@@ -7262,12 +7279,12 @@ function geoCdf( p, k) {
     } else {
         prob = 1-Math.pow( 1-p, k);
     }
-    return(prob);
+    return prob;
 }
 
 function geoTail( p,  k) {
   // chance of k or more trials to the first success in iid Bernoulli(p) trials
-    return(1 - geoCdf(p, k-1));
+    return 1 - geoCdf(p, k-1);
 }
 
 function geoInv(p, pt) { // geometric percentile function
@@ -7285,7 +7302,7 @@ function geoInv(p, pt) { // geometric percentile function
             pc += geoPmf(p, t++);
         }
     }
-    return(t);
+    return t;
 }
 
 function hyperGeoPmf( N,  M,  n,  m) {
@@ -7300,7 +7317,7 @@ function hyperGeoPmf( N,  M,  n,  m) {
     } else {
         p = binomialCoef(M,m)*binomialCoef(N-M,n-m)/binomialCoef(N,n);
     }
-    return(p);
+    return p;
 }
 
 function hyperGeoCdf( N,  M,  n,  m) {
@@ -7316,7 +7333,7 @@ function hyperGeoCdf( N,  M,  n,  m) {
             p += hyperGeoPmf(N, M, n, i);
         }
     }
-    return(p);
+    return p;
 }
 
 function hyperGeoTail( N,  M,  n,  m) {
@@ -7330,7 +7347,7 @@ function hyperGeoTail( N,  M,  n,  m) {
             p += hyperGeoPmf(N, M, n, i);
         }
     }
-    return(p);
+    return p;
 }
 
 function negBinomialPmf( p,  s,  t) {
@@ -7344,7 +7361,7 @@ function negBinomialPmf( p,  s,  t) {
     } else {
         prob = p*binomialPmf(t-1,p,s-1);
     }
-    return(prob);
+    return prob;
 }
 
 function negBinomialCdf( p,  s,  t) {
@@ -7357,22 +7374,22 @@ function negBinomialCdf( p,  s,  t) {
              prob += negBinomialPmf(p, s, i);
          }
     }
-    return(prob);
+    return prob;
 }
 
 function pDieRolls(rolls,spots) { // chance that the sum of 'rolls' rolls of a die = 'spots'
     if (rolls > 4) {
         alert('Error #1 in irGrade.pDiceRolls: too many rolls ' + rolls + '. ');
-        return(Math.NaN);
+        return Math.NaN;
     } else {  // BRUTE FORCE!
         var found = 0;
-        if (spots < rolls || spots > 6*rolls) {return(0.0);}
+        if (spots < rolls || spots > 6*rolls) {return 0.0;}
         var possible = Math.pow(6,rolls);
         var i = 0;
         var j = 0;
         var k = 0;
         if (rolls == 1) {
-            return(1/possible);
+            return 1/possible;
         } else if (rolls == 2) {
             for (i=1; i <=6; i++ ) {
                 for (j=1; j <= 6; j++ ) {
@@ -7398,9 +7415,9 @@ function pDieRolls(rolls,spots) { // chance that the sum of 'rolls' rolls of a d
                 }
             }
         }
-        return(found/possible);
+        return found/possible;
     }
-    return(false);
+    return false;
 }
 
 function permutations(n,k) { // number of permutations of k of n things
@@ -7415,13 +7432,13 @@ function permutations(n,k) { // number of permutations of k of n things
         coef=1;
         for (var j=0; j < k; j++) coef *= (n-j);
     }
-    return(Math.round(coef));
+    return Math.round(coef);
 }
 
 
 function sgn(x) {  // signum function
     if (x >= 0) {
-        return(1);
+        return 1;
     } else if (x < 0) {
         return (-1);
     }
@@ -7433,14 +7450,14 @@ function linspace(lo,hi,n) { // n linearly spaced points between lo and hi
     for (var i=0; i < n; i++) {
         spaced[i] = lo + i*dx;
     }
-    return(spaced);
+    return spaced;
 }
 
 function rms(list) { // rms
     var r = 0;
     for (var i=0; i < list.length; i++) r += list[i]*list[i];
     r /= list.length;
-    return(Math.sqrt(r));
+    return Math.sqrt(r);
 }
 
 function vMinMax(list){ // returns min and max of list
@@ -7451,7 +7468,7 @@ function vMinMax(list){ // returns min and max of list
         if (mx < list[i]) mx = list[i];
     }
     var vmnmx =  new Array(mn,mx);
-    return(vmnmx);
+    return vmnmx;
 }
 
 function vMinMaxIndices(list){ // returns min, max, index of min, index of max
@@ -7470,7 +7487,7 @@ function vMinMaxIndices(list){ // returns min, max, index of min, index of max
         }
     }
     var vmnmx =  new Array(mn,mx,indMn,indMx);
-    return(vmnmx);
+    return vmnmx;
 }
 
 function vMinMaxAbs(list) {
@@ -7484,7 +7501,7 @@ function vMinMaxAbs(list) {
             if (mx < val) mx = val;
     }
     var vmnmx =  new Array(mn,mx);
-    return(vmnmx);
+    return vmnmx;
 }
 
 function randBoolean(p){ // random boolean value, prob p that it is true
@@ -7492,9 +7509,9 @@ function randBoolean(p){ // random boolean value, prob p that it is true
         p = 0.5;
     }
     if (rand.next() <= p) {
-        return(false);
+        return false;
     } else {
-        return(true);
+        return true;
     }
 }
 
@@ -7513,7 +7530,7 @@ function sortUnique(list,order) { // sort a list, remove duplicate entries
             temp2[++ix] = temp[i];
         }
     }
-    return(temp2);
+    return temp2;
 }
 
 function uniqueCount(list) { // unique elements and their counts
@@ -7535,11 +7552,11 @@ function uniqueCount(list) { // unique elements and their counts
         uc[0][k] = j;
         uc[1][k++] = temp[j];
     }
-    return(uc);
+    return uc;
 }
 
 function unique(list) {
-    return(uniqueCount(list)[0]);
+    return uniqueCount(list)[0];
 }
 
 function randPermutation(list,index) { // returns a random permutation of list
@@ -7564,7 +7581,7 @@ function randPermutation(list,index) { // returns a random permutation of list
         }
         thePermutation = p;
     }
-    return(thePermutation);
+    return thePermutation;
 }
 
 
@@ -7576,7 +7593,7 @@ function cyclicPermutation(n, k) { // cyclic permutation by k of of the integers
     for (var i = 0; i < n; i++) {
             perm[i] = (i+k)%n;
     }
-    return(perm);
+    return perm;
 }
 
 function distinctPermutation(n, k) { // returns a permutation of the integers 0 to n-1
@@ -7584,7 +7601,7 @@ function distinctPermutation(n, k) { // returns a permutation of the integers 0 
     if (typeof(k) == 'undefined' || k === null) {
             k = Math.min(3, n-1);
     }
-    return(cyclicPermutation(n,k));
+    return cyclicPermutation(n,k);
 }
 
 function distinctRandPermutation(n) { // returns a random permutation of the integers 0 to n-1
@@ -7596,7 +7613,7 @@ function distinctRandPermutation(n) { // returns a random permutation of the int
               v = true;
            }
         }
-        return(v);
+        return v;
     }
     var x = new Array(n);
     for (var i = 0; i < n; i++) {
@@ -7606,7 +7623,7 @@ function distinctRandPermutation(n) { // returns a random permutation of the int
     while (isInPlace(x)) {
        x = randPermutation(x);
     }
-    return(x);
+    return x;
 }
 
 
@@ -7652,7 +7669,7 @@ function fakeBivariateData(nPoints, funArray, heteroFac, snr, loEnd, hiEnd) {
     } else {
         alert('Error #1 in irGrade.fakeBivariateData()!\n' +
             'Unsupported function type: ' + funArray[0].toString());
-        return(null);
+        return null;
     }
 // now add noise.
     var sigNorm = twoNorm(data[1]);
@@ -7670,7 +7687,7 @@ function fakeBivariateData(nPoints, funArray, heteroFac, snr, loEnd, hiEnd) {
     for (i=0; i < nPoints; i++) {
         data[1][i] += noise[i]*sigNorm/noiseNorm/snr;
     }
-    return(data);
+    return data;
 }
 
 function nextRand() {  // generates next random number in a sequence
@@ -7701,7 +7718,7 @@ function rng(s) {
        this.oneOverM = 1.0 / this.M;
        this.next = nextRand;
        this.getSeed = getRandSeed;
-       return(this);
+       return this;
 }
 
 // Only define rand if it has not already been defined - the page may want to
@@ -7717,7 +7734,7 @@ jQuery(function() {
 });
 
 function getRandSeed() { // get seed of random number generator
-    return(this.seed);
+    return this.seed;
 }
 
 function crypt(s,t) {
@@ -7742,7 +7759,7 @@ function crypt(s,t) {
            result += (r < rad ? '0' : '') + r.toString(rad);
         }
     }
-    return(result);
+    return result;
 }
 
 
